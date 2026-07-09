@@ -1,10 +1,4 @@
-#!/usr/bin/env node
-
-import app from '../app.js';
-import debugLib from 'debug';
-import http from 'http';
-
-const debug = debugLib('mxanime-server:server');
+import app from './configs/app.js';
 
 function normalizePort(val: string): number | string | false {
   const port = parseInt(val, 10);
@@ -49,7 +43,5 @@ function onError(error: NodeJS.ErrnoException) {
 function onListening() {
   const addr = server.address();
   const bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + (addr && (addr as any).port);
-  debug('Listening on ' + bind);
+  console.log('Listening on ' + bind);
 }
-
-export {};
