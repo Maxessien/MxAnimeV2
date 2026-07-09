@@ -10,11 +10,16 @@
     "dev": "ts-node-dev --respawn --transpile-only src/bin/www.ts"
   },
   "dependencies": {
+    "@ts-ffmpeg/fluent-ffmpeg": "^2.2.6",
+    "cloudinary": "^2.10.0",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
+    "dotenv": "^17.4.2",
     "express": "~4.16.1",
     "http-errors": "~1.6.3",
+    "mongoose": "^9.7.4",
     "morgan": "~1.9.1",
+    "offline-cloudinary": "^2.2.2",
     "seedr": "^1.1.2"
   },
   "devDependencies": {
