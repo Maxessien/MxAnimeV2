@@ -1,0 +1,4 @@
+
+interface GetShowsQuery {
+    page: number
+}
