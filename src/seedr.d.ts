@@ -18,7 +18,13 @@ declare module "seedr" {
     name: string;
     success: boolean;
     result: boolean;
-  }	export default class Seedr {
+  }
+
+  export interface SeedrDeleteResponse {
+    success: boolean;
+    result: boolean;
+  }	
+  export default class Seedr {
 		username?: string;
 		password?: string;
 		token?: string;
@@ -35,7 +41,7 @@ declare module "seedr" {
 		addMagnet(magnet: string): Promise<SeedrAddMagnetResponse>;
 		getVideos(): Promise<SeedrVideo[][]>;
 		getFile(id: string | number): Promise<SeedrGetFileResponse>;
-		deleteFolder(id: string | number): Promise<any>;
-		deleteFile(id: string | number): Promise<any>;
+		deleteFolder(id: string | number): Promise<SeedrDeleteResponse>;
+		deleteFile(id: string | number): Promise<SeedrDeleteResponse>;
 	}
 }
