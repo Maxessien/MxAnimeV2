@@ -1,7 +1,7 @@
-import { useSeasonsNow, useTopAnime } from '@/hooks/use-jikan';
 import { AnimeCard, AnimeCardSkeleton } from '@/components/AnimeCard';
+import { useSeasonsNow, useTopAnime } from '@/hooks/use-jikan';
+import { ArrowRight, Loader2, PlayCircle } from 'lucide-react';
 import { Link } from 'wouter';
-import { ArrowRight, PlayCircle, Loader2 } from 'lucide-react';
 
 export default function Home() {
   const { data: trending, isLoading: isLoadingTrending, error: trendingError } = useSeasonsNow(1);
@@ -12,7 +12,7 @@ export default function Home() {
   return (
     <div className="flex flex-col gap-16 pb-12 animate-in fade-in duration-500">
       {/* Hero / Spotlight */}
-      <section className="relative rounded-2xl md:rounded-3xl overflow-hidden bg-muted aspect-[4/3] md:aspect-[21/9] min-h-[400px] flex items-end shadow-xl border">
+      <section className="relative rounded-2xl h-max md:rounded-3xl overflow-hidden bg-muted aspect-4/3 md:aspect-21/9 min-h-100 flex items-end shadow-xl border">
         {isLoadingTrending && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader2 className="animate-spin text-muted-foreground" size={32} />
@@ -26,10 +26,10 @@ export default function Home() {
               alt={spotlight.title}
               className="absolute inset-0 w-full h-full object-cover object-top opacity-60"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-background via-background/80 to-transparent" />
-            <div className="absolute inset-0 bg-gradient-to-r from-background/90 via-background/40 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-t from-background via-background/80 to-transparent" />
+            <div className="absolute inset-0 bg-linear-to-r from-background/90 via-background/40 to-transparent" />
             
-            <div className="relative z-10 p-6 md:p-12 w-full max-w-4xl">
+            <div className="z-10 p-6 w-full mx-auto max-w-4xl">
               <div className="flex items-center gap-3 mb-4 animate-in slide-in-from-bottom-4 fade-in duration-700">
                 <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full uppercase tracking-wider shadow-sm">
                   Season Spotlight

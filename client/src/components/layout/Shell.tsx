@@ -1,8 +1,8 @@
-import { Link, useLocation } from 'wouter';
-import { Search, Flame, Calendar, CalendarClock, Trophy, History, Download, Settings } from 'lucide-react';
-import { ThemeToggle } from '@/components/theme-toggle';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
+import { Calendar, CalendarClock, Download, Flame, History, Search, Settings, Trophy } from 'lucide-react';
+import { Link, useLocation } from 'wouter';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Flame },
@@ -21,14 +21,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const isActive = (href: string) => location === href || (href !== '/' && location.startsWith(href));
 
   return (
-    <div className="min-h-[100dvh] flex bg-background text-foreground">
+    <div className="min-h-dvh flex bg-background text-foreground">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:flex-col w-64 flex-shrink-0 border-r bg-background sticky top-0 h-[100dvh]">
-        <Link href="/" className="flex items-center gap-2 px-6 h-16 flex-shrink-0 outline-none focus-visible:ring-2 ring-primary rounded-lg">
+      <aside className="hidden md:flex md:flex-col w-64 shrink-0 border-r bg-background sticky top-0 h-dvh">
+        <Link href="/" className="flex items-center gap-2 px-6 h-16 shrink-0 outline-none focus-visible:ring-2 ring-primary rounded-lg">
           <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shadow-sm">
             <Flame size={20} strokeWidth={2.5} />
           </div>
-          <span className="font-display font-bold text-xl tracking-tight">Anime Hub</span>
+          <span className="font-display font-bold text-xl tracking-tight">MxAnime</span>
         </Link>
 
         <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
@@ -52,7 +52,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
           })}
         </nav>
 
-        <div className="p-4 border-t flex items-center justify-between flex-shrink-0">
+        <div className="p-4 border-t flex items-center justify-between shrink-0">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Theme</span>
           <ThemeToggle />
         </div>
@@ -66,7 +66,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
               <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shadow-sm">
                 <Flame size={20} strokeWidth={2.5} />
               </div>
-              <span className="font-display font-bold text-xl tracking-tight">Anime Hub</span>
+              <span className="font-display font-bold text-xl tracking-tight">MxAnime</span>
             </Link>
             <ThemeToggle />
           </div>
@@ -75,20 +75,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
         <main className="flex-1 flex flex-col w-full container mx-auto px-4 py-8 pb-8">
           {children}
         </main>
-
-        <footer className="border-t py-12 text-center text-sm text-muted-foreground bg-muted/30">
-          <div className="flex flex-col items-center gap-2">
-            <div className="bg-primary/20 text-primary p-2 rounded-full mb-2">
-              <Flame size={20} />
-            </div>
-            <p className="font-medium text-foreground">Anime Hub</p>
-            <p>Powered by <a href="https://jikan.moe" target="_blank" rel="noreferrer" className="text-primary hover:underline font-medium">Jikan API</a></p>
-            <p className="text-xs max-w-sm mx-auto mt-2 opacity-70">Not affiliated with MyAnimeList. This is a passionate database built for anime fans.</p>
-          </div>
-        </footer>
-
-        {/* Spacer so content/footer isn't hidden behind the mobile bottom nav */}
-        <div className="md:hidden h-16 flex-shrink-0" aria-hidden="true" />
       </div>
 
       {/* Mobile Bottom Nav */}
