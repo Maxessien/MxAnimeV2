@@ -8,7 +8,7 @@ import { normalizePort, onError, onListening } from './utils/serverInit.js';
 
 const port = normalizePort(process.env.PORT || '3000');
 
-let par = parse("[SubsPlease] Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru - 02 (480p) [78A9AFF6].mkv")
+let par = parse("[SubsPlease] Mushoku Tensei S2 - 02 (480p) [78A9AFF6].mkv")
 
 console.log(par)
 

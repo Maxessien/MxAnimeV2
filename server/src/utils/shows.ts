@@ -3,6 +3,10 @@ import { DEFAULT_SHOW_POSTER, Episode, Show } from "../models/showModel.js";
 import { Response } from "express";
 import { SERVER_ERROR } from "./httpCodes.js";
 
+const JIKAN_API = "https://api.jikan.moe/v4"
+
+const getAniZipUrl = (malId: number | string)=> `https://api.ani.zip/mappings?mal_id=${malId}`
+
 const addNewShow = async (
   synopsis: string,
   title: string,
@@ -27,6 +31,7 @@ const addNewEpisode = async ({
   seasonNumber = 0,
   showId,
   quality,
+  fileSize,
 }: {
   episodeNumber: number;
   fileUrl: string;
@@ -34,6 +39,7 @@ const addNewEpisode = async ({
   publicId: string;
   seasonNumber?: number;
   quality: number;
+  fileSize: number;
   showId: string;
 }) => {
   let ep = await Episode.create({
@@ -44,6 +50,7 @@ const addNewEpisode = async ({
     seasonNumber,
     showId,
     quality,
+    fileSize,
   });
 
   await Show.updateOne({ showId }, { $inc: { epCount: 1 } });
@@ -63,4 +70,4 @@ const handler = async (res: Response, cb: () => Promise<Response>) => {
   }
 };
 
-export { addNewShow, addNewEpisode, handler };
+export { addNewShow, addNewEpisode, handler, JIKAN_API, getAniZipUrl };

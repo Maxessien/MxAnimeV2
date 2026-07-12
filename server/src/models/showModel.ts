@@ -9,6 +9,7 @@ const EpisodeSchema = new Schema({
     publicId: {type: String, required: false},
     seasonNumber: {type: Number, required: true},
     quality: {type: Number, required: true},
+    fileSize: {type: Number, required: true},
     showId: {required: true, type: String},
 }, {timestamps: true})
 
