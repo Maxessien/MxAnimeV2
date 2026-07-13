@@ -51,59 +51,30 @@ export interface MalSubItem {
 }
 
 export interface Anime {
-  mal_id: number;
-  url: string;
-  images: AnimeImages;
-  trailer: {
-    youtube_id: string | null;
-    url: string | null;
-    embed_url: string | null;
-  };
-  approved: boolean;
-  titles: AnimeTitle[];
-  title: string;
-  title_english: string | null;
-  title_japanese: string | null;
-  title_synonyms: string[];
-  type: AnimeType | null;
-  source: string | null;
-  episodes: number | null;
-  status: AnimeStatus;
-  airing: boolean;
-  aired: {
-    from: string | null;
-    to: string | null;
-    prop: {
-      from: { day: number | null; month: number | null; year: number | null };
-      to: { day: number | null; month: number | null; year: number | null };
+    mal_id: number;
+    url: string;
+    images: {
+        jpg: Record<string, string | null>;
+        webp: Record<string, string | null>;
     };
-    string: string;
-  };
-  duration: string;
-  rating: AnimeRating | null;
-  score: number | null;
-  scored_by: number | null;
-  rank: number | null;
-  popularity: number | null;
-  members: number | null;
-  favorites: number | null;
-  synopsis: string | null;
-  background: string | null;
-  season: AnimeSeason | null;
-  year: number | null;
-  broadcast: {
-    day: string | null;
-    time: string | null;
-    timezone: string | null;
-    string: string | null;
-  };
-  producers: MalSubItem[];
-  licensors: MalSubItem[];
-  studios: MalSubItem[];
-  genres: MalSubItem[];
-  explicit_genres: MalSubItem[];
-  themes: MalSubItem[];
-  demographics: MalSubItem[];
+    title: string;
+    title_english: string | null;
+    title_japanese: string | null;
+    titles: Array<{ type: string; title: string }>;
+    type: string | null;
+    source: string | null;
+    episodes: number | null;
+    status: string | null;
+    airing: boolean;
+    score: number | null;
+    scored_by: number | null;
+    rank: number | null;
+    popularity: number | null;
+    synopsis: string | null;
+    season: string | null;
+    year: number | null;
+    studios: Array<{ mal_id: number; type: string; name: string; url: string }>;
+    genres: Array<{ mal_id: number; type: string; name: string; url: string }>;
 }
 
 export interface AnimeFull extends Anime {

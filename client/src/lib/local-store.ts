@@ -43,7 +43,7 @@ async function downloadAnime(mutateAsync: UseMutateAsyncFunction<void, Error, {
   const {mal_id, episode} = info
 
   const res = await axios.get<AnimeDownload>(`${BACKEND_URL}/download`, {
-    params: {mal_id, episode},
+    params: {mal_id, eid: episode.ep},
   });
 
   const path = await invoke<string>("dl_file", res.data);

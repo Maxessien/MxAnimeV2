@@ -74,9 +74,9 @@ export default function History() {
                       {entry.type}
                     </span>
                   )}
-                  {entry.episodes ? (
+                  {entry.episode ? (
                     <span className="font-mono bg-muted px-1.5 py-0.5 rounded">
-                      {entry.episodes} eps
+                      {entry.episode.ep} eps
                     </span>
                   ) : null}
                   <span>

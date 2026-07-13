@@ -1,51 +1,30 @@
 import { Request, Response } from "express";
-import { handler } from "../utils/shows.js";
-import { Show } from "../models/showModel.js";
+import { getSeasonNumber, getTorrentioApi, handler } from "../utils/shows.js";
 import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
-import { SortOrder } from "mongoose";
+import { readFile } from "fs/promises";
 
-const getShows = async (req: Request, res: Response) =>
+const downloadEpisode = async (req: Request, res: Response) =>
   handler(res, async () => {
-    const {
-      page,
-      limit = "10",
-      search = undefined,
-      sortBy = "title",
-      direction = "asc",
-    } = req.query;
+    const { mal_id, eid } = req.query;
+    const mapping = JSON.parse((await readFile("mappings1.json")).toString());
+    const map = new Map<string, number>(Object.entries(mapping));
 
-    if (!Number.isFinite(Number(limit)) || !Number.isFinite(Number(page)))
+    if (!mal_id || !eid)
       return res
         .status(CLIENT_ERROR.BAD_REQUEST)
-        .json({ message: "Invalid page number" });
+        .json({ message: "Invalid mal_id or eid" });
 
-    const parsedSortBy = ["title", "createdAt"].includes(sortBy?.toString())
-      ? sortBy.toString()
-      : "title";
-    
-    const parsedDirection: SortOrder = ["asc", "desc"].includes(
-      direction?.toString(),
-    )
-      ? (direction.toString() as SortOrder)
-      : "asc";
+    const season = await getSeasonNumber(mal_id.toString());
 
-    const filter = {
-      ...(search?.toString().trim()
-        ? { title: { $regex: search?.toString() } }
-        : {}),
-    };
+    const torrentioUrl = getTorrentioApi(
+      `${mal_id}:${season}:${eid}`,
+      "series",
+    );
 
-    const [shows, total] = await Promise.all([
-      Show.find(filter)
-        .limit(Number(limit))
-        .sort([[parsedSortBy, parsedDirection]])
-        .skip(Number(page) * Number(limit))
-        .lean(),
-
-      Show.find(filter).countDocuments(),
-    ]);
-
-    return res.status(SUCCESS.OK).json({shows, total});
+    return res.status(SUCCESS.OK);
   });
 
-export { getShows };
+const getEpisode = async (req: Request, res: Response) =>
+  handler(res, async () => {});
+
+export {};
