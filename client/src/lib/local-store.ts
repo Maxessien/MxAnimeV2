@@ -18,7 +18,7 @@ async function getDownloads<T>(subPath: string) {
     subPath,
   });
   let downloads: T[] = JSON.parse(file);
-
+  
   return downloads;
 }
 

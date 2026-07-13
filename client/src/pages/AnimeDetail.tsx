@@ -8,7 +8,6 @@ import {
   ChevronLeft,
   ChevronRight,
   Download,
-  ExternalLink,
   LayoutDashboard,
   ListVideo,
   Star,
@@ -119,12 +118,12 @@ export default function AnimeDetail() {
         </div>
 
         {/* Main Info Card floating over banner */}
-        <div className="container mx-auto px-4 relative z-10 -mt-32 md:-mt-48 flex flex-col md:flex-row gap-8">
+        <div className="container mx-auto px-4 relative z-10 -mt-32 md:-mt-48 flex flex-col lg:flex-row gap-8">
           <div className="w-48 md:w-72 shrink-0 mx-auto md:mx-0 shadow-2xl rounded-2xl overflow-hidden border-4 border-background bg-background">
             <img
               src={anime.images.webp.large_image_url}
               alt={anime.title}
-              className="w-full h-auto object-cover"
+              className="w-full h-full object-center object-cover"
             />
           </div>
 
@@ -150,11 +149,11 @@ export default function AnimeDetail() {
               )}
             </div>
 
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-extrabold tracking-tight mb-2 text-foreground">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-extrabold tracking-tight mb-2 text-foreground">
               {anime.title_english || anime.title}
             </h1>
             {anime.title_english && anime.title !== anime.title_english && (
-              <h2 className="text-xl md:text-2xl text-muted-foreground font-medium mb-6">
+              <h2 className="text-base sm:text-lg md:text-xl text-muted-foreground font-medium mb-6">
                 {anime.title}
               </h2>
             )}
@@ -269,17 +268,6 @@ export default function AnimeDetail() {
               ))}
             </div>
           </div>
-
-          {anime.url && (
-            <a
-              href={anime.url}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center justify-center gap-2 w-full py-3 bg-secondary hover:bg-secondary/80 text-secondary-foreground rounded-xl font-medium transition-colors"
-            >
-              View on MyAnimeList <ExternalLink size={16} />
-            </a>
-          )}
         </div>
 
         {/* Right Column - Synopsis & Characters & Trailer */}
@@ -289,7 +277,7 @@ export default function AnimeDetail() {
             <h2 className="text-2xl font-bold font-display mb-4 border-l-4 border-primary pl-3">
               Synopsis
             </h2>
-            <p className="text-muted-foreground leading-relaxed text-lg whitespace-pre-line">
+            <p className="text-muted-foreground leading-relaxed text-base sm:text-lg whitespace-pre-line">
               {anime.synopsis || "No synopsis available for this title."}
             </p>
             {anime.background && (

@@ -48,21 +48,16 @@ export function useJson<T>({
   const add = useMutation<void, Error, { anime: T; type: JsonFiles, exists: (v: T[])=> boolean }, void>({
     ...addOptions,
     mutationFn: async ({ anime, type, exists }) => {
-      setJson((dl) => {
-        if (exists(dl[type])) return dl
-
-        let n = {...dl}
-        n[type].push(anime)
-        return n
-      });
-      let str = JSON.stringify(anime);
+        let n = {...json}
+        if (!exists(json[type])) n[type].push(anime)
+      setJson(n);
       switch (type) {
         case "downloads":
-          await invoke("save_dl_history", { downloads: str });
+          await invoke("save_dl_history", { downloads: JSON.stringify(n.downloads) });
           break;
 
         case "history":
-          await invoke("save_watch_history", { history: str });
+          await invoke("save_watch_history", { history: JSON.stringify(n.history) });
           break;
 
         default:
@@ -74,22 +69,22 @@ export function useJson<T>({
 
   const remove = useMutation<void, Error, (v: T[])=> T[], void>({
     ...removeOptions,
-    mutationFn: async (mal_id: (v: T[])=> T[]) => {
-      setJson((dl) => ({
-        ...dl,
-        [type]: mal_id(dl[type])}));
+    mutationFn: async (filter: (v: T[])=> T[]) => {
       switch (type) {
         case "downloads":
-          await invoke("save_dl_history", { downloads: json[type] });
+          await invoke("save_dl_history", { downloads: JSON.stringify(filter(json[type])) });
           break;
 
         case "history":
-          await invoke("save_watch_history", { history: json[type] });
+          await invoke("save_watch_history", { history: JSON.stringify(filter(json[type])) });
           break;
 
         default:
           break;
       }
+      setJson((dl) => ({
+        ...dl,
+        [type]: filter(dl[type])}));
     },
     retry: 3,
   });
@@ -115,7 +110,11 @@ export function useJson<T>({
   });
 
   useEffect(() => {
-    if (query.data) setJson((dl) => ({ ...dl, [type]: query.data }));
+    if (query.data) setJson((dl) => {
+        let n = {...dl}
+        n[type] = query.data
+        return n
+      });
   }, [query.dataUpdatedAt, query.errorUpdatedAt]);
 
   return {

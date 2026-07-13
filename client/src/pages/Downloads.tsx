@@ -32,7 +32,7 @@ export default function Downloads() {
         )}
       </div>
 
-      {json.downloads.length === 0 ? (
+      {!json?.downloads?.length || json.downloads?.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center py-24 gap-3 border-2 border-dashed rounded-3xl">
           <DownloadIcon
             size={40}
