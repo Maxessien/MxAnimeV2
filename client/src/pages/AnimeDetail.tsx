@@ -7,10 +7,7 @@ import {
 } from "@/components/anime-details";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnimeEpisodes, useAnimeFull } from "@/hooks/use-jikan";
-import { useJson } from "@/hooks/use-json";
-import { AnimeSummary } from "@/lib/local-store";
 import { useState } from "react";
-import { toast } from "react-toastify";
 import { useRoute } from "wouter";
 
 export default function AnimeDetail() {
@@ -30,11 +27,6 @@ export default function AnimeDetail() {
     isFetching: isFetchingEpisodes,
     error: episodesError,
   } = useAnimeEpisodes(id, episodePage);
-
-  const { add, remove, json } = useJson<AnimeSummary>({ type: "downloads", addOptions: {
-    onError: ()=> toast.error("Couldn't start download"),
-    onSuccess: ()=> toast.success("Download started")
-  } });
 
   if (animeError) {
     return (
@@ -69,37 +61,13 @@ export default function AnimeDetail() {
   const episodes = episodesData?.data || [];
   const episodesPagination = episodesData?.pagination;
   const trailerUrl = anime.trailer?.embed_url;
-  const downloaded = json.downloads.some((v) => v.mal_id === anime.mal_id);
-
-  const toggleDownload = () => {
-    if (downloaded) {
-      remove.mutateAsync((lt)=> lt.filter(v=> v.mal_id !== anime.mal_id));
-    } else {
-      add.mutateAsync({
-        anime: {
-          mal_id: anime.mal_id,
-          title: anime.title_english || anime.title,
-          image:
-            anime.images?.webp?.large_image_url ||
-            anime.images?.jpg?.large_image_url ||
-            null,
-          type: anime.type,
-          episodes: anime.episodes,
-          score: anime.score,
-        },
-        type: "downloads",
-        exists: (l) => l.some((v) => v.mal_id === anime.mal_id),
-      });
-    }
-  };
 
   return (
     <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
       <AnimeDetailHero
         anime={anime}
         trailerUrl={trailerUrl}
-        downloaded={downloaded}
-        onToggleDownload={toggleDownload}
+        epIds={episodes.map(v=> v.mal_id)}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -109,6 +77,7 @@ export default function AnimeDetail() {
           <AnimeSynopsis anime={anime} />
           <AnimeTrailer animeTitle={anime.title} youtubeId={anime.trailer?.youtube_id} />
           <AnimeDetailEpisodes
+          anime={anime}
             episodes={episodes}
             pagination={episodesPagination}
             episodePage={episodePage}

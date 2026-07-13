@@ -1,7 +1,12 @@
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AnimeEpisode, JikanPagination } from "@/types/jikan";
+import { useJson } from "@/hooks/use-json";
+import { AnimeSummary, downloadAnime } from "@/lib/local-store";
+import { downloadQueue } from "@/lib/queue";
+import { Anime, AnimeEpisode, JikanPagination } from "@/types/jikan";
+import { useMutation } from "@tanstack/react-query";
 import { ChevronLeft, ChevronRight, ListVideo } from "lucide-react";
+import { FaDownload, FaSpinner } from "react-icons/fa";
 
 type AnimeEpisodesProps = {
   episodes: AnimeEpisode[];
@@ -10,6 +15,7 @@ type AnimeEpisodesProps = {
   isLoading: boolean;
   isFetching: boolean;
   error: unknown;
+  anime: Anime;
   onPreviousPage: () => void;
   onNextPage: () => void;
 };
@@ -21,9 +27,32 @@ export function AnimeEpisodes({
   isLoading,
   isFetching,
   error,
+  anime,
   onPreviousPage,
   onNextPage,
 }: AnimeEpisodesProps) {
+  const { add } = useJson<AnimeSummary>({
+    type: "downloads",
+  });
+
+  const { mutateAsync } = useMutation({
+    mutationFn: async (eid: string | number) => {
+      downloadQueue.push({
+        mal_id: anime.mal_id,
+        title: anime.title,
+        image: anime.images.webp.large_image_url,
+        type: anime.type,
+        episode: {
+          ep: eid,
+          path: "",
+        },
+        score: anime.score,
+      });
+
+      if (!downloadQueue.isProcessing) await downloadAnime(add.mutateAsync);
+    },
+  });
+
   return (
     <section>
       <div className="flex items-center justify-between mb-6">
@@ -66,13 +95,12 @@ export function AnimeEpisodes({
           Episode list is unavailable for this title right now.
         </p>
       ) : episodes.length > 0 ? (
-        <div className={`space-y-3 transition-opacity ${isFetching ? "opacity-50" : "opacity-100"}`}>
+        <div
+          className={`space-y-3 transition-opacity ${isFetching ? "opacity-50" : "opacity-100"}`}
+        >
           {episodes.map((episode, index) => (
-            <a
+            <div
               key={episode.mal_id}
-              href={episode.url || undefined}
-              target={episode.url ? "_blank" : undefined}
-              rel={episode.url ? "noreferrer" : undefined}
               className="flex items-center gap-4 bg-card p-4 rounded-xl border hover:border-primary/50 transition-colors group animate-in fade-in slide-in-from-bottom-1"
               style={{ animationDelay: `${index * 30}ms` }}
             >
@@ -105,11 +133,29 @@ export function AnimeEpisodes({
                   </span>
                 )}
               </div>
-            </a>
+              <button
+                onClick={() => mutateAsync(episode.mal_id)}
+                className="rounded-full hover:bg-primary/90 transition-all p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
+              >
+                {!downloadQueue
+                  .traverse()
+                  .find(
+                    (v) =>
+                      v.mal_id === anime.mal_id &&
+                      v.episode.ep === episode.mal_id,
+                  ) ? (
+                  <FaDownload />
+                ) : (
+                  <FaSpinner className="animate-spin" />
+                )}
+              </button>
+            </div>
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground italic">No episode data available.</p>
+        <p className="text-muted-foreground italic">
+          No episode data available.
+        </p>
       )}
     </section>
   );

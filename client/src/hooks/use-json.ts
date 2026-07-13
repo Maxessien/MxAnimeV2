@@ -8,7 +8,7 @@ import {
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 
-type JsonFiles = "downloads" | "saved" | "history";
+export type JsonFiles = "downloads" | "saved" | "history";
 
 export function useJson<T>({
   queryOptions,
@@ -26,10 +26,13 @@ export function useJson<T>({
   addOptions?: UseMutationOptions<
     void,
     Error,
-    { anime: T; type: JsonFiles, exists: (v: T[])=> boolean },
+    {
+      anime: T[] | T;
+      type: JsonFiles;
+    },
     void
   >;
-  removeOptions?: UseMutationOptions<void, Error, (v: T[])=> T[], void>;
+  removeOptions?: UseMutationOptions<void, Error, (v: T[]) => T[], void>;
   clearOptions?: UseMutationOptions;
   type: JsonFiles;
 }) {
@@ -45,19 +48,32 @@ export function useJson<T>({
     queryFn: ({ queryKey }) => getDownloads(queryKey[0] + ".json"),
   });
 
-  const add = useMutation<void, Error, { anime: T; type: JsonFiles, exists: (v: T[])=> boolean }, void>({
+  const add = useMutation<
+    void,
+    Error,
+    {
+      anime: T[] | T;
+      type: JsonFiles;
+    },
+    void
+  >({
     ...addOptions,
-    mutationFn: async ({ anime, type, exists }) => {
-        let n = {...json}
-        if (!exists(json[type])) n[type].push(anime)
+    mutationFn: async ({ anime, type }) => {
+      let n = { ...json };
+      let parsedAnime = Array.isArray(anime) ? anime : [anime];
+      n[type] = [...n[type], ...parsedAnime];
       setJson(n);
       switch (type) {
         case "downloads":
-          await invoke("save_dl_history", { downloads: JSON.stringify(n.downloads) });
+          await invoke("save_dl_history", {
+            downloads: JSON.stringify(n.downloads),
+          });
           break;
 
         case "history":
-          await invoke("save_watch_history", { history: JSON.stringify(n.history) });
+          await invoke("save_watch_history", {
+            history: JSON.stringify(n.history),
+          });
           break;
 
         default:
@@ -67,16 +83,20 @@ export function useJson<T>({
     retry: 3,
   });
 
-  const remove = useMutation<void, Error, (v: T[])=> T[], void>({
+  const remove = useMutation<void, Error, (v: T[]) => T[], void>({
     ...removeOptions,
-    mutationFn: async (filter: (v: T[])=> T[]) => {
+    mutationFn: async (filter: (v: T[]) => T[]) => {
       switch (type) {
         case "downloads":
-          await invoke("save_dl_history", { downloads: JSON.stringify(filter(json[type])) });
+          await invoke("save_dl_history", {
+            downloads: JSON.stringify(filter(json[type])),
+          });
           break;
 
         case "history":
-          await invoke("save_watch_history", { history: JSON.stringify(filter(json[type])) });
+          await invoke("save_watch_history", {
+            history: JSON.stringify(filter(json[type])),
+          });
           break;
 
         default:
@@ -84,7 +104,8 @@ export function useJson<T>({
       }
       setJson((dl) => ({
         ...dl,
-        [type]: filter(dl[type])}));
+        [type]: filter(dl[type]),
+      }));
     },
     retry: 3,
   });
@@ -110,10 +131,11 @@ export function useJson<T>({
   });
 
   useEffect(() => {
-    if (query.data) setJson((dl) => {
-        let n = {...dl}
-        n[type] = query.data
-        return n
+    if (query.data)
+      setJson((dl) => {
+        let n = { ...dl };
+        n[type] = query.data;
+        return n;
       });
   }, [query.dataUpdatedAt, query.errorUpdatedAt]);
 

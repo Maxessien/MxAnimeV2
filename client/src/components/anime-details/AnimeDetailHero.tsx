@@ -1,22 +1,50 @@
 import { Badge } from "@/components/ui/badge";
+import { useJson } from "@/hooks/use-json";
+import { AnimeSummary, downloadAnime } from "@/lib/local-store";
+import { downloadQueue } from "@/lib/queue";
 import { AnimeFull } from "@/types/jikan";
+import { useMutation } from "@tanstack/react-query";
 import { Check, Download, Star } from "lucide-react";
+import { FaSpinner } from "react-icons/fa";
 
 type AnimeDetailHeroProps = {
   anime: AnimeFull;
   trailerUrl?: string | null;
-  downloaded: boolean;
-  onToggleDownload: () => void;
+  epIds: (string | number)[];
 };
 
 export function AnimeDetailHero({
   anime,
   trailerUrl,
-  downloaded,
-  onToggleDownload,
+  epIds,
 }: AnimeDetailHeroProps) {
   const coverImage =
     anime.images?.webp?.large_image_url || anime.images?.jpg?.large_image_url;
+
+  const { add, json } = useJson<AnimeSummary>({
+    type: "downloads",
+  });
+
+  const isDownloaded = json.downloads.some((v) => v.mal_id === anime.mal_id);
+
+  const { mutateAsync, isPending } = useMutation({
+    mutationFn: async () => {
+      epIds.forEach((id) => {
+        downloadQueue.push({
+          mal_id: anime.mal_id,
+          title: anime.title,
+          image: anime.images.webp.large_image_url,
+          type: anime.type,
+          episode: {
+            ep: id,
+            path: "",
+          },
+          score: anime.score,
+        });
+      });
+      if (!downloadQueue.isProcessing) await downloadAnime(add.mutateAsync);
+    },
+  });
 
   return (
     <div className="relative -mt-8 -mx-4 md:-mx-8 mb-8 md:mb-16">
@@ -52,7 +80,9 @@ export function AnimeDetailHero({
           <div className="flex flex-wrap gap-2 mb-3 justify-center md:justify-start">
             {anime.status && (
               <Badge
-                variant={anime.status === "Currently Airing" ? "default" : "secondary"}
+                variant={
+                  anime.status === "Currently Airing" ? "default" : "secondary"
+                }
                 className="font-mono uppercase tracking-wider"
               >
                 {anime.status}
@@ -103,15 +133,30 @@ export function AnimeDetailHero({
           </div>
 
           <button
-            onClick={onToggleDownload}
+            onClick={() => mutateAsync()}
             className={`mt-4 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm w-fit mx-auto md:mx-0 transition-colors ${
-              downloaded
+              isDownloaded
                 ? "bg-primary/10 text-primary border border-primary/30 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
                 : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
             }`}
+            disabled={
+              isPending ||
+              isDownloaded ||
+              downloadQueue
+                .traverse()
+                .some((v) => v.mal_id === anime.mal_id)
+            }
           >
-            {downloaded ? <Check size={16} /> : <Download size={16} />}
-            {downloaded ? "Saved for Offline" : "Save for Offline"}
+            {isPending ? (
+              <>
+                <FaSpinner className="animate-spin" />
+              </>
+            ) : (
+              <>
+                {isDownloaded ? <Check size={16} /> : <Download size={16} />}
+                {isDownloaded ? "Downloaded" : "Download all"}
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -1,3 +1,5 @@
+import { AnimeSummary } from "./local-store";
+
 class Queue<T> {
   private elements: T[];
   isProcessing: boolean
@@ -32,10 +34,6 @@ class Queue<T> {
   }
 }
 
-interface DownloadQueue {
-  mal_id: string
-}
-
-export const downloadQueue = new Queue<DownloadQueue>();
+export const downloadQueue = new Queue<AnimeSummary>();
 
 export default Queue;

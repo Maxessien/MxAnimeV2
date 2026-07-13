@@ -1,3 +1,5 @@
+import { JsonFiles } from "@/hooks/use-json";
+import { UseMutateAsyncFunction } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import axios from "axios";
 import { downloadQueue } from "./queue";
@@ -9,7 +11,10 @@ export type AnimeSummary = {
   title: string;
   image: string | null;
   type?: string | null;
-  episodes?: number | null;
+  episode: {
+    ep: string | number;
+    path: string;
+  };
   score?: number | null;
 };
 
@@ -28,18 +33,31 @@ async function getDownloads<T>(subPath: string) {
   return downloads;
 }
 
-async function downloadAnime() {
+async function downloadAnime(mutateAsync: UseMutateAsyncFunction<void, Error, {
+    anime: AnimeSummary | AnimeSummary[];
+    type: JsonFiles;
+}, void>) {
   downloadQueue.isProcessing = true;
-  const { mal_id } = downloadQueue.pop();
+  const info = downloadQueue.pop();
 
-  const res = await axios.get<AnimeDownload>(
-    BACKEND_URL + "/download/" + mal_id,
-  );
+  const {mal_id, episode} = info
 
-  await invoke("dl_file", res.data);
+  const res = await axios.get<AnimeDownload>(`${BACKEND_URL}/download`, {
+    params: {mal_id, episode},
+  });
 
-  if (downloadQueue.traverse().length > 0) return downloadAnime();
-  else downloadQueue.isProcessing = false;
+  const path = await invoke<string>("dl_file", res.data);
+
+  await mutateAsync({
+          anime: {...info, episode: {ep: info.episode.ep, path}},
+          type: "downloads"
+        })
+
+  if (downloadQueue.traverse().length > 0)
+    return downloadAnime(mutateAsync);
+  else {
+    downloadQueue.isProcessing = false;
+  }
 }
 
-export { getDownloads, downloadAnime };
+export { downloadAnime, getDownloads };
