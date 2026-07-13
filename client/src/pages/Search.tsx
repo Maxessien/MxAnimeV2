@@ -3,24 +3,26 @@ import { useLocation } from 'wouter';
 import { useSearchAnime, useGenres } from '@/hooks/use-jikan';
 import { AnimeCard, AnimeCardSkeleton } from '@/components/AnimeCard';
 import { Search as SearchIcon, Loader2, FilterX } from 'lucide-react';
+import { AnimeType } from '@/types/jikan';
+import { parseType } from './TopAnime';
 
 export default function Search() {
-  const [location, setLocation] = useLocation();
+  const [_, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   
   const [q, setQ] = useState(searchParams.get('q') || '');
   const [debouncedQ, setDebouncedQ] = useState(q);
   const [genre, setGenre] = useState(searchParams.get('genre') || '');
-  const [type, setType] = useState(searchParams.get('type') || '');
+  const [type, setType] = useState<AnimeType>(parseType(searchParams.get('type') || ''));
   const [page, setPage] = useState(Number(searchParams.get('page')) || 1);
 
   // Debounce logic without triggering loops
-  const timerRef = useRef<NodeJS.Timeout>();
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
     timerRef.current = setTimeout(() => {
       setDebouncedQ(q);
     }, 500);
-    return () => clearTimeout(timerRef.current);
+    return () => clearTimeout(timerRef.current || undefined);
   }, [q]);
 
   // Sync with URL and reset page on new search
@@ -90,7 +92,7 @@ export default function Search() {
 
           <select 
             value={type}
-            onChange={(e) => setType(e.target.value)}
+            onChange={(e) => setType(parseType(e.target.value))}
             className="flex-1 py-3 px-4 bg-muted/50 rounded-xl border-none focus:ring-2 focus:ring-primary outline-none text-sm appearance-none font-medium cursor-pointer"
           >
             <option value="">Any Format</option>
