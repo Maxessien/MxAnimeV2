@@ -7,7 +7,7 @@ export function AnimeCard({ anime }: { anime: any }) {
   
   return (
     <Link href={`/anime/${anime.mal_id}`} className="group flex flex-col gap-3 cursor-pointer outline-none focus-visible:ring-2 ring-primary rounded-xl">
-      <div className="relative aspect-[3/4] overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
+      <div className="relative aspect-3/4 overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
         {imageUrl ? (
           <img 
             src={imageUrl} 
@@ -21,7 +21,7 @@ export function AnimeCard({ anime }: { anime: any }) {
           </div>
         )}
         
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-4">
+        <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/20 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 flex flex-col justify-end p-4">
           <p className="text-white text-xs leading-relaxed line-clamp-4">
             {anime.synopsis ? anime.synopsis : "No synopsis available."}
           </p>
@@ -50,7 +50,7 @@ export function AnimeCard({ anime }: { anime: any }) {
 export function AnimeCardSkeleton() {
   return (
     <div className="flex flex-col gap-3">
-      <Skeleton className="aspect-[3/4] w-full rounded-xl" />
+      <Skeleton className="aspect-3/4 w-full rounded-xl" />
       <Skeleton className="h-5 w-full" />
       <div className="flex gap-1">
         <Skeleton className="h-4 w-12" />

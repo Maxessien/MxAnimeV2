@@ -1,15 +1,14 @@
-import { useEffect, useState } from 'react';
-import { useTheme } from 'next-themes';
-import { Sun, Moon, Monitor, Settings as SettingsIcon, History, Download, Trash2, Info } from 'lucide-react';
-import { useWatchHistory } from '@/hooks/use-watch-history';
-import { useDownloads } from '@/hooks/use-downloads';
+import { useJson } from '@/hooks/use-json';
 import { cn } from '@/lib/utils';
+import { Download, History, Info, Monitor, Moon, Settings as SettingsIcon, Sun, Trash2 } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useEffect, useState } from 'react';
 
 export default function Settings() {
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const { history, clear: clearHistory } = useWatchHistory();
-  const { downloads, clear: clearDownloads } = useDownloads();
+  const { json, clear: clearHistory } = useJson({type: "history"});
+  const { clear: clearDownloads } = useJson({type: "downloads"});
 
   useEffect(() => setMounted(true), []);
 
@@ -69,12 +68,12 @@ export default function Settings() {
             </div>
             <div>
               <p className="font-medium text-sm">Watch History</p>
-              <p className="text-xs text-muted-foreground">{history.length} title{history.length === 1 ? '' : 's'} saved</p>
+              <p className="text-xs text-muted-foreground">{json.history.length} title{json.history.length === 1 ? '' : 's'} saved</p>
             </div>
           </div>
           <button
-            onClick={clearHistory}
-            disabled={history.length === 0}
+            onClick={()=> clearHistory.mutateAsync()}
+            disabled={json.history.length === 0}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-muted hover:bg-destructive hover:text-destructive-foreground disabled:opacity-40 disabled:hover:bg-muted disabled:hover:text-muted-foreground transition-colors"
           >
             <Trash2 size={14} /> Clear
@@ -88,12 +87,12 @@ export default function Settings() {
             </div>
             <div>
               <p className="font-medium text-sm">Downloads</p>
-              <p className="text-xs text-muted-foreground">{downloads.length} title{downloads.length === 1 ? '' : 's'} saved</p>
+              <p className="text-xs text-muted-foreground">{json.downloads.length} title{json.downloads.length === 1 ? '' : 's'} saved</p>
             </div>
           </div>
           <button
-            onClick={clearDownloads}
-            disabled={downloads.length === 0}
+            onClick={()=> clearDownloads.mutateAsync()}
+            disabled={json.downloads.length === 0}
             className="flex items-center gap-1.5 px-3 py-2 rounded-lg text-sm font-medium bg-muted hover:bg-destructive hover:text-destructive-foreground disabled:opacity-40 disabled:hover:bg-muted disabled:hover:text-muted-foreground transition-colors"
           >
             <Trash2 size={14} /> Clear
