@@ -12,6 +12,7 @@
   "dependencies": {
     "@tauri-apps/api": "^2",
     "@tauri-apps/plugin-opener": "^2",
+    "axios": "^1.18.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-toastify": "^11.1.0"

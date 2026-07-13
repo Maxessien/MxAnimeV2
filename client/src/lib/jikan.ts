@@ -1,4 +1,19 @@
-export const JIKAN_BASE_URL = 'https://api.jikan.moe/v4';
+import axios from "axios";
+
+export const getBaseUrl = async ()=>{
+
+  const selfHosted = 'https://jikan-mxanime.onrender.com'
+  const community = 'https://api.jikan.moe/v4'
+
+  return community
+
+  try {
+    await axios.get(selfHosted, {timeout: 10000})
+    return selfHosted
+  } catch (err) {
+    return community
+  }
+};
 
 let queue: (() => Promise<void>)[] = [];
 let isProcessing = false;
@@ -22,7 +37,9 @@ export const fetchJikan = async <T>(endpoint: string, params?: Record<string, an
   return new Promise((resolve, reject) => {
     const task = async () => {
       try {
-        const url = new URL(`${JIKAN_BASE_URL}${endpoint}`);
+        const baseUrl = await getBaseUrl()
+        console.log(baseUrl)
+        const url = new URL(`${baseUrl}${endpoint}`);
         if (params) {
           Object.entries(params).forEach(([key, value]) => {
             if (value !== undefined && value !== null && value !== '') {

@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { useLocation } from 'wouter';
-import { useSeason } from '@/hooks/use-jikan';
 import { AnimeCard, AnimeCardSkeleton } from '@/components/AnimeCard';
+import { useSeason } from '@/hooks/use-jikan';
 import { CalendarDays } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useLocation } from 'wouter';
 
 export default function Seasons() {
-  const [location, setLocation] = useLocation();
+  const [_, setLocation] = useLocation();
   const searchParams = new URLSearchParams(window.location.search);
   
   const currentYear = new Date().getFullYear();
@@ -95,7 +95,7 @@ export default function Seasons() {
           <>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8">
               {data?.data?.map((anime: any, i: number) => (
-                <div key={anime.mal_id} className="animate-in fade-in zoom-in-95" style={{ animationDelay: `${Math.min(i, 10) * 50}ms`, animationFillMode: 'both' }}>
+                <div key={i} className="animate-in fade-in zoom-in-95" style={{ animationDelay: `${Math.min(i, 10) * 50}ms`, animationFillMode: 'both' }}>
                   <AnimeCard anime={anime} />
                 </div>
               ))}
