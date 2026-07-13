@@ -1,79 +1,278 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchJikan } from '@/lib/jikan';
 
-export const useTopAnime = (page = 1, filter?: string, type?: string) => {
-  return useQuery({
+// ==========================================
+// JIKAN API COMMON TYPES
+// ==========================================
+
+export interface JikanPagination {
+  last_visible_page: number;
+  has_next_page: boolean;
+  current_page?: number;
+  items?: {
+    count: number;
+    total: number;
+    per_page: number;
+  };
+}
+
+export interface JikanResponse<T> {
+  data: T;
+}
+
+export interface JikanPaginatedResponse<T> {
+  data: T[];
+  pagination: JikanPagination;
+}
+
+// ==========================================
+// CORE ENTITY TYPES
+// ==========================================
+
+export type AnimeType = 'tv' | 'movie' | 'ova' | 'special' | 'ona' | 'music' | 'cm' | 'pv' | 'tv_special';
+export type AnimeStatus = 'Finished Airing' | 'Currently Airing' | 'Not yet aired';
+export type AnimeRating = 'g' | 'pg' | 'pg13' | 'r17' | 'r' | 'rx';
+export type AnimeSeason = 'summer' | 'spring' | 'fall' | 'winter';
+
+export interface AnimeImageVariant {
+  image_url: string;
+  small_image_url: string;
+  large_image_url: string;
+}
+
+export interface AnimeImages {
+  jpg: AnimeImageVariant;
+  webp: AnimeImageVariant;
+}
+
+export interface AnimeTitle {
+  type: string;
+  title: string;
+}
+
+export interface MalSubItem {
+  mal_id: number;
+  type: string;
+  name: string;
+  url: string;
+}
+
+export interface Anime {
+  mal_id: number;
+  url: string;
+  images: AnimeImages;
+  trailer: {
+    youtube_id: string | null;
+    url: string | null;
+    embed_url: string | null;
+  };
+  approved: boolean;
+  titles: AnimeTitle[];
+  title: string;
+  title_english: string | null;
+  title_japanese: string | null;
+  title_synonyms: string[];
+  type: AnimeType | null;
+  source: string | null;
+  episodes: number | null;
+  status: AnimeStatus;
+  airing: boolean;
+  aired: {
+    from: string | null;
+    to: string | null;
+    prop: {
+      from: { day: number | null; month: number | null; year: number | null };
+      to: { day: number | null; month: number | null; year: number | null };
+    };
+    string: string;
+  };
+  duration: string;
+  rating: AnimeRating | null;
+  score: number | null;
+  scored_by: number | null;
+  rank: number | null;
+  popularity: number | null;
+  members: number | null;
+  favorites: number | null;
+  synopsis: string | null;
+  background: string | null;
+  season: AnimeSeason | null;
+  year: number | null;
+  broadcast: {
+    day: string | null;
+    time: string | null;
+    timezone: string | null;
+    string: string | null;
+  };
+  producers: MalSubItem[];
+  licensors: MalSubItem[];
+  studios: MalSubItem[];
+  genres: MalSubItem[];
+  explicit_genres: MalSubItem[];
+  themes: MalSubItem[];
+  demographics: MalSubItem[];
+}
+
+export interface AnimeFull extends Anime {
+  relations: Array<{
+    relation: string;
+    entry: MalSubItem[];
+  }>;
+  theme: {
+    openings: string[];
+    endings: string[];
+  };
+  external: Array<{
+    name: string;
+    url: string;
+  }>;
+  streaming: Array<{
+    name: string;
+    url: string;
+  }>;
+}
+
+export interface AnimeCharacter {
+  character: {
+    mal_id: number;
+    url: string;
+    images: {
+      jpg: { image_url: string; small_image_url: string };
+      webp: { image_url: string; small_image_url: string };
+    };
+    name: string;
+  };
+  role: 'Main' | 'Supporting';
+  favorites: number;
+  voice_actors: Array<{
+    person: {
+      mal_id: number;
+      url: string;
+      images: { jpg: { image_url: string } };
+      name: string;
+    };
+    language: string;
+  }>;
+}
+
+export interface AnimeEpisode {
+  mal_id: number;
+  url: string | null;
+  title: string;
+  title_japanese: string | null;
+  title_romanji: string | null;
+  aired: string | null;
+  filler: boolean;
+  recap: boolean;
+  forum_url: string | null;
+}
+
+export interface Genre {
+  mal_id: number;
+  name: string;
+  url: string;
+  count: number;
+}
+
+// ==========================================
+// API FILTER PARAMETER TYPES
+// ==========================================
+
+export type TopAnimeFilter = 'airing' | 'upcoming' | 'bypopularity' | 'favorite';
+export type ScheduleFilter = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday' | 'other' | 'unknown';
+export type AnimeOrderBy = 'mal_id' | 'title' | 'type' | 'rating' | 'start_date' | 'end_date' | 'episodes' | 'score' | 'scored_by' | 'rank' | 'popularity' | 'members' | 'favorites';
+
+// ==========================================
+// REACT QUERY HOOKS
+// ==========================================
+
+export const useTopAnime = (
+  page = 1, 
+  filter?: TopAnimeFilter, 
+  type?: AnimeType
+) => {
+  return useQuery<JikanPaginatedResponse<Anime>>({
     queryKey: ['top-anime', page, filter, type],
-    queryFn: () => fetchJikan<any>('/top/anime', { page, filter, type }),
+    queryFn: () => fetchJikan('/top/anime', { page, filter, type }),
     staleTime: 5 * 60 * 1000,
   });
 };
 
 export const useSeasonsNow = (page = 1) => {
-  return useQuery({
+  return useQuery<JikanPaginatedResponse<Anime>>({
     queryKey: ['seasons-now', page],
-    queryFn: () => fetchJikan<any>('/seasons/now', { page }),
+    queryFn: () => fetchJikan('/seasons/now', { page }),
     staleTime: 5 * 60 * 1000,
   });
 };
 
-export const useSeason = (year: number, season: string, page = 1) => {
-  return useQuery({
+export const useSeason = (
+  year: number, 
+  season: AnimeSeason | string, 
+  page = 1
+) => {
+  return useQuery<JikanPaginatedResponse<Anime>>({
     queryKey: ['season', year, season, page],
-    queryFn: () => fetchJikan<any>(`/seasons/${year}/${season}`, { page }),
+    queryFn: () => fetchJikan(`/seasons/${year}/${season}`, { page }),
     enabled: !!year && !!season,
     staleTime: 5 * 60 * 1000,
   });
 };
 
-export const useSearchAnime = (q: string, page = 1, genres?: string, type?: string, order_by?: string) => {
-  return useQuery({
+export const useSearchAnime = (
+  q: string, 
+  page = 1, 
+  genres?: string, 
+  type?: AnimeType, 
+  order_by?: AnimeOrderBy
+) => {
+  return useQuery<JikanPaginatedResponse<Anime>>({
     queryKey: ['search-anime', q, page, genres, type, order_by],
-    queryFn: () => fetchJikan<any>('/anime', { q, page, genres, type, order_by }),
-    enabled: !!q || !!genres || !!type || !!order_by || page > 1, // trigger on page change even if empty search
+    queryFn: () => fetchJikan('/anime', { q, page, genres, type, order_by }),
+    enabled: !!q || !!genres || !!type || !!order_by || page > 1,
     staleTime: 5 * 60 * 1000,
   });
 };
 
-export const useAnimeFull = (id: string) => {
-  return useQuery({
+export const useAnimeFull = (id: string | number) => {
+  return useQuery<JikanResponse<AnimeFull>>({
     queryKey: ['anime-full', id],
-    queryFn: () => fetchJikan<any>(`/anime/${id}/full`),
+    queryFn: () => fetchJikan(`/anime/${id}/full`),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
 };
 
-export const useAnimeCharacters = (id: string) => {
-  return useQuery({
+export const useAnimeCharacters = (id: string | number) => {
+  return useQuery<JikanResponse<AnimeCharacter[]>>({
     queryKey: ['anime-characters', id],
-    queryFn: () => fetchJikan<any>(`/anime/${id}/characters`),
+    queryFn: () => fetchJikan(`/anime/${id}/characters`),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
 };
 
-export const useAnimeEpisodes = (id: string, page = 1) => {
-  return useQuery({
+export const useAnimeEpisodes = (id: string | number, page = 1) => {
+  return useQuery<JikanPaginatedResponse<AnimeEpisode>>({
     queryKey: ['anime-episodes', id, page],
-    queryFn: () => fetchJikan<any>(`/anime/${id}/episodes`, { page }),
+    queryFn: () => fetchJikan(`/anime/${id}/episodes`, { page }),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
 };
 
-export const useSchedules = (filter?: string, page = 1) => {
-  return useQuery({
+export const useSchedules = (filter?: ScheduleFilter, page = 1) => {
+  return useQuery<JikanPaginatedResponse<Anime>>({
     queryKey: ['schedules', filter, page],
-    queryFn: () => fetchJikan<any>('/schedules', { filter }),
+    queryFn: () => fetchJikan('/schedules', { filter, page }),
     staleTime: 5 * 60 * 1000,
   });
 };
 
 export const useGenres = () => {
-  return useQuery({
+  return useQuery<JikanResponse<Genre[]>>({
     queryKey: ['genres-anime'],
-    queryFn: () => fetchJikan<any>('/genres/anime'),
+    queryFn: () => fetchJikan('/genres/anime'),
     staleTime: 24 * 60 * 60 * 1000,
   });
 };
