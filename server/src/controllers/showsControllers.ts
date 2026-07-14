@@ -58,7 +58,7 @@ const downloadEpisode = async (req: Request, res: Response) =>
 
 const addEpisode = async (req: Request, res: Response) =>
   handler(res, async () => {
-    const { mal_id, eId, sid } = req.query;
+    const { mal_id, eId, sid } = req.body;
 
     if (!mal_id || !eId || !sid)
       return res

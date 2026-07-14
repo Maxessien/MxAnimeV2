@@ -13,6 +13,7 @@ export type AnimeSummary = {
   type?: string | null;
   episode: {
     ep: string | number;
+    season: string | number;
     path: string;
   };
   score?: number | null;
@@ -43,13 +44,13 @@ async function downloadAnime(mutateAsync: UseMutateAsyncFunction<void, Error, {
   const {mal_id, episode} = info
 
   const res = await axios.get<AnimeDownload>(`${BACKEND_URL}/download`, {
-    params: {mal_id, eid: episode.ep},
+    params: {mal_id, eid: episode.ep, sid: episode.season},
   });
 
-  const path = await invoke<string>("dl_file", res.data);
+  const path = await invoke<string>("dl_file", {url: res.data.url, fileName: `${info.title} - Episode ${episode.ep}.mkv`});
 
   await mutateAsync({
-          anime: {...info, episode: {ep: info.episode.ep, path}},
+          anime: {...info, episode: {ep: episode.ep, path, season: episode.season}},
           type: "downloads"
         })
 

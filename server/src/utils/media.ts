@@ -98,7 +98,7 @@ const QUALITY: Record<string, boolean> = {
   360: false,
 };
 
-const ALLOWED = Object.entries(quality).map((v) => v[0]);
+const ALLOWED = Object.entries(QUALITY).map((v) => v[0]);
 
 const getAnimeTorrent = async (
   mappings: ThirdPartyMappings,

@@ -3,14 +3,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useJson } from "@/hooks/use-json";
 import { AnimeSummary, downloadAnime } from "@/lib/local-store";
 import { downloadQueue } from "@/lib/queue";
-import { Anime, AnimeEpisode, JikanPagination } from "@/types/jikan";
+import { Episode } from "@/types/anizip";
+import { Anime } from "@/types/jikan";
 import { useMutation } from "@tanstack/react-query";
-import { ChevronLeft, ChevronRight, ListVideo } from "lucide-react";
+import { ListVideo } from "lucide-react";
 import { FaDownload, FaSpinner } from "react-icons/fa";
 
 type AnimeEpisodesProps = {
-  episodes: AnimeEpisode[];
-  pagination?: JikanPagination;
+  episodes: (Episode & { hasAired: boolean })[];
   episodePage: number;
   isLoading: boolean;
   isFetching: boolean;
@@ -22,21 +22,23 @@ type AnimeEpisodesProps = {
 
 export function AnimeEpisodes({
   episodes,
-  pagination,
-  episodePage,
   isLoading,
   isFetching,
   error,
   anime,
-  onPreviousPage,
-  onNextPage,
 }: AnimeEpisodesProps) {
   const { add } = useJson<AnimeSummary>({
     type: "downloads",
   });
 
   const { mutateAsync } = useMutation({
-    mutationFn: async (eid: string | number) => {
+    mutationFn: async ({
+      eid,
+      season,
+    }: {
+      eid: string | number;
+      season: string | number;
+    }) => {
       downloadQueue.push({
         mal_id: anime.mal_id,
         title: anime.title,
@@ -44,6 +46,7 @@ export function AnimeEpisodes({
         type: anime.type,
         episode: {
           ep: eid,
+          season,
           path: "",
         },
         score: anime.score,
@@ -59,29 +62,6 @@ export function AnimeEpisodes({
         <h2 className="text-2xl font-bold font-display border-l-4 border-primary pl-3 flex items-center gap-2">
           <ListVideo size={24} className="text-primary" /> Episodes
         </h2>
-        {(pagination?.last_visible_page || 0) > 1 && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={onPreviousPage}
-              disabled={episodePage <= 1 || isFetching}
-              className="p-2 rounded-lg bg-muted hover:bg-muted/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label="Previous episodes page"
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span className="text-sm text-muted-foreground font-mono min-w-16 text-center">
-              {episodePage} / {pagination?.last_visible_page || 1}
-            </span>
-            <button
-              onClick={onNextPage}
-              disabled={!pagination?.has_next_page || isFetching}
-              className="p-2 rounded-lg bg-muted hover:bg-muted/70 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
-              aria-label="Next episodes page"
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-        )}
       </div>
 
       {isLoading ? (
@@ -100,32 +80,25 @@ export function AnimeEpisodes({
         >
           {episodes.map((episode, index) => (
             <div
-              key={episode.mal_id}
+              key={index}
               className="flex items-center gap-4 bg-card p-4 rounded-xl border hover:border-primary/50 transition-colors group animate-in fade-in slide-in-from-bottom-1"
               style={{ animationDelay: `${index * 30}ms` }}
             >
               <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 text-primary font-mono font-bold flex items-center justify-center text-sm">
-                {episode.mal_id}
+                {`${episode.episodeNumber || index + 1}`}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium truncate group-hover:text-primary transition-colors">
-                    {episode.title || `Episode ${episode.mal_id}`}
+                    {`Episode ${episode.episodeNumber || index + 1}`}
                   </span>
-                  {episode.filler && (
-                    <Badge variant="outline" className="text-xs opacity-70">
-                      Filler
-                    </Badge>
-                  )}
-                  {episode.recap && (
-                    <Badge variant="outline" className="text-xs opacity-70">
-                      Recap
-                    </Badge>
-                  )}
+                  {!episode.hasAired && <span className="text-sm bg-muted px-2 py-1 rounded-md text-muted-foreground">
+                    Not yet aired
+                  </span>}
                 </div>
-                {episode.aired && (
+                {episode.airDate && (
                   <span className="text-xs text-muted-foreground">
-                    {new Date(episode.aired).toLocaleDateString(undefined, {
+                    {new Date(episode.airDate).toLocaleDateString(undefined, {
                       year: "numeric",
                       month: "short",
                       day: "numeric",
@@ -133,22 +106,31 @@ export function AnimeEpisodes({
                   </span>
                 )}
               </div>
-              <button
-                onClick={() => mutateAsync(episode.mal_id)}
-                className="rounded-full hover:bg-primary/90 transition-all p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
-              >
-                {!downloadQueue
-                  .traverse()
-                  .find(
-                    (v) =>
-                      v.mal_id === anime.mal_id &&
-                      v.episode.ep === episode.mal_id,
-                  ) ? (
-                  <FaDownload />
-                ) : (
-                  <FaSpinner className="animate-spin" />
-                )}
-              </button>
+              {episode.hasAired && (
+                <button
+                  onClick={() => {
+                    if (episode.hasAired)
+                      mutateAsync({
+                        eid: episode.episodeNumber || index + 1,
+                        season: episode.seasonNumber || 1,
+                      });
+                  }}
+                  className="rounded-full hover:bg-primary/90 transition-all p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
+                >
+                  {!downloadQueue
+                    .traverse()
+                    .find(
+                      (v) =>
+                        v.mal_id === anime.mal_id &&
+                        v.episode.ep === episode.episodeNumber &&
+                        v.episode.season === episode.seasonNumber,
+                    ) ? (
+                    <FaDownload />
+                  ) : (
+                    <FaSpinner className="animate-spin" />
+                  )}
+                </button>
+              )}
             </div>
           ))}
         </div>

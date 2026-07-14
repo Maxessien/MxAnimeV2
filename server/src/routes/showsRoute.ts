@@ -1,10 +1,11 @@
 import { Router } from "express";
-import { getShows } from "../controllers/showsControllers.js";
+import { downloadEpisode } from "../controllers/showsControllers.js";
 
 
 const router = Router()
 
-router.get("/", getShows)
+router.get("/download", downloadEpisode)
+router.post("/download", downloadEpisode)
 
 const showRoutes = router
 

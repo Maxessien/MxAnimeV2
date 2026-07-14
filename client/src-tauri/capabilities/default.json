@@ -5,6 +5,14 @@
   "windows": ["main"],
   "permissions": [
     "core:default",
-    "opener:default"
+    "opener:default",
+    "http:default",
+    {
+      "identifier": "http:allow-fetch",
+      "allow": [
+        { "url": "https://api.myanimelist.net/v2/*" },
+        { "url": "https://api.jikan.moe/v4/*" }
+      ]
+    }
   ]
 }

@@ -25,4 +25,5 @@ serde_json = "1"
 reqwest = {version = "0.13.4", features = ["stream"] }
 tokio = "1.52.3"
 futures-util = "0.3.32"
+tauri-plugin-http = "2.5.9"
 

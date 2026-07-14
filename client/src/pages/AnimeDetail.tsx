@@ -20,7 +20,7 @@ export default function AnimeDetail() {
     isLoading: isLoadingAnime,
     error: animeError,
   } = useAnimeFull(id);
-  
+
   const {
     data: episodesData,
     isLoading: isLoadingEpisodes,
@@ -58,16 +58,20 @@ export default function AnimeDetail() {
   const anime = animeData?.data;
   if (!anime) return null;
 
-  const episodes = episodesData?.data || [];
-  const episodesPagination = episodesData?.pagination;
-  const trailerUrl = anime.trailer?.embed_url;
+  const episodes = episodesData?.data?.episodes
+    ? Object.entries(episodesData.data.episodes).map((v) => ({
+        ...v[1],
+        hasAired: v[1].airDate && new Date(v[1].airDate).getTime() < Date.now(),
+      }))
+    : [];
+  // const trailerUrl = anime.trailer?.embed_url;
 
   return (
     <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
       <AnimeDetailHero
         anime={anime}
-        trailerUrl={trailerUrl}
-        epIds={episodes.map(v=> v.mal_id)}
+        trailerUrl={null}
+        epIds={episodes.map((v, i) => v.episodeNumber ?? i + 1)}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
@@ -75,16 +79,17 @@ export default function AnimeDetail() {
 
         <div className="lg:col-span-2 space-y-12 order-1 lg:order-2">
           <AnimeSynopsis anime={anime} />
-          <AnimeTrailer animeTitle={anime.title} youtubeId={anime.trailer?.youtube_id} />
+          <AnimeTrailer animeTitle={anime.title} youtubeId={null} />
           <AnimeDetailEpisodes
-          anime={anime}
+            anime={anime}
             episodes={episodes}
-            pagination={episodesPagination}
             episodePage={episodePage}
             isLoading={isLoadingEpisodes}
             isFetching={isFetchingEpisodes}
             error={episodesError}
-            onPreviousPage={() => setEpisodePage((page) => Math.max(1, page - 1))}
+            onPreviousPage={() =>
+              setEpisodePage((page) => Math.max(1, page - 1))
+            }
             onNextPage={() => setEpisodePage((page) => page + 1)}
           />
         </div>
