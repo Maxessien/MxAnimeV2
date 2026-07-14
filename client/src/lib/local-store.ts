@@ -34,28 +34,41 @@ async function getDownloads<T>(subPath: string) {
   return downloads;
 }
 
-async function downloadAnime(mutateAsync: UseMutateAsyncFunction<void, Error, {
-    anime: AnimeSummary | AnimeSummary[];
-    type: JsonFiles;
-}, void>) {
+async function downloadAnime(
+  mutateAsync: UseMutateAsyncFunction<
+    void,
+    Error,
+    {
+      anime: AnimeSummary | AnimeSummary[];
+      type: JsonFiles;
+    },
+    void
+  >,
+) {
   downloadQueue.isProcessing = true;
   const info = downloadQueue.pop();
 
-  const {mal_id, episode} = info
+  const { mal_id, episode } = info;
 
   const res = await axios.get<AnimeDownload>(`${BACKEND_URL}/download`, {
-    params: {mal_id, eid: episode.ep, sid: episode.season},
+    params: { mal_id, eId: episode.ep, sId: episode.season },
   });
 
-  const path = await invoke<string>("dl_file", {url: res.data.url, fileName: `${info.title} - Episode ${episode.ep}.mkv`});
+  const safeTitle = info.title.replace(/[<>:"/\\|?*]/g, "_");
+  const path = await invoke<string>("dl_file", {
+    url: res.data.url,
+    fileName: `${safeTitle} - Episode ${episode.ep}.mkv`,
+  });
 
   await mutateAsync({
-          anime: {...info, episode: {ep: episode.ep, path, season: episode.season}},
-          type: "downloads"
-        })
+    anime: {
+      ...info,
+      episode: { ep: episode.ep, path, season: episode.season },
+    },
+    type: "downloads",
+  });
 
-  if (downloadQueue.traverse().length > 0)
-    return downloadAnime(mutateAsync);
+  if (downloadQueue.traverse().length > 0) return downloadAnime(mutateAsync);
   else {
     downloadQueue.isProcessing = false;
   }

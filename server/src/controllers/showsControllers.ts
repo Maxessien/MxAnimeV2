@@ -1,15 +1,15 @@
-import { Request, Response } from "express";
-import { handler } from "../utils/shows.js";
-import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
 import axios from "axios";
+import { Request, Response } from "express";
+import { Episode } from "../models/showModel.js";
 import { AniZipMetadata } from "../types/anizip.js";
+import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
 import {
   compressTorrent,
   downloadTorrent,
   getAnimeTorrent,
   QUALITY,
 } from "../utils/media.js";
-import { Episode } from "../models/showModel.js";
+import { handler } from "../utils/shows.js";
 
 const downloadEpisode = async (req: Request, res: Response) =>
   handler(res, async () => {
@@ -58,9 +58,9 @@ const downloadEpisode = async (req: Request, res: Response) =>
 
 const addEpisode = async (req: Request, res: Response) =>
   handler(res, async () => {
-    const { mal_id, eId, sid } = req.body;
+    const { mal_id, eId, sId } = req.body;
 
-    if (!mal_id || !eId || !sid)
+    if (!mal_id || !eId || !sId)
       return res
         .status(CLIENT_ERROR.BAD_REQUEST)
         .json({ message: "Invalid mal_id or eId or sid" });
@@ -68,7 +68,7 @@ const addEpisode = async (req: Request, res: Response) =>
     const hasIdx = await Episode.find({
       malId: mal_id.toString(),
       eId: eId.toString(),
-      sId: sid.toString(),
+      sId: sId.toString(),
     }).lean();
 
     if (hasIdx.length > 0) {
@@ -88,14 +88,14 @@ const addEpisode = async (req: Request, res: Response) =>
 
     const { filteredQuality } = await getAnimeTorrent(
       mappings,
-      sid.toString(),
+      sId.toString(),
       eId.toString(),
     );
 
     const eps = await Episode.insertMany(
       filteredQuality.map((v) => ({
         eId: eId.toString(),
-        sId: sid.toString(),
+        sId: sId.toString(),
         isCompressed: false,
         magnetUri: v.magUri,
         malId: mal_id.toString(),
@@ -105,4 +105,4 @@ const addEpisode = async (req: Request, res: Response) =>
     return res.status(200).json(eps);
   });
 
-export { downloadEpisode, addEpisode };
+export { addEpisode, downloadEpisode };

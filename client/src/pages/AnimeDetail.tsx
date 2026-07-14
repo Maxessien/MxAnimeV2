@@ -61,10 +61,9 @@ export default function AnimeDetail() {
   const episodes = episodesData?.data?.episodes
     ? Object.entries(episodesData.data.episodes).map((v) => ({
         ...v[1],
-        hasAired: v[1].airDate && new Date(v[1].airDate).getTime() < Date.now(),
+        hasAired: Boolean(v[1].airDate && new Date(v[1].airDate).getTime() < Date.now()),
       }))
     : [];
-  // const trailerUrl = anime.trailer?.embed_url;
 
   return (
     <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
