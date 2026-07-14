@@ -104,7 +104,7 @@ const getAnimeTorrent = async (
   mappings: ThirdPartyMappings,
   sid: string,
   eId: string,
-): Promise<{ filteredQuality: ParsedTorrentioStream[]; allowed: string[] }> => {
+): Promise<{ filteredQuality: ParsedTorrentioStream[] }> => {
   const torrentioUrl = getTorrentioApi(
     `${mappings.imdb_id || mappings.themoviedb_id}:${sid}:${eId}`,
     "series",
@@ -128,8 +128,10 @@ const getAnimeTorrent = async (
       ?.toLowerCase()
       ?.replace("p", "");
 
-    if (resolution && ALLOWED.includes(resolution) && QUALITY[resolution])
+    if (resolution && ALLOWED.includes(resolution) && !QUALITY[resolution]) {
       filteredQuality.push(info);
+      QUALITY[resolution] = true;
+    }
   }
 
   return { filteredQuality };

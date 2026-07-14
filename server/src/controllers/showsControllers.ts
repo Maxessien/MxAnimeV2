@@ -13,9 +13,9 @@ import { handler } from "../utils/shows.js";
 
 const downloadEpisode = async (req: Request, res: Response) =>
   handler(res, async () => {
-    const { dl_quality, mal_id } = req.query;
+    const { dl_quality, mal_id, eId, sId } = req.query;
 
-    if (!mal_id || !dl_quality)
+    if (!mal_id || !dl_quality || !eId || !sId)
       return res
         .status(CLIENT_ERROR.BAD_REQUEST)
         .json({ message: "Invalid mal_id or dl_quality" });
@@ -26,7 +26,10 @@ const downloadEpisode = async (req: Request, res: Response) =>
         .json({ message: "Invalid dl_quality" });
 
     const ep = await Episode.findOne({
-      malId: mal_id.toString(), quality: Number(dl_quality.toString())
+      malId: mal_id.toString(),
+      quality: Number(dl_quality.toString()),
+      eId: eId.toString(),
+      sId: sId.toString(),
     }).lean();
 
     if (!ep)
@@ -53,7 +56,7 @@ const downloadEpisode = async (req: Request, res: Response) =>
         .status(CLIENT_ERROR.BAD_REQUEST)
         .json({ message: "Failed to compress torrent" });
 
-    return res.status(SUCCESS.OK).json({url: comp.url, size: comp.size});
+    return res.status(SUCCESS.OK).json({ url: comp.url, size: comp.size });
   });
 
 const addEpisode = async (req: Request, res: Response) =>
@@ -99,10 +102,13 @@ const addEpisode = async (req: Request, res: Response) =>
         isCompressed: false,
         magnetUri: v.magUri,
         malId: mal_id.toString(),
-        quality: v.info?.video.resolution?.toLowerCase().replace("p", ""),
+        quality: Number(
+          v.info?.video.resolution?.toLowerCase().replace("p", ""),
+        ),
       })),
     );
-    return res.status(200).json(eps);
+
+    return res.status(SUCCESS.CREATED).json(eps);
   });
 
 export { addEpisode, downloadEpisode };

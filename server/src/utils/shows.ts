@@ -13,10 +13,10 @@ const handler = async (res: Response, cb: () => Promise<Response>) => {
     const resp = await cb();
     return resp;
   } catch (error) {
-    console.log(error);
+    console.log(error, "rrrt");
     return res
       .status(SERVER_ERROR.INTERNAL_SERVER_ERROR)
-      .json({ message: "Server error" });
+      .json({ message: "Internal server error" });
   }
 };
 

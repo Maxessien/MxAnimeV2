@@ -1,18 +1,19 @@
 import { config } from "dotenv";
 
-config()
+config();
 
 import ffmpeg from "@ts-ffmpeg/fluent-ffmpeg";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
 import Seedr from "seedr";
 import { resolveFfmpegBinaryPath } from "../utils/ffmpegUtil.js";
-import { S3Client } from "@aws-sdk/client-s3"
+import { S3Client } from "@aws-sdk/client-s3";
 import ffprobe from "ffprobe-static";
 
 const cloudflareAccessKey = process.env.CLOUDFARE_ACCESS_KEY || "";
 const cloudflareSecretKey = process.env.CLOUDFARE_SECRET_KEY || "";
-const CLOUDFARE_URL = "https://dc18e8090b44f06d5139bf4673fc3e4b.r2.cloudflarestorage.com";
+const CLOUDFARE_URL =
+  "https://dc18e8090b44f06d5139bf4673fc3e4b.r2.cloudflarestorage.com";
 const CLOUDFARE_APP_BUCKET = "mxanime";
 
 const cloudflareClient = new S3Client({
@@ -23,7 +24,6 @@ const cloudflareClient = new S3Client({
     secretAccessKey: cloudflareSecretKey,
   },
 });
-
 
 // Parse CLOUDINARY_URL and configure
 const cloudinaryUrl = process.env.CLOUDINARY_URL || "";
@@ -36,16 +36,33 @@ if (urlMatch) {
   });
 }
 
-
 let seedr = new Seedr();
 await seedr.login(process.env.SEEDR_EMAIL, process.env.SEEDR_PASS);
 
-ffmpeg.setFfmpegPath(resolveFfmpegBinaryPath() ?? "")
-ffmpeg.setFfprobePath(ffprobe.path)
+ffmpeg.setFfmpegPath(resolveFfmpegBinaryPath() ?? "");
+ffmpeg.setFfprobePath(ffprobe.path);
 
 // const uploader = process.env.NODE_ENV === "development" ? offlineCloudinary : cloudinary.uploader
-const uploader = cloudinary.uploader
+const uploader = cloudinary.uploader;
 
-mongoose.connect(process.env.MONGO_URI || "")
+try {
+  await mongoose.connect(process.env.MONGO_URI || "");
+  //mongoose.connection.dropDatabase();
+  console.log("Connected to mongodb server");
+} catch (err) {
+  console.log(err);
+}
 
-export { ffmpeg, mongoose, seedr, uploader, CLOUDFARE_APP_BUCKET, CLOUDFARE_URL, cloudflareClient };
+mongoose.connection.on("error", (err) => {
+  console.error("MongoDB error:", err);
+});
+
+export {
+  ffmpeg,
+  mongoose,
+  seedr,
+  uploader,
+  CLOUDFARE_APP_BUCKET,
+  CLOUDFARE_URL,
+  cloudflareClient,
+};
