@@ -6,7 +6,7 @@
   "main": "dist/bin/www.js",
   "scripts": {
     "build": "tsc -p .",
-    "start": "node dist/src/index.js",
+    "start": "node dist/index.js",
     "dev": "tsx --watch src/index.ts"
   },
   "dependencies": {
