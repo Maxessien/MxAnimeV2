@@ -23,10 +23,9 @@
 
 
 import { parse } from "anitomy";
-import {getSeasonNumber} from "./src/utils/shows"
 
 const par = parse(
   "[Judas] Nogizaka Haruka no Himitsu (Haruka Nogizaka's Secret) (Seasons 1-2 + OVAs) [BD 1080p][HEVC x265 10bit][Eng-Subs] (Batch)\n[Judas] Nogizaka Haruka no Himitsu S2 - Purezza/[Judas] Nogizaka Haruka no Himitsu - S02E01.mkv\n👤 1 💾 493.4 MB ⚙️ NyaaSi"
 )
 
-console.log(par, await getSeasonNumber(39535))
+console.log(par)
