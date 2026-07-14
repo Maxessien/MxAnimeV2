@@ -1,6 +1,24 @@
 import { UploadApiResponse } from "cloudinary";
 import { SeedrVideo } from "seedr";
-import { ffmpeg, seedr, uploader } from "../configs/config.js";
+import {
+  CLOUDFARE_APP_BUCKET,
+  CLOUDFARE_URL,
+  cloudflareClient,
+  ffmpeg,
+  seedr,
+} from "../configs/config.js";
+import { PutObjectCommand } from "@aws-sdk/client-s3";
+import { randomUUID } from "crypto";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import { FfprobeData } from "@ts-ffmpeg/fluent-ffmpeg";
+import { createMagnetUri, getTorrentioApi } from "./shows.js";
+import { ThirdPartyMappings } from "../types/anizip.js";
+import {
+  ParsedTorrentioStream,
+  TorrentioResponse,
+} from "../types/torrentio.js";
+import axios from "axios";
+import { parse } from "anitomy";
 
 const downloadTorrent = async (magnetUri: string) => {
   const res = await seedr.addMagnet(magnetUri);
@@ -18,25 +36,51 @@ const downloadTorrent = async (magnetUri: string) => {
 
 const compressTorrent = async (
   vid: SeedrVideo,
-): Promise<UploadApiResponse | undefined> => {
+  fileName?: string,
+): Promise<
+  | (FfprobeData["format"] & { url: string; key: string; bucket: string })
+  | undefined
+> => {
   const file = await seedr.getFile(vid.id);
 
-  return new Promise((resolve, reject) => {
-    const uploadStream = uploader.upload_chunked_stream(
-      { resource_type: "video", folder: "MxAnime", chunk_size: 6000000 },
-      async (error, result) => {
-        if (error) return reject(error);
-        await clnUpTorrent(vid.id);
-        resolve(result);
-      },
-    );
+  const key = `videos/${fileName ?? randomUUID()}.mkv`;
 
-    ffmpeg(file.url)
-      .videoCodec("libx264")
-      .audioCodec("aac").format('flv')
-      .on("error", reject).on("progress", ({percent})=> console.log(`${percent}% loading...`))
-      .pipe(uploadStream, { end: true });
+  const command = new PutObjectCommand({
+    Bucket: CLOUDFARE_APP_BUCKET,
+    Key: key,
   });
+
+  const url = await getSignedUrl(cloudflareClient, command);
+
+  await new Promise((resolve, reject) => {
+    ffmpeg(file.url)
+      .output(url)
+      .videoCodec("libx264")
+      .audioCodec("aac")
+      .format("mkv")
+      .on("error", reject)
+      .on("progress", ({ percent }) => console.log(`${percent}% loading...`))
+      .on("end", () => {
+        console.log("done");
+        resolve("done");
+      });
+  });
+
+  const uploadedFileUrl = `https://${CLOUDFARE_URL}/${key}`;
+
+  const info: FfprobeData = await new Promise((resolve, reject) => {
+    ffmpeg.ffprobe(uploadedFileUrl, (err, data) => {
+      if (err) reject(err);
+      else resolve(data);
+    });
+  });
+
+  return {
+    ...info.format,
+    url: uploadedFileUrl,
+    key,
+    bucket: CLOUDFARE_APP_BUCKET,
+  };
 };
 
 const clnUpTorrent = async (id: string | number, maxRetries: number = 3) => {
@@ -47,9 +91,48 @@ const clnUpTorrent = async (id: string | number, maxRetries: number = 3) => {
   }
 };
 
-export {
-    clnUpTorrent,
-    compressTorrent,
-    downloadTorrent
+const QUALITY: Record<string, boolean> = {
+  1080: false,
+  720: false,
+  480: false,
+  360: false,
 };
 
+const ALLOWED = Object.entries(quality).map((v) => v[0]);
+
+const getAnimeTorrent = async (
+  mappings: ThirdPartyMappings,
+  sid: string,
+  eId: string,
+): Promise<{ filteredQuality: ParsedTorrentioStream[]; allowed: string[] }> => {
+  const torrentioUrl = getTorrentioApi(
+    `${mappings.imdb_id || mappings.themoviedb_id}:${sid}:${eId}`,
+    "series",
+  );
+
+  const { data: torrRes } = await axios.get<TorrentioResponse>(torrentioUrl);
+
+  const parsed: ParsedTorrentioStream[] = torrRes.streams.map((v) => ({
+    info: v.name ? parse(v.name) : null,
+    magUri:
+      v.infoHash && v.sources ? createMagnetUri(v.infoHash, v.sources) : null,
+    ...v,
+  }));
+
+  const filteredQuality: ParsedTorrentioStream[] = [];
+
+  for (let info of parsed) {
+    if (QUALITY[1080] && QUALITY[720] && QUALITY[360] && QUALITY[480]) break;
+
+    let resolution = info.info?.video?.resolution
+      ?.toLowerCase()
+      ?.replace("p", "");
+
+    if (resolution && ALLOWED.includes(resolution) && QUALITY[resolution])
+      filteredQuality.push(info);
+  }
+
+  return { filteredQuality };
+};
+
+export { clnUpTorrent, compressTorrent, downloadTorrent, getAnimeTorrent, ALLOWED, QUALITY };
