@@ -4,10 +4,10 @@ import { Episode } from "../models/showModel.js";
 import { AniZipMetadata } from "../types/anizip.js";
 import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
 import {
+  ALLOWED,
   compressTorrent,
   downloadTorrent,
   getAnimeTorrent,
-  QUALITY,
 } from "../utils/media.js";
 import { handler } from "../utils/shows.js";
 
@@ -20,7 +20,9 @@ const downloadEpisode = async (req: Request, res: Response) =>
         .status(CLIENT_ERROR.BAD_REQUEST)
         .json({ message: "Invalid mal_id or dl_quality" });
 
-    if (!QUALITY[dl_quality.toString()])
+    let ql = dl_quality.toString();
+
+    if (!ALLOWED.includes(ql))
       return res
         .status(CLIENT_ERROR.BAD_REQUEST)
         .json({ message: "Invalid dl_quality" });

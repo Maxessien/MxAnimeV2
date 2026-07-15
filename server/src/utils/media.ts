@@ -19,6 +19,10 @@ import {
 } from "../types/torrentio.js";
 import axios from "axios";
 import { parse } from "anitomy";
+import { Upload } from "@aws-sdk/lib-storage";
+import { createReadStream, createWriteStream, promises as fs } from "fs";
+import path from "path";
+import os from "os";
 
 const downloadTorrent = async (magnetUri: string) => {
   const res = await seedr.addMagnet(magnetUri);
@@ -41,46 +45,84 @@ const compressTorrent = async (
   | (FfprobeData["format"] & { url: string; key: string; bucket: string })
   | undefined
 > => {
-  const file = await seedr.getFile(vid.id);
+  console.log("compressTorrent", vid.id);
 
+  const file = await seedr.getFile(vid.id);
   const key = `videos/${fileName ?? randomUUID()}.mkv`;
 
-  const command = new PutObjectCommand({
-    Bucket: CLOUDFARE_APP_BUCKET,
-    Key: key,
-  });
+  // Create a temporary local path to store the processed video
+  const tempFilePath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
 
-  const url = await getSignedUrl(cloudflareClient, command);
-
-  await new Promise((resolve, reject) => {
-    ffmpeg(file.url)
-      .output(url)
-      .videoCodec("libx264")
-      .audioCodec("aac")
-      .format("mkv")
-      .on("error", reject)
-      .on("progress", ({ percent }) => console.log(`${percent}% loading...`))
-      .on("end", () => {
-        console.log("done");
-        resolve("done");
-      });
-  });
-
-  const uploadedFileUrl = `https://${CLOUDFARE_URL}/${key}`;
-
-  const info: FfprobeData = await new Promise((resolve, reject) => {
-    ffmpeg.ffprobe(uploadedFileUrl, (err, data) => {
-      if (err) reject(err);
-      else resolve(data);
+  try {
+    // 1. Run Ffmpeg and output to local temp file
+    await new Promise<void>((resolve, reject) => {
+      ffmpeg(file.url)
+        .videoCodec("libx264")
+        .audioCodec("aac")
+        .format("matroska")
+        .on("start", (command) => console.log("ffmpeg start", command))
+        .on("error", (err) => {
+          console.error("ffmpeg error", err);
+          reject(err);
+        })
+        .on("progress", ({ percent }) => console.log(`${percent ? percent.toFixed(1) : 0}% loading...`))
+        .on("end", () => {
+          console.log("ffmpeg processing done");
+          resolve();
+        })
+        .save(tempFilePath); // Saves directly to local storage safely
     });
-  });
 
-  return {
-    ...info.format,
-    url: uploadedFileUrl,
-    key,
-    bucket: CLOUDFARE_APP_BUCKET,
-  };
+    // 2. Upload the finished file to Cloudflare R2 using AWS Lib-Storage Upload
+    console.log("Uploading file to Cloudflare R2...");
+    const fileStream = createReadStream(tempFilePath);
+
+    const parallelUploads3 = new Upload({
+      client: cloudflareClient,
+      params: {
+        Bucket: CLOUDFARE_APP_BUCKET,
+        Key: key,
+        Body: fileStream,
+        ContentType: "video/x-matroska"
+      },
+      // Optional configurations for tuning performance
+      queueSize: 4,
+      partSize: 1024 * 1024 * 5, // 5MB chunks
+      leavePartsOnError: false,
+    });
+
+    await parallelUploads3.done();
+    console.log("Upload completed successfully");
+
+    const uploadedFileUrl = `https://${CLOUDFARE_URL}/${key}`;
+
+    // 3. Probe the file to get its duration, size, etc.
+    const info: FfprobeData = await new Promise((resolve, reject) => {
+      ffmpeg.ffprobe(uploadedFileUrl, (err, data) => {
+        if (err) reject(err);
+        else resolve(data);
+      });
+    });
+
+    return {
+      ...info.format,
+      url: uploadedFileUrl,
+      key,
+      bucket: CLOUDFARE_APP_BUCKET,
+    };
+
+  } catch (error) {
+    console.error("Compression / Upload process failed:", error);
+    throw error;
+  } finally {
+    // 4. Always clean up the local temp file to avoid running out of disk space
+    try {
+      await fs.unlink(tempFilePath);
+      console.log("Cleaned up temp file:", tempFilePath);
+    } catch (cleanupErr) {
+      // Temp file might not have been created if it failed early
+    }
+  }
 };
 
 const clnUpTorrent = async (id: string | number, maxRetries: number = 3) => {
@@ -137,4 +179,11 @@ const getAnimeTorrent = async (
   return { filteredQuality };
 };
 
-export { clnUpTorrent, compressTorrent, downloadTorrent, getAnimeTorrent, ALLOWED, QUALITY };
+export {
+  clnUpTorrent,
+  compressTorrent,
+  downloadTorrent,
+  getAnimeTorrent,
+  ALLOWED,
+  QUALITY,
+};

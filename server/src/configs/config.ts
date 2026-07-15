@@ -17,7 +17,8 @@ const CLOUDFARE_URL =
 const CLOUDFARE_APP_BUCKET = "mxanime";
 
 const cloudflareClient = new S3Client({
-  region: "us-east-1",
+  region: "auto",
+  forcePathStyle: true,
   endpoint: CLOUDFARE_URL,
   credentials: {
     accessKeyId: cloudflareAccessKey,

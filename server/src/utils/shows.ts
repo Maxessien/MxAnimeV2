@@ -16,7 +16,7 @@ const handler = async (res: Response, cb: () => Promise<Response>) => {
     console.log(error, "rrrt");
     return res
       .status(SERVER_ERROR.INTERNAL_SERVER_ERROR)
-      .json({ message: "Internal server error" });
+      .json(error);
   }
 };
 

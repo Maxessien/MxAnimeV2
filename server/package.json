@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1086.0",
+    "@aws-sdk/lib-storage": "^3.1087.0",
     "@aws-sdk/s3-request-presigner": "^3.1086.0",
     "@ts-ffmpeg/fluent-ffmpeg": "^2.2.6",
     "anitomy": "^0.0.35",
