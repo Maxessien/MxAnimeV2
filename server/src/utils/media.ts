@@ -93,6 +93,9 @@ const compressTorrent = async (
         .outputOptions("-preset medium")
         .audioChannels(2)
         .audioBitrate("96k")
+    .outputOptions("-pix_fmt yuv420p") // Forces standard 8-bit web color format
+    .outputOptions("-tag:v hvc1")      // Tells Apple/Chrome devices exactly how to decode the stream
+    .outputOptions("-movflags +faststart")
         .format("matroska")
         .on("start", (command) => console.log("ffmpeg start", command))
         .on("error", (err) => {
