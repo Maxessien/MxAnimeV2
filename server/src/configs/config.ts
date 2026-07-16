@@ -1,7 +1,3 @@
-import { config } from "dotenv";
-
-config();
-
 import ffmpeg from "@ts-ffmpeg/fluent-ffmpeg";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
@@ -36,6 +32,8 @@ if (urlMatch) {
     cloud_name: urlMatch[3],
   });
 }
+
+console.log(process.env.SEEDR_EMAIL, process.env.SEEDR_PASS)
 
 let seedr = new Seedr();
 await seedr.login(process.env.SEEDR_EMAIL, process.env.SEEDR_PASS);
