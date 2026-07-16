@@ -1,5 +1,8 @@
 import axios from "axios";
 import { Request, Response } from "express";
+import { Query } from "mongoose";
+import { randomInt } from "node:crypto";
+import { downloadTasks } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
 import { AniZipMetadata } from "../types/anizip.js";
 import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
@@ -51,14 +54,63 @@ const downloadEpisode = async (req: Request, res: Response) =>
         .status(CLIENT_ERROR.BAD_REQUEST)
         .json({ message: "Failed to download torrent" });
 
-    const comp = await compressTorrent(vid);
+    let taskId: number;
+    do {
+      taskId = randomInt(1_000_000);
+    } while (downloadTasks.has(taskId));
 
-    if (!comp)
+    const epInfo = {
+      episodeId: Number(eId),
+      malId: Number(mal_id),
+      quality: dl_quality.toString(),
+      season: Number(sId),
+    };
+
+    void compressTorrent(vid, taskId, epInfo).catch((error) => {
+      console.error("Episode download task failed:", error);
+    });
+
+    downloadTasks.set(taskId, {
+      status: "pending",
+      progress: 0,
+      epInfo,
+    });
+
+    return res.status(SUCCESS.ACCEPTED).json({ taskId });
+  });
+
+const getDownloadStatus = async (req: Request, res: Response) =>
+  handler(res, async () => {
+    const { id: taskId } = req.params;
+
+    if (!taskId)
       return res
         .status(CLIENT_ERROR.BAD_REQUEST)
-        .json({ message: "Failed to compress torrent" });
+        .json({ message: "Invalid taskId" });
 
-    return res.status(SUCCESS.OK).json({ url: comp.url, size: comp.size });
+    const status = downloadTasks.get(Number(taskId));
+
+    if (!status)
+      return res
+        .status(CLIENT_ERROR.BAD_REQUEST)
+        .json({ message: "Task not found" });
+
+    if (status.status === "completed") {
+      let episode = Episode.findOne({
+        malId: status.epInfo.malId.toString(),
+        eId: status.epInfo.episodeId,
+        sId: status.epInfo.season,
+        quality: status.epInfo.quality,
+      } as any);
+
+      downloadTasks.delete(Number(taskId));
+
+      return res.status(SUCCESS.OK).json({ episode, ...status });
+    }
+
+    if (status.status === "error") downloadTasks.delete(Number(taskId));
+
+    return res.status(SUCCESS.OK).json({ ...status, episode: null });
   });
 
 const addEpisode = async (req: Request, res: Response) =>
@@ -113,4 +165,4 @@ const addEpisode = async (req: Request, res: Response) =>
     return res.status(SUCCESS.CREATED).json(eps);
   });
 
-export { addEpisode, downloadEpisode };
+export { addEpisode, downloadEpisode, getDownloadStatus };

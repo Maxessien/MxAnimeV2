@@ -4,6 +4,7 @@ import {
   CLOUDFARE_APP_BUCKET,
   CLOUDFARE_URL,
   cloudflareClient,
+  downloadTasks,
   ffmpeg,
   seedr,
 } from "../configs/config.js";
@@ -23,6 +24,9 @@ import { Upload } from "@aws-sdk/lib-storage";
 import { createReadStream, createWriteStream, promises as fs } from "fs";
 import path from "path";
 import os from "os";
+import { Tasks } from "../types/show.js";
+import { Episode } from "../models/showModel.js";
+import { _QueryFilter } from "mongoose";
 
 const downloadTorrent = async (magnetUri: string) => {
   const res = await seedr.addMagnet(magnetUri);
@@ -40,11 +44,10 @@ const downloadTorrent = async (magnetUri: string) => {
 
 const compressTorrent = async (
   vid: SeedrVideo,
+  taskId: number,
+  epInfo: Tasks["epInfo"],
   fileName?: string,
-): Promise<
-  | (FfprobeData["format"] & { url: string; key: string; bucket: string })
-  | undefined
-> => {
+): Promise<void> => {
   console.log("compressTorrent", vid.id);
 
   const file = await seedr.getFile(vid.id);
@@ -62,10 +65,20 @@ const compressTorrent = async (
     response.data.pipe(writer);
     writer.on("finish", () => {
       console.log("Download finished successfully.");
+      downloadTasks.set(taskId, {
+        epInfo,
+        status: "pending",
+        progress: 10,
+      });
       resolve();
     });
     writer.on("error", (err) => {
       console.error("Write stream error during download:", err);
+      downloadTasks.set(taskId, {
+        epInfo,
+        status: "error",
+        progress: 10,
+      });
       reject(err);
     });
   });
@@ -84,13 +97,31 @@ const compressTorrent = async (
         .on("start", (command) => console.log("ffmpeg start", command))
         .on("error", (err) => {
           console.error("ffmpeg error", err);
+          downloadTasks.set(taskId, {
+            epInfo,
+            status: "error",
+            progress: downloadTasks.get(taskId)?.progress || 10,
+          });
           reject(err);
         })
-        .on("progress", ({ percent }) =>
-          console.log(`${percent ? percent.toFixed(1) : 0}% loading...`),
-        )
+        .on("progress", ({ percent }) => {
+          if (percent)
+            downloadTasks.set(taskId, {
+          epInfo,
+              status: "pending",
+              progress: percent * 80 + 10,
+            });
+
+          if (percent && Math.floor(percent) % 20 === 0)
+            console.log(`${percent.toFixed(1)}% loading...`);
+        })
         .on("end", () => {
           console.log("ffmpeg processing done");
+          downloadTasks.set(taskId, {
+            epInfo,
+            status: "pending",
+            progress: 90,
+          });
           resolve();
         })
         .save(tempOutpPath); // Saves directly to local storage safely
@@ -117,6 +148,12 @@ const compressTorrent = async (
     await parallelUploads3.done();
     console.log("Upload completed successfully");
 
+    downloadTasks.set(taskId, {
+      epInfo,
+      status: "pending",
+      progress: 95,
+    });
+
     const uploadedFileUrl = `${CLOUDFARE_URL}/${key}`;
 
     // 3. Probe the file to get its duration, size, etc.
@@ -127,14 +164,31 @@ const compressTorrent = async (
       });
     });
 
-    return {
-      ...info.format,
-      url: uploadedFileUrl,
-      key,
-      bucket: CLOUDFARE_APP_BUCKET,
-    };
+    await Episode.updateOne(
+            {
+              malId: epInfo.malId.toString(),
+              eId: epInfo.episodeId,
+              sId: epInfo.season,
+              quality: epInfo.quality,
+            } as _QueryFilter<any>,
+            {
+              isCompressed: true,
+              fileUrl: uploadedFileUrl,
+              manageInfo: {
+                key: key,
+                bucket: CLOUDFARE_APP_BUCKET,
+              },
+            }
+          );
+
+    downloadTasks.set(taskId, {
+      epInfo,
+      status: "completed",
+      progress: 100,
+    });
   } catch (error) {
     console.error("Compression / Upload process failed:", error);
+    downloadTasks.delete(taskId);
     throw error;
   } finally {
     // 4. Always clean up the local temp file to avoid running out of disk space
