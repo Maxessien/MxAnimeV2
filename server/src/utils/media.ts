@@ -76,7 +76,7 @@ const compressTorrent = async (
       ffmpeg(tempInpPath)
         .videoCodec("libx265") // Switched to high-efficiency HEVC
         .audioCodec("aac")
-        .outputOptions("-crf 24")
+        .outputOptions("-crf 26")
         .outputOptions("-preset medium")
         .audioChannels(2)
         .audioBitrate("96k")
