@@ -1,3 +1,7 @@
+import { config } from 'dotenv';
+
+config()
+
 import app from './configs/app.js';
 import { normalizePort, onError, onListening } from './utils/serverInit.js';
 
