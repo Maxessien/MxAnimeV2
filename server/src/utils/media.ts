@@ -121,7 +121,7 @@ const compressTorrent = async (
 
     // 3. Probe the file to get its duration, size, etc.
     const info: FfprobeData = await new Promise((resolve, reject) => {
-      ffmpeg.ffprobe(uploadedFileUrl, (err, data) => {
+      ffmpeg.ffprobe(tempOutpPath, (err, data) => {
         if (err) reject(err);
         else resolve(data);
       });

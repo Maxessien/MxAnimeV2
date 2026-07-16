@@ -36,8 +36,14 @@ if (urlMatch) {
 let seedr = new Seedr();
 await seedr.login(process.env.SEEDR_EMAIL, process.env.SEEDR_PASS);
 
-ffmpeg.setFfmpegPath(resolveFfmpegBinaryPath() ?? "");
-ffmpeg.setFfprobePath(ffprobe.path);
+if (process.env.NODE_ENV === "production") {
+  console.log("Production detected: Forcing native Linux FFmpeg/FFprobe paths");
+  ffmpeg.setFfmpegPath("/usr/bin/ffmpeg");
+  ffmpeg.setFfprobePath("/usr/bin/ffprobe");
+} else {
+  ffmpeg.setFfmpegPath(resolveFfmpegBinaryPath() ?? "");
+  ffmpeg.setFfprobePath(ffprobe.path);
+}
 
 // const uploader = process.env.NODE_ENV === "development" ? offlineCloudinary : cloudinary.uploader
 const uploader = cloudinary.uploader;
