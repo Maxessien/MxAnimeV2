@@ -44,7 +44,7 @@ const downloadEpisode = async (req: Request, res: Response) =>
 
     if (ep.isCompressed)
       return res
-        .status(CLIENT_ERROR.BAD_REQUEST)
+        .status(SUCCESS.OK)
         .json({ url: ep.fileUrl, size: ep.fileSize });
 
     const vid = await downloadTorrent(ep?.magnetUri);
