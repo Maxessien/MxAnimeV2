@@ -56,7 +56,19 @@ const compressTorrent = async (
 
   // Download the input file to the temporary input path
   const response = await axios.get(file.url, { responseType: "stream" });
-  response.data.pipe(createWriteStream(tempInpPath));
+
+  await new Promise<void>((resolve, reject) => {
+    const writer = createWriteStream(tempInpPath);
+    response.data.pipe(writer);
+    writer.on("finish", () => {
+      console.log("Download finished successfully.");
+      resolve();
+    });
+    writer.on("error", (err) => {
+      console.error("Write stream error during download:", err);
+      reject(err);
+    });
+  });
 
   try {
     // 1. Run Ffmpeg and output to local temp file
@@ -70,7 +82,9 @@ const compressTorrent = async (
           console.error("ffmpeg error", err);
           reject(err);
         })
-        .on("progress", ({ percent }) => console.log(`${percent ? percent.toFixed(1) : 0}% loading...`))
+        .on("progress", ({ percent }) =>
+          console.log(`${percent ? percent.toFixed(1) : 0}% loading...`),
+        )
         .on("end", () => {
           console.log("ffmpeg processing done");
           resolve();
@@ -88,7 +102,7 @@ const compressTorrent = async (
         Bucket: CLOUDFARE_APP_BUCKET,
         Key: key,
         Body: fileStream,
-        ContentType: "video/x-matroska"
+        ContentType: "video/x-matroska",
       },
       // Optional configurations for tuning performance
       queueSize: 4,
@@ -115,7 +129,6 @@ const compressTorrent = async (
       key,
       bucket: CLOUDFARE_APP_BUCKET,
     };
-
   } catch (error) {
     console.error("Compression / Upload process failed:", error);
     throw error;
