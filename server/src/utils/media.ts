@@ -93,9 +93,9 @@ const compressTorrent = async (
         .outputOptions("-preset medium")
         .audioChannels(2)
         .audioBitrate("96k")
-    .outputOptions("-pix_fmt yuv420p") // Forces standard 8-bit web color format
-    .outputOptions("-tag:v hvc1")      // Tells Apple/Chrome devices exactly how to decode the stream
-    .outputOptions("-movflags +faststart")
+        .outputOptions("-pix_fmt yuv420p") // Forces standard 8-bit web color format
+        .outputOptions("-tag:v hvc1") // Tells Apple/Chrome devices exactly how to decode the stream
+        .outputOptions("-movflags +faststart")
         .format("matroska")
         .on("start", (command) => console.log("ffmpeg start", command))
         .on("error", (err) => {
@@ -110,13 +110,10 @@ const compressTorrent = async (
         .on("progress", ({ percent }) => {
           if (percent)
             downloadTasks.set(taskId, {
-          epInfo,
+              epInfo,
               status: "pending",
-              progress: percent * 80 + 10,
+              progress: (percent * 0.8) + 10,
             });
-
-          if (percent && Math.floor(percent) % 20 === 0)
-            console.log(`${percent.toFixed(1)}% loading...`);
         })
         .on("end", () => {
           console.log("ffmpeg processing done");
@@ -168,21 +165,21 @@ const compressTorrent = async (
     });
 
     await Episode.updateOne(
-            {
-              malId: epInfo.malId.toString(),
-              eId: epInfo.episodeId,
-              sId: epInfo.season,
-              quality: epInfo.quality,
-            } as _QueryFilter<any>,
-            {
-              isCompressed: true,
-              fileUrl: uploadedFileUrl,
-              manageInfo: {
-                key: key,
-                bucket: CLOUDFARE_APP_BUCKET,
-              },
-            }
-          );
+      {
+        malId: epInfo.malId.toString(),
+        eId: epInfo.episodeId,
+        sId: epInfo.season,
+        quality: epInfo.quality,
+      } as _QueryFilter<any>,
+      {
+        isCompressed: true,
+        fileUrl: uploadedFileUrl,
+        manageInfo: {
+          key: key,
+          bucket: CLOUDFARE_APP_BUCKET,
+        },
+      },
+    );
 
     downloadTasks.set(taskId, {
       epInfo,
