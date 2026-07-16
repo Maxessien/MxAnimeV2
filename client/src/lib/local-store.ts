@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import axios from "axios";
 import { downloadQueue } from "./queue";
 
-const BACKEND_URL = "";
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export type AnimeSummary = {
   mal_id: number;
