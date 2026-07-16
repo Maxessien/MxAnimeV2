@@ -113,7 +113,7 @@ const compressTorrent = async (
     await parallelUploads3.done();
     console.log("Upload completed successfully");
 
-    const uploadedFileUrl = `https://${CLOUDFARE_URL}/${key}`;
+    const uploadedFileUrl = `${CLOUDFARE_URL}/${key}`;
 
     // 3. Probe the file to get its duration, size, etc.
     const info: FfprobeData = await new Promise((resolve, reject) => {
