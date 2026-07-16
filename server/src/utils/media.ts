@@ -51,12 +51,17 @@ const compressTorrent = async (
   const key = `videos/${fileName ?? randomUUID()}.mkv`;
 
   // Create a temporary local path to store the processed video
-  const tempFilePath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
+  const tempInpPath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
+  const tempOutpPath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
+
+  // Download the input file to the temporary input path
+  const response = await axios.get(file.url, { responseType: "stream" });
+  response.data.pipe(createWriteStream(tempInpPath));
 
   try {
     // 1. Run Ffmpeg and output to local temp file
     await new Promise<void>((resolve, reject) => {
-      ffmpeg(file.url)
+      ffmpeg(tempInpPath)
         .videoCodec("libx264")
         .audioCodec("aac")
         .format("matroska")
@@ -70,12 +75,12 @@ const compressTorrent = async (
           console.log("ffmpeg processing done");
           resolve();
         })
-        .save(tempFilePath); // Saves directly to local storage safely
+        .save(tempOutpPath); // Saves directly to local storage safely
     });
 
     // 2. Upload the finished file to Cloudflare R2 using AWS Lib-Storage Upload
     console.log("Uploading file to Cloudflare R2...");
-    const fileStream = createReadStream(tempFilePath);
+    const fileStream = createReadStream(tempOutpPath);
 
     const parallelUploads3 = new Upload({
       client: cloudflareClient,
@@ -117,8 +122,9 @@ const compressTorrent = async (
   } finally {
     // 4. Always clean up the local temp file to avoid running out of disk space
     try {
-      await fs.unlink(tempFilePath);
-      console.log("Cleaned up temp file:", tempFilePath);
+      await fs.unlink(tempInpPath);
+      await fs.unlink(tempOutpPath);
+      console.log("Cleaned up temp file:", tempInpPath, tempOutpPath);
     } catch (cleanupErr) {
       // Temp file might not have been created if it failed early
     }
