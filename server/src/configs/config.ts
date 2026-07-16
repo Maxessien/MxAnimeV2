@@ -1,7 +1,3 @@
-import { config } from "dotenv";
-
-config();
-
 import ffmpeg from "@ts-ffmpeg/fluent-ffmpeg";
 import { v2 as cloudinary } from "cloudinary";
 import mongoose from "mongoose";
