@@ -33,8 +33,6 @@ if (urlMatch) {
   });
 }
 
-console.log(process.env.SEEDR_EMAIL, process.env.SEEDR_PASS)
-
 let seedr = new Seedr();
 await seedr.login(process.env.SEEDR_EMAIL, process.env.SEEDR_PASS);
 
