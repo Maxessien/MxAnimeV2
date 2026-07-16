@@ -74,8 +74,12 @@ const compressTorrent = async (
     // 1. Run Ffmpeg and output to local temp file
     await new Promise<void>((resolve, reject) => {
       ffmpeg(tempInpPath)
-        .videoCodec("libx264")
+        .videoCodec("libx265") // Switched to high-efficiency HEVC
         .audioCodec("aac")
+        .outputOptions("-crf 24")
+        .outputOptions("-preset medium")
+        .audioChannels(2)
+        .audioBitrate("96k")
         .format("matroska")
         .on("start", (command) => console.log("ffmpeg start", command))
         .on("error", (err) => {
