@@ -98,6 +98,8 @@ async function downloadAnime(
       taskId: taskId.toString()
     });
 
+    ongoingDownloadQueue.pop()
+
     await mutateAsync({
       anime: {
         ...info,

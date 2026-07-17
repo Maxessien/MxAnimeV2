@@ -1,9 +1,9 @@
 import DlHistory from "@/components/downloads/DlHistory";
-import OngoingDlCard from "@/components/downloads/OngoingDlcard";
+import OngoingDlCard from "@/components/downloads/OngoingDlCard";
 import { useJson } from "@/hooks/use-json";
 import { AnimeSummary } from "@/lib/local-store";
 import { ongoingDownloadQueue } from "@/lib/queue";
-import { listen } from "@tauri-apps/api/event";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { Download as DownloadIcon, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -22,15 +22,12 @@ export default function Downloads() {
   const [_, triggerRender] = useState(0);
 
   useEffect(() => {
-    ongoingDownloadQueue.addEventListener("modify", () =>
-      triggerRender((prev) => prev + 1),
-    );
-    ongoingDownloadQueue.addEventListener("status_update", () =>
-      triggerRender((prev) => prev + 1),
-    );
-    ongoingDownloadQueue.addEventListener("prog_update", () =>
-      triggerRender((prev) => prev + 1),
-    );
+    const increment = () => triggerRender((prev) => prev + 1);
+    ongoingDownloadQueue.addEventListener("modify", () => increment);
+    ongoingDownloadQueue.addEventListener("status_update", () => increment);
+    ongoingDownloadQueue.addEventListener("prog_update", () => increment);
+
+    let unlisten: UnlistenFn | undefined;
 
     listen<{
       current: number;
@@ -38,10 +35,20 @@ export default function Downloads() {
       task_id: string;
     }>("dl_progress", ({ payload }) =>
       ongoingDownloadQueue.updateProg(payload.task_id, {
-        curr: payload.current,
-        total: payload.total,
+        curr: payload.current / (1024 * 1024),
+        total: payload.total / (1024 * 1024),
       }),
-    );
+    ).then((fn) => (unlisten = fn));
+
+    return () => {
+      ongoingDownloadQueue.removeEventListener("modify", increment);
+      ongoingDownloadQueue.removeEventListener(
+        "status_update",
+        () => increment,
+      );
+      ongoingDownloadQueue.removeEventListener("prog_update", () => increment);
+      if (unlisten) unlisten();
+    };
   }, []);
 
   return (
