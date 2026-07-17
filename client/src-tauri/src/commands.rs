@@ -1,12 +1,23 @@
 use reqwest::Client;
-use std::path::PathBuf;
-use tauri::{AppHandle, Manager};
+use serde::Serialize;
+use std::{
+    path::PathBuf,
+    time::{Duration, Instant},
+};
+use tauri::{AppHandle, Emitter, Manager};
 use tokio::{
-    fs::{File, create_dir_all, write},
+    fs::{create_dir_all, write, File},
     io::{AsyncReadExt, AsyncWriteExt},
 };
 
-use futures_util::{StreamExt, TryFutureExt}; 
+use futures_util::{StreamExt, TryFutureExt};
+
+#[derive(Serialize, Clone)]
+pub struct ByteProgress {
+    pub current: usize,
+    pub total: usize,
+    pub task_id: String
+}
 
 async fn check_path(path: PathBuf) -> Result<(bool, PathBuf), String> {
     if !path.exists() {
@@ -87,7 +98,7 @@ pub async fn get_json_file(app: AppHandle, sub_path: String) -> Result<String, S
 }
 
 #[tauri::command]
-pub async fn dl_file(app: tauri::AppHandle, url: String, save_as: String) -> Result<(), String> {
+pub async fn dl_file(app: tauri::AppHandle, url: String, save_as: String, task_id: String) -> Result<(), String> {
     let cl = Client::new();
 
     let res = cl
@@ -96,23 +107,47 @@ pub async fn dl_file(app: tauri::AppHandle, url: String, save_as: String) -> Res
         .await
         .map_err(|_| "Failed to fetch file".to_string())?;
 
-    let mut  str = res.bytes_stream();
+    let total = res.content_length().unwrap_or(0) as usize;
+
+    let mut str = res.bytes_stream();
 
     let app_dir = app
         .path()
         .app_data_dir()
         .map_err(|_| "Failed to get app data dir".to_string())?;
 
-    let path =app_dir.join(format!("downloads/{}", save_as));
+    let path = app_dir.join(format!("downloads/{}", save_as));
 
-    let mut f = File::create(path).map_err(|_| "Failed to create file").await?;
+    let mut f = File::create(path)
+        .map_err(|_| "Failed to create file")
+        .await?;
+
+    let mut curr = 0;
+
+    let mut last_emit = Instant::now();
+
+    let app_clone = app.clone();
 
     while let Some(byte) = str.next().await {
         let b = byte.map_err(|_| "Failed to read stream")?;
+
+        curr += b.len();
         let _ = f.write_all(&b).await;
-    };
+
+        if last_emit.elapsed() >= Duration::from_millis(100) {
+            let _ = app_clone.emit(
+                "dl_progress",
+                ByteProgress {
+                    current: curr,
+                    total,
+                    task_id: task_id.clone()
+                },
+            );
+            last_emit = Instant::now();
+        };
+    }
 
     let _ = f.flush().await;
-    
+
     Ok(())
 }

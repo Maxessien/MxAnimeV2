@@ -1,3 +1,5 @@
+import { AnimeSummary } from "@/lib/local-store";
+
 export interface DefaultTimeStamp {
   createdAt: Date;
   updatedAt: Date;
@@ -28,6 +30,14 @@ export interface Tasks {
 }
 
 export interface DownloadStatus {
-  episode: Episode | null;
+  episode: DbEpisode | null;
   status: Tasks;
+}
+
+export interface OngoingDl {
+  anime: Pick<AnimeSummary, "image" | "title">;
+  id: string | number;
+  status: Tasks | null;
+  curr: number;
+  total: number;
 }

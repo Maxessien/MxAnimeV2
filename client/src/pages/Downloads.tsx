@@ -1,14 +1,48 @@
+import DlHistory from "@/components/downloads/DlHistory";
+import OngoingDlCard from "@/components/downloads/OngoingDlcard";
 import { useJson } from "@/hooks/use-json";
 import { AnimeSummary } from "@/lib/local-store";
-import { Download as DownloadIcon, Trash2, X } from "lucide-react";
+import { ongoingDownloadQueue } from "@/lib/queue";
+import { listen } from "@tauri-apps/api/event";
+import { Download as DownloadIcon, Trash2 } from "lucide-react";
+import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
-import { Link } from "wouter";
 
 export default function Downloads() {
   const { json, remove, clear } = useJson<AnimeSummary>({
     type: "downloads",
-    removeOptions: { onSuccess: () => toast.success("Download Removed"), onError: ()=> toast.error("couldn't delete download") },
+    removeOptions: {
+      onSuccess: () => toast.success("Download Removed"),
+      onError: () => toast.error("couldn't delete download"),
+    },
   });
+
+  const [tab, setTab] = useState<"downloads" | "ongoing">("ongoing");
+
+  const [_, triggerRender] = useState(0);
+
+  useEffect(() => {
+    ongoingDownloadQueue.addEventListener("modify", () =>
+      triggerRender((prev) => prev + 1),
+    );
+    ongoingDownloadQueue.addEventListener("status_update", () =>
+      triggerRender((prev) => prev + 1),
+    );
+    ongoingDownloadQueue.addEventListener("prog_update", () =>
+      triggerRender((prev) => prev + 1),
+    );
+
+    listen<{
+      current: number;
+      total: number;
+      task_id: string;
+    }>("dl_progress", ({ payload }) =>
+      ongoingDownloadQueue.updateProg(payload.task_id, {
+        curr: payload.current,
+        total: payload.total,
+      }),
+    );
+  }, []);
 
   return (
     <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
@@ -22,7 +56,7 @@ export default function Downloads() {
             Titles you've saved on this device for quick offline reference.
           </p>
         </div>
-        {json.downloads.length > 0 && (
+        {tab === "downloads" && json.downloads.length > 0 && (
           <button
             onClick={() => clear.mutateAsync()}
             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-muted hover:bg-destructive hover:text-destructive-foreground transition-colors"
@@ -32,83 +66,59 @@ export default function Downloads() {
         )}
       </div>
 
-      {!json?.downloads?.length || json.downloads?.length === 0 ? (
-        <div className="flex flex-col items-center justify-center text-center py-24 gap-3 border-2 border-dashed rounded-3xl">
-          <DownloadIcon
-            size={40}
-            className="text-muted-foreground opacity-40"
-          />
-          <h2 className="text-xl font-semibold">Nothing saved yet</h2>
-          <p className="text-muted-foreground max-w-sm">
-            Open an anime and tap "Save for Offline" to keep its info and
-            episode list handy here.
-          </p>
-          <Link
-            href="/"
-            className="mt-2 text-primary font-medium hover:underline"
+      <div className="border-b border-border">
+        <div className="flex gap-1 sm:gap-2">
+          <button
+            onClick={() => setTab("downloads")}
+            className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+              tab === "downloads"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
           >
-            Browse anime
-          </Link>
+            Downloaded
+            {tab === "downloads" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
+          <button
+            onClick={() => setTab("ongoing")}
+            className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+              tab === "ongoing"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Ongoing Downloads
+            {tab === "ongoing" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
         </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-          {json.downloads.map((entry, i) => (
-            <div
-              key={entry.mal_id}
-              className="group relative flex flex-col gap-3 animate-in fade-in zoom-in-95"
-              style={{ animationDelay: `${Math.min(i, 20) * 30}ms` }}
-            >
-              <Link
-                href={`/anime/${entry.mal_id}`}
-                className="relative aspect-3/4 overflow-hidden rounded-xl bg-muted shadow-sm block"
-              >
-                {entry.image ? (
-                  <img
-                    src={entry.image}
-                    alt={entry.title}
-                    className="h-full w-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center text-muted-foreground text-sm p-4 text-center">
-                    No Image
-                  </div>
-                )}
-              </Link>
-              <button
-                onClick={() =>
-                  remove.mutateAsync((lt) =>
-                    lt.filter((v) => v.mal_id !== entry.mal_id),
-                  )
-                }
-                aria-label={`Remove ${entry.title} from downloads`}
-                className="absolute top-2 right-2 p-1.5 rounded-full bg-background/80 backdrop-blur-md text-muted-foreground hover:text-destructive shadow-sm border opacity-0 group-hover:opacity-100 transition-opacity"
-              >
-                <X size={14} />
-              </button>
-              <div>
-                <Link href={`/anime/${entry.mal_id}`}>
-                  <h3 className="font-semibold text-sm leading-tight line-clamp-2 hover:text-primary transition-colors">
-                    {entry.title}
-                  </h3>
-                </Link>
-                <div className="flex flex-wrap gap-1 mt-1.5 opacity-80">
-                  {entry.type && (
-                    <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
-                      {entry.type}
-                    </span>
-                  )}
-                  {entry.episodes ? (
-                    <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
-                      {entry.episodes} eps
-                    </span>
-                  ) : null}
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
+      </div>
+
+      <div>
+        {tab === "downloads" ? (
+          <DlHistory json={json} remove={remove} />
+        ) : ongoingDownloadQueue.traverse().length > 0 ? (
+          <div className="space-y-3">
+            {ongoingDownloadQueue.traverse().map((val, idx) => (
+              <OngoingDlCard key={idx} {...val} />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center text-center py-16 gap-3 border-2 border-dashed rounded-2xl">
+            <DownloadIcon
+              size={32}
+              className="text-muted-foreground opacity-40"
+            />
+            <h3 className="font-semibold">No active downloads</h3>
+            <p className="text-sm text-muted-foreground max-w-sm">
+              Downloads will appear here as they're being processed.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
