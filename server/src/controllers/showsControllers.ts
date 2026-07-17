@@ -1,10 +1,9 @@
 import axios from "axios";
 import { Request, Response } from "express";
-import { Query } from "mongoose";
 import { randomInt } from "node:crypto";
 import { downloadTasks } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
-import { AniZipMetadata, Episode } from "../types/anizip.js";
+import { AniZipMetadata } from "../types/anizip.js";
 import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
 import {
   ALLOWED,

@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { BACKEND_URL } from "@/lib/local-store";
 import { DbEpisode } from "@/types/apiResponses";
 import { UseMutateAsyncFunction, useQuery } from "@tanstack/react-query";
@@ -37,24 +38,28 @@ export function AnimeEpisodesDl({
   });
 
   return (
-    <div>
-      <div>
-        <h2>Download Quality</h2>
-        <p>Choose quality to download file with</p>
-        <div>
-          {isFetching && (
-            <span className="text-3xl font-medium">
-              <FaSpinner className="animate-spin" />
-            </span>
-          )}
-          {data &&
-            !isFetching &&
-            data.map(({ eId, quality, sId }) => (
-              <button onClick={() => mutationFn({ eid: eId, season: sId })}>
-                {quality}P
-              </button>
-            ))}
-        </div>
+    <div className="bg-muted/30 p-6 rounded-2xl border">
+      <h2 className="font-bold text-lg mb-2">Download Quality</h2>
+      <p className="text-muted-foreground text-sm mb-6">Choose quality to download file with</p>
+      
+      <div className="flex flex-wrap gap-3">
+        {isFetching && (
+          <div className="flex items-center justify-center w-full py-8">
+            <FaSpinner className="text-3xl animate-spin text-primary" />
+          </div>
+        )}
+        {data &&
+          !isFetching &&
+          data.map(({ eId, quality, sId }) => (
+            <Button
+              key={`${eId}-${sId}-${quality}`}
+              onClick={() => mutationFn({ eid: eId, season: sId })}
+              variant="secondary"
+              className="min-w-20"
+            >
+              {quality}P
+            </Button>
+          ))}
       </div>
     </div>
   );
