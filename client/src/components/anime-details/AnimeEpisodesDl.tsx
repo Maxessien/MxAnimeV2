@@ -64,8 +64,8 @@ export function AnimeEpisodesDl({
               <Button
                 key={`${eId}-${sId}-${quality}`}
                 onClick={() => {
-                  mutationFn({ eid: eId, season: sId, quality })
                   closeFn()
+                  mutationFn({ eid: eId, season: sId, quality })
                 }}
                 variant="secondary"
                 className="min-w-20 cursor-pointer hover:brightness-110 transition-all"

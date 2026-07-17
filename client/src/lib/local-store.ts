@@ -113,6 +113,7 @@ async function downloadAnime(
       });
     } catch (err) {
       console.log("Failed download", err);
+      toast.error(`${info.title} - Episode ${episode.ep} download failed`);
     }
   }
 
