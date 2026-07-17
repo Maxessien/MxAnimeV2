@@ -154,7 +154,7 @@ const compressTorrent = async (
       progress: 95,
     });
 
-    const uploadedFileUrl = `${CLOUDFARE_URL}/${key}`;
+    const uploadedFileUrl = `https://pub-991c552c64ed424ebd8971019038f0ad.r2.dev/${key}`;
 
     // 3. Probe the file to get its duration, size, etc.
     const info: FfprobeData = await new Promise((resolve, reject) => {
