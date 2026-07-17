@@ -8,12 +8,16 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnimeEpisodes, useAnimeFull } from "@/hooks/use-jikan";
 import { useState } from "react";
+import { useJson } from "@/hooks/use-json";
+import { AnimeSummary, downloadAnime } from "@/lib/local-store";
+import { useMutation } from "@tanstack/react-query";
+import { downloadQueue } from "@/lib/queue";
 import { useRoute } from "wouter";
+import { AnimeEpisodesDl } from "@/components/anime-details/AnimeEpisodesDl";
 
 export default function AnimeDetail() {
   const [, params] = useRoute("/anime/:id");
   const id = params?.id || "";
-  const [episodePage, setEpisodePage] = useState(1);
 
   const {
     data: animeData,
@@ -26,7 +30,11 @@ export default function AnimeDetail() {
     isLoading: isLoadingEpisodes,
     isFetching: isFetchingEpisodes,
     error: episodesError,
-  } = useAnimeEpisodes(id, episodePage);
+  } = useAnimeEpisodes(id);
+
+  const { add } = useJson<AnimeSummary>({
+    type: "downloads",
+  });
 
   if (animeError) {
     return (
@@ -58,15 +66,50 @@ export default function AnimeDetail() {
   const anime = animeData?.data;
   if (!anime) return null;
 
+  const { mutateAsync } = useMutation({
+    mutationFn: async ({
+      eid,
+      season,
+    }: {
+      eid: string | number;
+      season: string | number;
+    }) => {
+      downloadQueue.push({
+        mal_id: anime.mal_id,
+        title: anime.title,
+        image: anime.images.webp.large_image_url,
+        type: anime.type,
+        episode: {
+          ep: eid,
+          season,
+          path: "",
+        },
+        score: anime.score,
+      });
+
+      if (!downloadQueue.isProcessing) await downloadAnime(add.mutateAsync);
+    },
+  });
+
   const episodes = episodesData?.data?.episodes
     ? Object.entries(episodesData.data.episodes).map((v) => ({
         ...v[1],
-        hasAired: Boolean(v[1].airDate && new Date(v[1].airDate).getTime() < Date.now()),
+        hasAired: Boolean(
+          v[1].airDate && new Date(v[1].airDate).getTime() < Date.now(),
+        ),
       }))
     : [];
 
+  const [dlPopup, setDlPopup] = useState<{
+    active: boolean;
+    info: { mal_id: string | number; eId: number; sId: number } | null;
+  }>({ active: false, info: null });
+
   return (
     <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
+      {dlPopup.active && dlPopup.info && (
+        <AnimeEpisodesDl mutationFn={mutateAsync} episodeInfo={dlPopup.info} />
+      )}
       <AnimeDetailHero
         anime={anime}
         trailerUrl={null}
@@ -82,14 +125,10 @@ export default function AnimeDetail() {
           <AnimeDetailEpisodes
             anime={anime}
             episodes={episodes}
-            episodePage={episodePage}
             isLoading={isLoadingEpisodes}
             isFetching={isFetchingEpisodes}
             error={episodesError}
-            onPreviousPage={() =>
-              setEpisodePage((page) => Math.max(1, page - 1))
-            }
-            onNextPage={() => setEpisodePage((page) => page + 1)}
+            showDlPopup={(val) => setDlPopup({ active: true, info: val })}
           />
         </div>
       </div>

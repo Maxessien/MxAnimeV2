@@ -178,6 +178,7 @@ const compressTorrent = async (
           key: key,
           bucket: CLOUDFARE_APP_BUCKET,
         },
+        fileSize: info.format.size
       },
     );
 
@@ -186,6 +187,7 @@ const compressTorrent = async (
       status: "completed",
       progress: 100,
     });
+
   } catch (error) {
     console.error("Compression / Upload process failed:", error);
     downloadTasks.delete(taskId);
@@ -195,6 +197,7 @@ const compressTorrent = async (
     try {
       await fs.unlink(tempInpPath);
       await fs.unlink(tempOutpPath);
+      await clnUpTorrent(vid.id)
       console.log("Cleaned up temp file:", tempInpPath, tempOutpPath);
     } catch (cleanupErr) {
       // Temp file might not have been created if it failed early

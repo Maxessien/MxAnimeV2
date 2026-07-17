@@ -8,7 +8,7 @@ const JIKAN_API = "https://api.jikan.moe/v4";
 const getAniZipUrl = (malId: number | string) =>
   `https://api.ani.zip/mappings?mal_id=${malId}`;
 
-const handler = async (res: Response, cb: () => Promise<Response>) => {
+const handler = async (res: Response, cb: () => Promise<Response>): Promise<Response> => {
   try {
     const resp = await cb();
     return resp;

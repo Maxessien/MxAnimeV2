@@ -4,7 +4,7 @@ import { Query } from "mongoose";
 import { randomInt } from "node:crypto";
 import { downloadTasks } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
-import { AniZipMetadata } from "../types/anizip.js";
+import { AniZipMetadata, Episode } from "../types/anizip.js";
 import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
 import {
   ALLOWED,
@@ -105,15 +105,15 @@ const getDownloadStatus = async (req: Request, res: Response) =>
 
       downloadTasks.delete(Number(taskId));
 
-      return res.status(SUCCESS.OK).json({ episode, ...status });
+      return res.status(SUCCESS.OK).json({ episode, status });
     }
 
     if (status.status === "error") downloadTasks.delete(Number(taskId));
 
-    return res.status(SUCCESS.OK).json({ ...status, episode: null });
+    return res.status(SUCCESS.OK).json({ status, episode: null });
   });
 
-const addEpisode = async (req: Request, res: Response) =>
+const addEpisode = (req: Request, res: Response) =>
   handler(res, async () => {
     const { mal_id, eId, sId } = req.body;
 
@@ -126,7 +126,7 @@ const addEpisode = async (req: Request, res: Response) =>
       malId: mal_id.toString(),
       eId: eId.toString(),
       sId: sId.toString(),
-    }).lean();
+    }).select(["malId", "quality", "eId", "sId"]).lean();
 
     if (hasIdx.length > 0) {
       return res.status(SUCCESS.OK).json(hasIdx);

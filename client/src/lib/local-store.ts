@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import axios from "axios";
 import { downloadQueue } from "./queue";
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
+export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 export type AnimeSummary = {
   mal_id: number;
@@ -50,7 +50,7 @@ async function downloadAnime(
 
   const { mal_id, episode } = info;
 
-  const res = await axios.get<AnimeDownload>(`${BACKEND_URL}/download`, {
+  const res = await axios.get<AnimeDownload>(`${BACKEND_URL}/show/download`, {
     params: { mal_id, eId: episode.ep, sId: episode.season },
   });
 

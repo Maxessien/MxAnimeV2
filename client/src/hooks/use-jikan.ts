@@ -151,9 +151,9 @@ export const useAnimeCharacters = (id: string | number) => {
   });
 };
 
-export const useAnimeEpisodes = (id: string | number, page = 1) => {
+export const useAnimeEpisodes = (id: string | number) => {
   return useQuery<AxiosResponse<AniZipMetadata>>({
-    queryKey: ["anime-episodes", id, page],
+    queryKey: ["anime-episodes", id],
     queryFn: () => axios.get<AniZipMetadata>(`https://api.ani.zip/mappings?mal_id=${id}`),
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
