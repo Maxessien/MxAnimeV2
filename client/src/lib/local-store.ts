@@ -1,10 +1,10 @@
 import { JsonFiles } from "@/hooks/use-json";
+import { DownloadStatus } from "@/types/apiResponses";
 import { UseMutateAsyncFunction } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import axios from "axios";
-import { downloadQueue, ongoingDownloadQueue } from "./queue";
-import { DownloadStatus } from "@/types/apiResponses";
 import { toast } from "react-toastify";
+import { downloadQueue, ongoingDownloadQueue } from "./queue";
 
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -48,32 +48,49 @@ async function downloadAnime(
     void
   >,
 ) {
+  console.log("first", downloadQueue);
   downloadQueue.isProcessing = true;
   const info = downloadQueue.pop();
 
   const { mal_id, episode } = info;
 
   const {
-    data: { taskId },
-  } = await axios.get<{ taskId: number | string }>(
-    `${BACKEND_URL}/show/download`,
-    {
-      params: {
-        mal_id,
-        eId: episode.ep,
-        sId: episode.season,
-        dl_quality: episode.quality,
-      },
+    data: { taskId, isCompressed, episode: ep },
+  } = await axios.get<{
+    taskId: number | string;
+    episode: DownloadStatus["episode"];
+    isCompressed: boolean;
+  }>(`${BACKEND_URL}/show/download`, {
+    params: {
+      mal_id,
+      eId: episode.ep,
+      sId: episode.season,
+      dl_quality: episode.quality,
     },
-  );
+  });
 
-  let status: DownloadStatus | undefined;
+  let status: DownloadStatus | undefined =
+    isCompressed && ep
+      ? {
+          episode: ep,
+          status: {
+            progress: 100,
+            status: "completed",
+            epInfo: {
+              episodeId: Number(episode.ep),
+              malId: mal_id,
+              quality: episode.quality.toString(),
+              season: Number(episode.season),
+            },
+          },
+        }
+      : undefined;
 
   ongoingDownloadQueue.push({
     anime: { image: info.image, title: info.title },
     curr: 0,
     total: 100,
-    status: null,
+    status: status?.status ?? null,
     id: taskId,
   });
 

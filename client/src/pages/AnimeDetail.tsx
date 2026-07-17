@@ -41,13 +41,15 @@ export default function AnimeDetail() {
   const { mutateAsync } = useMutation({
     mutationFn: async ({
       eid,
-      season, quality
+      season,
+      quality,
     }: {
       eid: string | number;
       season: string | number;
-      quality: number
+      quality: number;
     }) => {
-      if (!anime) return
+      console.log(downloadQueue)
+      if (!anime) return;
       downloadQueue.push({
         mal_id: anime.mal_id,
         title: anime.title,
@@ -57,7 +59,7 @@ export default function AnimeDetail() {
           ep: eid,
           season,
           path: "",
-          quality
+          quality,
         },
         score: anime.score,
       });
@@ -79,7 +81,7 @@ export default function AnimeDetail() {
     active: boolean;
     info: { mal_id: string | number; eId: number; sId: number } | null;
   }>({ active: false, info: null });
-  
+
   if (animeError) {
     return (
       <div className="py-20 text-center text-destructive">
@@ -112,7 +114,11 @@ export default function AnimeDetail() {
   return (
     <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
       {dlPopup.active && dlPopup.info && (
-        <AnimeEpisodesDl closeFn={()=> setDlPopup({active: false, info: null})} mutationFn={mutateAsync} episodeInfo={dlPopup.info} />
+        <AnimeEpisodesDl
+          closeFn={() => setDlPopup({ active: false, info: null })}
+          mutationFn={mutateAsync}
+          episodeInfo={dlPopup.info}
+        />
       )}
       <AnimeDetailHero
         anime={anime}

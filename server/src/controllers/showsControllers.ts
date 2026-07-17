@@ -29,6 +29,11 @@ const downloadEpisode = async (req: Request, res: Response) =>
         .status(CLIENT_ERROR.BAD_REQUEST)
         .json({ message: "Invalid dl_quality" });
 
+    let taskId: number;
+    do {
+      taskId = randomInt(1_000_000);
+    } while (downloadTasks.has(taskId));
+
     const ep = await Episode.findOne({
       malId: mal_id.toString(),
       quality: Number(dl_quality.toString()),
@@ -44,7 +49,7 @@ const downloadEpisode = async (req: Request, res: Response) =>
     if (ep.isCompressed)
       return res
         .status(SUCCESS.OK)
-        .json({ url: ep.fileUrl, size: ep.fileSize });
+        .json({ taskId, episode: ep, isCompressed: true });
 
     const vid = await downloadTorrent(ep?.magnetUri);
 
@@ -52,11 +57,6 @@ const downloadEpisode = async (req: Request, res: Response) =>
       return res
         .status(CLIENT_ERROR.BAD_REQUEST)
         .json({ message: "Failed to download torrent" });
-
-    let taskId: number;
-    do {
-      taskId = randomInt(1_000_000);
-    } while (downloadTasks.has(taskId));
 
     const epInfo = {
       episodeId: Number(eId),
@@ -75,7 +75,9 @@ const downloadEpisode = async (req: Request, res: Response) =>
       epInfo,
     });
 
-    return res.status(SUCCESS.ACCEPTED).json({ taskId });
+    return res
+      .status(SUCCESS.ACCEPTED)
+      .json({ taskId, episode: null, isCompressed: false });
   });
 
 const getDownloadStatus = async (req: Request, res: Response) =>
@@ -125,7 +127,9 @@ const addEpisode = (req: Request, res: Response) =>
       malId: mal_id.toString(),
       eId: eId.toString(),
       sId: sId.toString(),
-    }).select(["malId", "quality", "eId", "sId"]).lean();
+    })
+      .select(["malId", "quality", "eId", "sId"])
+      .lean();
 
     if (hasIdx.length > 0) {
       return res.status(SUCCESS.OK).json(hasIdx);
