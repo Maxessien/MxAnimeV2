@@ -23,9 +23,9 @@ export default function Downloads() {
 
   useEffect(() => {
     const increment = () => triggerRender((prev) => prev + 1);
-    ongoingDownloadQueue.addEventListener("modify", () => increment);
-    ongoingDownloadQueue.addEventListener("status_update", () => increment);
-    ongoingDownloadQueue.addEventListener("prog_update", () => increment);
+    ongoingDownloadQueue.addEventListener("modify", increment);
+    ongoingDownloadQueue.addEventListener("status_update", increment);
+    ongoingDownloadQueue.addEventListener("prog_update", increment);
 
     let unlisten: UnlistenFn | undefined;
 
@@ -42,11 +42,8 @@ export default function Downloads() {
 
     return () => {
       ongoingDownloadQueue.removeEventListener("modify", increment);
-      ongoingDownloadQueue.removeEventListener(
-        "status_update",
-        () => increment,
-      );
-      ongoingDownloadQueue.removeEventListener("prog_update", () => increment);
+      ongoingDownloadQueue.removeEventListener("status_update", increment);
+      ongoingDownloadQueue.removeEventListener("prog_update", increment);
       if (unlisten) unlisten();
     };
   }, []);

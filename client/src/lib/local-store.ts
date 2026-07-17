@@ -98,8 +98,6 @@ async function downloadAnime(
       taskId: taskId.toString()
     });
 
-    ongoingDownloadQueue.pop()
-
     await mutateAsync({
       anime: {
         ...info,
@@ -116,6 +114,8 @@ async function downloadAnime(
 
   if (status.status.status === "error")
     toast.error(`${info.title} - Episode ${episode.ep} download failed`);
+
+  ongoingDownloadQueue.removeById(taskId)
 
   if (downloadQueue.traverse().length > 0) return downloadAnime(mutateAsync);
   else {
