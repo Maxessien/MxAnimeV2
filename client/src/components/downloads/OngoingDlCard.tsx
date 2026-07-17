@@ -63,7 +63,7 @@ const OngoingDlCard = ({ anime, curr, status, total }: OngoingDl) => {
 
               <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
                 <span>
-                  {curr}MB / {total}MB
+                  {curr.toFixed(1)}MB / {total.toFixed(1)}MB
                 </span>
                 <span>{progress >= 100 ? "Finalizing" : "Downloading"}</span>
               </div>
