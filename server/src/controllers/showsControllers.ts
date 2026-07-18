@@ -91,7 +91,7 @@ const getDownloadStatus = async (req: Request, res: Response) =>
         .json({ message: "Task not found" });
 
     if (status.status === "completed") {
-      let episode = Episode.findOne({
+      let episode = await Episode.findOne({
         malId: status.epInfo.malId.toString(),
         eId: status.epInfo.episodeId,
         sId: status.epInfo.season,

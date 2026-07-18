@@ -49,7 +49,7 @@ const downloadTorrent = async (
   epInfo: Tasks["epInfo"],
   taskId: number,
   baseProg: number = 0,
-  maxProg: number = 45,
+  maxProg: number = 25,
 ) => {
   const res = await seedr.addMagnet(magnetUri);
   const accessTkn = seedr.token;
@@ -81,7 +81,7 @@ const compressTorrent = async (
   taskId: number,
   epInfo: Tasks["epInfo"],
   fileName?: string,
-  baseProg: number = 45,
+  baseProg: number = 25,
   maxProg: number = 100,
 ): Promise<void> => {
   console.log("compressTorrent", vid.id);
@@ -148,7 +148,7 @@ const compressTorrent = async (
             downloadTasks.set(taskId, {
               epInfo,
               status: "pending",
-              progress: percent * ((maxProg - baseProg) / 100) + baseProg,
+              progress: percent * ((maxProg - baseProg) / 100) + baseProg + 10,
             });
         })
         .on("end", () => {

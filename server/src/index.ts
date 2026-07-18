@@ -1,5 +1,4 @@
 import app from './configs/app.js';
-import { downloadTorrent } from './utils/media.js';
 import { normalizePort, onError, onListening } from './utils/serverInit.js';
 
 const port = normalizePort(process.env.PORT || "7860");
