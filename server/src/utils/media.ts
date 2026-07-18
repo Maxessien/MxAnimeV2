@@ -1,36 +1,34 @@
-import { UploadApiResponse } from "cloudinary";
+import { Upload } from "@aws-sdk/lib-storage";
+import { FfprobeData } from "@ts-ffmpeg/fluent-ffmpeg";
+import { parse } from "anitomy";
+import axios from "axios";
+import { randomUUID } from "crypto";
+import { createReadStream, createWriteStream, promises as fs } from "fs";
+import { _QueryFilter } from "mongoose";
+import os from "os";
+import path from "path";
 import { SeedrVideo } from "seedr";
 import {
   CLOUDFARE_APP_BUCKET,
-  CLOUDFARE_URL,
   cloudflareClient,
   downloadTasks,
   ffmpeg,
-  seedr,
+  seedr
 } from "../configs/config.js";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { randomUUID } from "crypto";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { FfprobeData } from "@ts-ffmpeg/fluent-ffmpeg";
-import { createMagnetUri, getTorrentioApi } from "./shows.js";
+import { Episode } from "../models/showModel.js";
 import { ThirdPartyMappings } from "../types/anizip.js";
+import { Tasks } from "../types/show.js";
 import {
   ParsedTorrentioStream,
   TorrentioResponse,
 } from "../types/torrentio.js";
-import axios from "axios";
-import { parse } from "anitomy";
-import { Upload } from "@aws-sdk/lib-storage";
-import { createReadStream, createWriteStream, promises as fs } from "fs";
-import path from "path";
-import os from "os";
-import { Tasks } from "../types/show.js";
-import { Episode } from "../models/showModel.js";
-import { _QueryFilter } from "mongoose";
+import { createMagnetUri, getTorrentioApi } from "./shows.js";
 
 const downloadTorrent = async (magnetUri: string) => {
   const res = await seedr.addMagnet(magnetUri);
   const vids = await seedr.getVideos();
+
+  console.log(res, vids)
 
   return (
     vids
@@ -260,10 +258,9 @@ const getAnimeTorrent = async (
 };
 
 export {
-  clnUpTorrent,
+  ALLOWED, clnUpTorrent,
   compressTorrent,
   downloadTorrent,
-  getAnimeTorrent,
-  ALLOWED,
-  QUALITY,
+  getAnimeTorrent, QUALITY
 };
+
