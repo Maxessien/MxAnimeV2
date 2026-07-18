@@ -48,68 +48,70 @@ async function downloadAnime(
     void
   >,
 ) {
-  console.log("first", downloadQueue);
   downloadQueue.isProcessing = true;
   const info = downloadQueue.pop();
 
   const { mal_id, episode } = info;
 
-  const {
-    data: { taskId, isCompressed, episode: ep },
-  } = await axios.get<{
-    taskId: number | string;
-    episode: DownloadStatus["episode"];
-    isCompressed: boolean;
-  }>(`${BACKEND_URL}/show/download`, {
-    params: {
-      mal_id,
-      eId: episode.ep,
-      sId: episode.season,
-      dl_quality: episode.quality,
-    },
-  });
+  try {
+    const {
+      data: { taskId, isCompressed, episode: ep },
+    } = await axios.get<{
+      taskId: number | string;
+      episode: DownloadStatus["episode"];
+      isCompressed: boolean;
+    }>(`${BACKEND_URL}/show/download`, {
+      params: {
+        mal_id,
+        eId: episode.ep,
+        sId: episode.season,
+        dl_quality: episode.quality,
+      },
+    });
 
-  let status: DownloadStatus | undefined =
-    isCompressed && ep
-      ? {
-          episode: ep,
-          status: {
-            progress: 100,
-            status: "completed",
-            epInfo: {
-              episodeId: Number(episode.ep),
-              malId: mal_id,
-              quality: episode.quality.toString(),
-              season: Number(episode.season),
+    let status: DownloadStatus | undefined =
+      isCompressed && ep
+        ? {
+            episode: ep,
+            status: {
+              progress: 100,
+              status: "completed",
+              epInfo: {
+                episodeId: Number(episode.ep),
+                malId: mal_id,
+                quality: episode.quality.toString(),
+                season: Number(episode.season),
+              },
             },
-          },
-        }
-      : undefined;
+          }
+        : undefined;
 
-  ongoingDownloadQueue.push({
-    anime: { image: info.image, title: `${info.title} - Episode ${episode.ep}` },
-    curr: 0,
-    total: 100,
-    status: status?.status ?? null,
-    id: taskId,
-  });
+    ongoingDownloadQueue.push({
+      anime: {
+        image: info.image,
+        title: `${info.title} - Episode ${episode.ep}`,
+      },
+      curr: 0,
+      total: 100,
+      status: status?.status ?? null,
+      id: taskId,
+    });
 
-  while (!status || status.status.status === "pending") {
-    const { data } = await axios.get<DownloadStatus>(
-      `${BACKEND_URL}/show/status/${taskId}`,
-    );
+    while (!status || status.status.status === "pending") {
+      const { data } = await axios.get<DownloadStatus>(
+        `${BACKEND_URL}/show/status/${taskId}`,
+      );
 
-    ongoingDownloadQueue.updateStatus(taskId, data.status);
+      ongoingDownloadQueue.updateStatus(taskId, data.status);
 
-    status = data;
+      status = data;
 
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-  }
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+    }
 
-  if (status.status.status === "completed" && status.episode) {
-    const safeTitle = info.title.replace(/[<>:"/\\|?*]/g, "_");
+    if (status.status.status === "completed" && status.episode) {
+      const safeTitle = info.title.replace(/[<>:"/\\|?*]/g, "_");
 
-    try {
       const path = await invoke<string>("dl_file", {
         url: status.episode.fileUrl,
         saveAs: `${safeTitle} - Episode ${episode.ep}.mkv`,
@@ -128,20 +130,22 @@ async function downloadAnime(
         },
         type: "downloads",
       });
-    } catch (err) {
-      console.log("Failed download", err);
-      toast.error(`${info.title} - Episode ${episode.ep} download failed`);
     }
-  }
 
-  if (status.status.status === "error")
-    toast.error(`${info.title} - Episode ${episode.ep} download failed`);
+    if (status.status.status === "error")
+      toast.error(`${info.title} - Episode ${episode.ep} download failed`);
 
-  ongoingDownloadQueue.removeById(taskId);
+    ongoingDownloadQueue.removeById(taskId);
 
-  if (downloadQueue.traverse().length > 0) return downloadAnime(mutateAsync);
-  else {
+    if (downloadQueue.traverse().length > 0) return downloadAnime(mutateAsync);
+    else {
+      downloadQueue.isProcessing = false;
+    }
+  } catch (err) {
+    console.log("Failed download", err);
     downloadQueue.isProcessing = false;
+    toast.error(`${info.title} - Episode ${episode.ep} download failed`);
+    return downloadAnime(mutateAsync);
   }
 }
 
