@@ -33,11 +33,12 @@ export default function Downloads() {
       current: number;
       total: number;
       task_id: string;
-    }>("dl_progress", ({ payload }) =>
+    }>("dl_progress", ({ payload }) =>{
       ongoingDownloadQueue.updateProg(payload.task_id, {
         curr: payload.current / (1024 * 1024),
         total: payload.total / (1024 * 1024),
-      }),
+      })
+    },
     ).then((fn) => (unlisten = fn));
 
     return () => {

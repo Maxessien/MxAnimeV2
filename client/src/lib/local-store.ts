@@ -87,7 +87,7 @@ async function downloadAnime(
       : undefined;
 
   ongoingDownloadQueue.push({
-    anime: { image: info.image, title: info.title },
+    anime: { image: info.image, title: `${info.title} - Episode ${episode.ep}` },
     curr: 0,
     total: 100,
     status: status?.status ?? null,

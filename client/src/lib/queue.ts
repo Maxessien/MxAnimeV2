@@ -50,19 +50,19 @@ class OngoingDlQueue extends Queue<OngoingDl> {
   }
 
   removeById(tId: string | number) {
-    let i = this.elements.findIndex(({ id }) => id === tId);
+    let i = this.elements.findIndex(({ id }) => id == tId);
     this.removeAt(i);
   }
 
   updateStatus(tid: string | number, val: OngoingDl["status"]) {
-    let i = this.elements.findIndex(({ id }) => id === tid);
+    let i = this.elements.findIndex(({ id }) => id == tid);
     if (i >= 0) this.elements[i] = { ...this.elements[i], status: val };
 
     this.dispatchEvent(new Event("status_update"));
   }
 
   updateProg(tid: string | number, val: Pick<OngoingDl, "curr" | "total">) {
-    let i = this.elements.findIndex(({ id }) => id === tid);
+    let i = this.elements.findIndex(({ id }) => id == tid);
     if (i >= 0) this.elements[i] = { ...this.elements[i], ...val };
 
     this.dispatchEvent(new Event("prog_update"));

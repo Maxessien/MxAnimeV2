@@ -116,7 +116,11 @@ pub async fn dl_file(app: tauri::AppHandle, url: String, save_as: String, task_i
         .app_data_dir()
         .map_err(|_| "Failed to get app data dir".to_string())?;
 
-    let path = app_dir.join(format!("downloads/{}", save_as));
+    let dl_path = app_dir.join("downloads");
+
+    let (_, dl_path_l) = check_path(dl_path).await?;
+
+    let path = dl_path_l.join(save_as);
 
     let mut f = File::create(path)
         .map_err(|_| "Failed to create file")
