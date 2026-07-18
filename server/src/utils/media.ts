@@ -148,7 +148,7 @@ const compressTorrent = async (
             downloadTasks.set(taskId, {
               epInfo,
               status: "pending",
-              progress: percent * ((maxProg - baseProg) / 100) + baseProg + 10,
+              progress: percent * ((maxProg - baseProg - 10) / 100) + baseProg + 10,
             });
         })
         .on("end", () => {

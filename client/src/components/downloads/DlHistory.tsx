@@ -44,7 +44,7 @@ const DlHistory = ({
               style={{ animationDelay: `${Math.min(i, 20) * 30}ms` }}
             >
               <Link
-                href={`/anime/${entry.mal_id}`}
+                href={`/downloads/${entry.mal_id}`}
                 className="relative aspect-3/4 overflow-hidden rounded-xl bg-muted shadow-sm block"
               >
                 {entry.image ? (
