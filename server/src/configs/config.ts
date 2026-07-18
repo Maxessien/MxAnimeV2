@@ -1,5 +1,5 @@
-import { config } from "dotenv";
-config()
+// import { config } from "dotenv";
+// config()
 
 import { S3Client } from "@aws-sdk/client-s3";
 import ffmpeg from "@ts-ffmpeg/fluent-ffmpeg";
@@ -75,4 +75,3 @@ export {
   seedr,
   uploader
 };
-

@@ -13,31 +13,67 @@ import {
   cloudflareClient,
   downloadTasks,
   ffmpeg,
-  seedr
+  seedr,
 } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
 import { ThirdPartyMappings } from "../types/anizip.js";
 import { Tasks } from "../types/show.js";
 import {
   ParsedTorrentioStream,
+  SeedrTransfer,
   TorrentioResponse,
 } from "../types/torrentio.js";
 import { createMagnetUri, getTorrentioApi } from "./shows.js";
 
-const downloadTorrent = async (magnetUri: string) => {
+const pollForProg = async (
+  torrId: string,
+  tkn: string,
+  pollUpdate: (prog: number) => void,
+) => {
+  const url = `https://seedr.cc/rest/transfer/${torrId}`;
+  let transfer: SeedrTransfer | undefined;
+
+  while (!transfer || transfer.progress < 101) {
+    const { data } = await axios.get<SeedrTransfer>(url, {
+      headers: { Authorization: `Bearer ${tkn}` },
+    });
+    pollUpdate(data.progress);
+    transfer = data;
+  }
+
+  return transfer;
+};
+
+const downloadTorrent = async (
+  magnetUri: string,
+  epInfo: Tasks["epInfo"],
+  taskId: number,
+  baseProg: number = 0,
+  maxProg: number = 45,
+) => {
   const res = await seedr.addMagnet(magnetUri);
+  const accessTkn = seedr.token;
+
+  if (!accessTkn) {
+    downloadTasks.set(taskId, { epInfo, progress: 0, status: "error" });
+    return null;
+  }
+
+  let tr = await pollForProg(
+    res.user_torrent_id.toString(),
+    accessTkn,
+    (prog) => {
+      downloadTasks.set(taskId, {
+        epInfo,
+        progress: prog * ((maxProg - baseProg) / 100) + baseProg,
+        status: "pending",
+      });
+    },
+  );
+
   const vids = await seedr.getVideos();
 
-  console.log(res, vids)
-
-  return (
-    vids
-      .flat()
-      .find(
-        ({ name }) =>
-          res.title.trim().toLowerCase() === name.trim().toLowerCase(),
-      ) ?? null
-  );
+  return vids.flat().find(({ fid }) => fid === tr.folder_created_id) ?? null;
 };
 
 const compressTorrent = async (
@@ -45,6 +81,8 @@ const compressTorrent = async (
   taskId: number,
   epInfo: Tasks["epInfo"],
   fileName?: string,
+  baseProg: number = 45,
+  maxProg: number = 100,
 ): Promise<void> => {
   console.log("compressTorrent", vid.id);
 
@@ -66,7 +104,7 @@ const compressTorrent = async (
       downloadTasks.set(taskId, {
         epInfo,
         status: "pending",
-        progress: 10,
+        progress: 10 * ((maxProg - baseProg) / 100) + baseProg,
       });
       resolve();
     });
@@ -75,7 +113,7 @@ const compressTorrent = async (
       downloadTasks.set(taskId, {
         epInfo,
         status: "error",
-        progress: 10,
+        progress: 10 * ((maxProg - baseProg) / 100) + baseProg,
       });
       reject(err);
     });
@@ -110,7 +148,7 @@ const compressTorrent = async (
             downloadTasks.set(taskId, {
               epInfo,
               status: "pending",
-              progress: (percent * 0.8) + 10,
+              progress: percent * ((maxProg - baseProg) / 100) + baseProg,
             });
         })
         .on("end", () => {
@@ -118,7 +156,7 @@ const compressTorrent = async (
           downloadTasks.set(taskId, {
             epInfo,
             status: "pending",
-            progress: 90,
+            progress: 90 * ((maxProg - baseProg) / 100) + baseProg,
           });
           resolve();
         })
@@ -149,7 +187,7 @@ const compressTorrent = async (
     downloadTasks.set(taskId, {
       epInfo,
       status: "pending",
-      progress: 95,
+      progress: 95 * ((maxProg - baseProg) / 100) + baseProg,
     });
 
     const uploadedFileUrl = `https://pub-991c552c64ed424ebd8971019038f0ad.r2.dev/${key}`;
@@ -176,16 +214,15 @@ const compressTorrent = async (
           key: key,
           bucket: CLOUDFARE_APP_BUCKET,
         },
-        fileSize: info.format.size
+        fileSize: info.format.size,
       },
     );
 
     downloadTasks.set(taskId, {
       epInfo,
       status: "completed",
-      progress: 100,
+      progress: 100 * ((maxProg - baseProg) / 100) + baseProg,
     });
-
   } catch (error) {
     console.error("Compression / Upload process failed:", error);
     downloadTasks.delete(taskId);
@@ -195,12 +232,27 @@ const compressTorrent = async (
     try {
       await fs.unlink(tempInpPath);
       await fs.unlink(tempOutpPath);
-      await clnUpTorrent(vid.id)
+      await clnUpTorrent(vid.id);
       console.log("Cleaned up temp file:", tempInpPath, tempOutpPath);
     } catch (cleanupErr) {
       // Temp file might not have been created if it failed early
     }
   }
+};
+
+const dlAndCompress = async (
+  taskId: number,
+  epInfo: Tasks["epInfo"],
+  magUri: string,
+) => {
+  const vid = await downloadTorrent(magUri, epInfo, taskId);
+
+  if (!vid) {
+    downloadTasks.set(taskId, { epInfo, progress: 0, status: "error" });
+    throw new Error("Failed to download torrent");
+  }
+
+  await compressTorrent(vid, taskId, epInfo);
 };
 
 const clnUpTorrent = async (id: string | number, maxRetries: number = 3) => {
@@ -258,9 +310,11 @@ const getAnimeTorrent = async (
 };
 
 export {
-  ALLOWED, clnUpTorrent,
+  ALLOWED,
+  clnUpTorrent,
   compressTorrent,
   downloadTorrent,
-  getAnimeTorrent, QUALITY
+  getAnimeTorrent,
+  dlAndCompress,
+  QUALITY,
 };
-

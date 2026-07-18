@@ -8,6 +8,7 @@ import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
 import {
   ALLOWED,
   compressTorrent,
+  dlAndCompress,
   downloadTorrent,
   getAnimeTorrent,
 } from "../utils/media.js";
@@ -51,13 +52,6 @@ const downloadEpisode = async (req: Request, res: Response) =>
         .status(SUCCESS.OK)
         .json({ taskId, episode: ep, isCompressed: true });
 
-    const vid = await downloadTorrent(ep?.magnetUri);
-
-    if (!vid)
-      return res
-        .status(CLIENT_ERROR.BAD_REQUEST)
-        .json({ message: "Failed to download torrent" });
-
     const epInfo = {
       episodeId: Number(eId),
       malId: Number(mal_id),
@@ -65,7 +59,7 @@ const downloadEpisode = async (req: Request, res: Response) =>
       season: Number(sId),
     };
 
-    void compressTorrent(vid, taskId, epInfo).catch((error) => {
+    void dlAndCompress(taskId, epInfo, ep.magnetUri).catch((error) => {
       console.error("Episode download task failed:", error);
     });
 
