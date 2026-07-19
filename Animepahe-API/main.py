@@ -43,7 +43,11 @@ class AnimePahe:
     async def search(self, query: str):
         url = f"{self.base}/api?m=search&q={query}"
         r = await self.get(url)
-        data = r.json()
+        try:
+            data = r.json()
+        except Exception as e:
+            print(f"[JSON ERROR] {e}\nResponse: {r.text[:500]}")
+            raise
         results = []
         for a in data.get("data", []):
             results.append({
@@ -64,8 +68,12 @@ class AnimePahe:
         if not meta:
             raise Exception("Could not find session ID in meta tag")
         temp_id = meta["content"].split("/")[-1]
-
-        first_page_json = (await self.get(f"{self.base}/api?m=release&id={temp_id}&sort=episode_asc&page=1")).json()
+        r = await self.get(f"{self.base}/api?m=release&id={temp_id}&sort=episode_asc&page=1")
+        try:
+            first_page_json = r.json()
+        except Exception as e:
+            print(f"[JSON ERROR] {e}\nResponse: {r.text[:500]}")
+            raise
         episodes = first_page_json.get("data", [])
         last_page = first_page_json.get("last_page", 1)
 
