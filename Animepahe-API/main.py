@@ -224,7 +224,7 @@ async def api_sources(anime_session: str, episode_session: str):
 
 
 @app.get("/sources/mal")
-async def api_sources(q: str, episode_num: str):
+async def api_sources_mal(q: str, episode_num: str):
     try:
         search = await pahe.search(q)
         anime_session = search.pop(0)["session"]
