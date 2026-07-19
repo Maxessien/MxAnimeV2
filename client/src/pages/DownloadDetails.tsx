@@ -1,3 +1,4 @@
+import AnimeVidPlayer from "@/components/AnimeVidPlayer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -9,12 +10,15 @@ import {
 } from "@/components/ui/card";
 import { useJson } from "@/hooks/use-json";
 import { AnimeSummary } from "@/lib/local-store";
+import { useState } from "react";
 import { FaPlay } from "react-icons/fa";
 import { Link, useRoute } from "wouter";
 
 const DownloadDetails = () => {
   const [, params] = useRoute("/downloads/:id");
   const id = params?.id || "";
+
+  const [vidPlayer, setVidPlayer] = useState<{active: boolean, vids: AnimeSummary[]}>({active: false, vids: []})
 
   const { json } = useJson<AnimeSummary>({
     type: "downloads",
@@ -26,6 +30,11 @@ const DownloadDetails = () => {
   //   const handleRemove = (entry: AnimeSummary) => {
   //     remove.mutate((list) => list.filter((v) => !(v.mal_id === entry.mal_id && v.episode.ep === entry.episode.ep && v.episode.season === entry.episode.season)));
   //   };
+
+  if (vidPlayer.active && vidPlayer.vids.length > 0) {
+    return <AnimeVidPlayer items={vidPlayer.vids} />
+  }
+
 
   if (eps.length === 0)
     return (
@@ -111,10 +120,10 @@ const DownloadDetails = () => {
                 )}
               </div>
 
-              <Link
-                href={`/play/${entry.mal_id}`}
+              <button
+              onClick={()=> setVidPlayer({active: true, vids: [entry]})}
                 className="rounded-full hover:bg-primary/90 transition-all p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
-              ><FaPlay /></Link>
+              ><FaPlay /></button>
             </div>
           </Card>
         ))}
