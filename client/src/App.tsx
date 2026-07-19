@@ -16,7 +16,6 @@ import Settings from '@/pages/Settings';
 import NotFound from '@/pages/not-found';
 import { ToastContainer } from 'react-toastify';
 import DownloadDetails from './pages/DownloadDetails';
-import Play from './pages/Play';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,7 +39,6 @@ function Router() {
         <Route path="/history" component={History} />
         <Route path="/downloads" component={Downloads} />
         <Route path="/downloads/:id" component={DownloadDetails} />
-        <Route path="/play/:id" component={Play} />
         <Route path="/settings" component={Settings} />
         <Route component={NotFound} />
       </Switch>

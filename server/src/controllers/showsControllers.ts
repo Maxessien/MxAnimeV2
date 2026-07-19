@@ -146,6 +146,11 @@ const addEpisode = (req: Request, res: Response) =>
       eId.toString(),
     );
 
+    if (!filteredQuality || filteredQuality.length === 0)
+      return res
+        .status(CLIENT_ERROR.NOT_FOUND)
+        .json({ message: "Torrents not found" });
+
     const eps = await Episode.insertMany(
       filteredQuality.map((v) => ({
         eId: eId.toString(),

@@ -72,7 +72,7 @@ export default function AnimeDetail() {
     ? Object.entries(episodesData.data.episodes).map((v) => ({
         ...v[1],
         hasAired: Boolean(
-          v[1].airDate && new Date(v[1].airDate).getTime() < Date.now(),
+          v[1].airDateUtc && new Date(v[1].airDateUtc).getTime() < Date.now(),
         ),
       }))
     : [];

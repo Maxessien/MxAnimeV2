@@ -312,9 +312,7 @@ const getAnimeTorrent = async (
 export {
   ALLOWED,
   clnUpTorrent,
-  compressTorrent,
-  downloadTorrent,
-  getAnimeTorrent,
-  dlAndCompress,
-  QUALITY,
+  compressTorrent, dlAndCompress, downloadTorrent,
+  getAnimeTorrent, QUALITY
 };
+

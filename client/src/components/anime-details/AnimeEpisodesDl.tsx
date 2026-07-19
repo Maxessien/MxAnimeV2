@@ -42,7 +42,7 @@ export function AnimeEpisodesDl({
   });
 
   return (
-    <div className="flex justify-center items-center backdrop-blur-lg fixed top-0 left-0 w-screen h-screen">
+    <div className="flex justify-center items-center backdrop-blur-3xl z-99999 fixed top-0 left-0 w-screen h-screen">
       <div className="bg-muted/30 p-6 max-w-140 rounded-2xl border">
       <div className="flex justify-end items-center">
         <button onClick={closeFn} className="text-2xl font-medium"><HiX /></button>

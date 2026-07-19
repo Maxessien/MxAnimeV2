@@ -98,7 +98,7 @@ pub async fn get_json_file(app: AppHandle, sub_path: String) -> Result<String, S
 }
 
 #[tauri::command]
-pub async fn dl_file(app: tauri::AppHandle, url: String, save_as: String, task_id: String) -> Result<(), String> {
+pub async fn dl_file(app: tauri::AppHandle, url: String, save_as: String, task_id: String) -> Result<PathBuf, String> {
     let cl = Client::new();
 
     let res = cl
@@ -122,7 +122,7 @@ pub async fn dl_file(app: tauri::AppHandle, url: String, save_as: String, task_i
 
     let path = dl_path_l.join(save_as);
 
-    let mut f = File::create(path)
+    let mut f = File::create(path.clone())
         .map_err(|_| "Failed to create file")
         .await?;
 
@@ -153,5 +153,5 @@ pub async fn dl_file(app: tauri::AppHandle, url: String, save_as: String, task_i
 
     let _ = f.flush().await;
 
-    Ok(())
+    Ok(path)
 }

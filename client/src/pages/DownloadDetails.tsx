@@ -84,7 +84,7 @@ const DownloadDetails = () => {
       )}
 
       {/* Episodes list (compact) */}
-      <div className="space-y-4">
+      <div className="space-y-4 max-w-160 mx-auto">
         {eps.map((entry) => (
           <Card
             key={`${entry.mal_id}-${entry.episode.ep}-${entry.episode.season}`}
