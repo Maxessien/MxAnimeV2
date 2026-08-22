@@ -1,4 +1,5 @@
 import { AnimeSummary } from '@/lib/local-store';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 type Props = {
@@ -101,7 +102,7 @@ export default function AnimeVidPlayer({ items, initialIndex = 0, className = ''
   return (
     <div className={`space-y-4 ${className}`}>
       <div className="bg-black rounded-md overflow-hidden">
-        <video ref={videoRef} className="w-full h-64 md:h-96 bg-black" controls={false} />
+        <video src={convertFileSrc(items?.[0]?.episode?.path)} ref={videoRef} className="w-full h-64 md:h-96 bg-black" controls={false} />
       </div>
 
       <div className="flex items-center gap-3">
