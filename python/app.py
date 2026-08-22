@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-from pikpakapi import PikPakApi, DownloadStatus
+from pikpakapi import PikPakApi, DownloadStatus, PikpakException
 from os import environ
 from dotenv import load_dotenv
 import asyncio
@@ -18,23 +18,35 @@ asyncio.run(pikpak.login())
 
 @app.route("/task", methods=["POST"])
 async def add_task():
-    magUri = dict(request.get_json()).get("magUri")
-    r = await pikpak.offline_download(file_url=magUri)
+    try:
+        magUri = dict(request.get_json()).get("magUri")
+        r = await pikpak.offline_download(file_url=magUri)
 
-    return jsonify(r.get("task")), 201
+        return jsonify(r.get("task")), 201
+    except PikpakException as err:
+        return jsonify(err), 500
+
 
 @app.route("/status", methods=["GET"])
 async def get_status():
-    (file_id, task_id) = (request.args.get("file_id"), request.args.get("task_id"))
+    try:
+        (file_id, task_id) = (request.args.get("file_id"), request.args.get("task_id"))
 
-    st = await pikpak.get_task_status(task_id, file_id)
+        st = await pikpak.get_task_status(task_id, file_id)
 
-    info = None
+        info = None
 
-    if st == DownloadStatus.done:
-        info = await pikpak.get_download_url(file_id)
+        if st == DownloadStatus.done:
+            info = await pikpak.get_download_url(file_id)
 
-    return jsonify({"status": str(st).replace("DownloadStatus.", ""), "info": info})
+        return jsonify({"status": str(st).replace("DownloadStatus.", ""), "info": info})
+    except PikpakException as err:
+        return jsonify(err), 500
+
 
 if __name__ == "__main__":
-    app.run("0.0.0.0", int(environ.get("PORT") or "5000"), int(environ.get("PORT") or 5000) > 0)
+    app.run(
+        "0.0.0.0",
+        int(environ.get("PORT") or "5000"),
+        int(environ.get("PORT") or 5000) > 0,
+    )
