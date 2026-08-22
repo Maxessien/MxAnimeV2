@@ -47,6 +47,7 @@ const pollForProg = async (
         params: { file_id: fileId, task_id: taskId },
       },
     );
+    console.log(data)
     pollUpdate(prog);
     transfer = data;
 
