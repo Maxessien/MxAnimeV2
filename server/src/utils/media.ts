@@ -68,8 +68,29 @@ const downloadTorrent = async (
   baseProg: number = 0,
   maxProg: number = 25,
 ) => {
-  const { data } = await axios.post<PikPakTaskResponse>(`${PYTHON_SERVER_URL}/task`, {magUri: magnetUri})
-
+  // const { data } = await axios.post<PikPakTaskResponse>(`${PYTHON_SERVER_URL}/task`, {magUri: magnetUri})
+  const data = {
+  callback: '',
+  created_time: '2026-08-23T05:08:46.886+08:00',
+  file_id: 'VP-fIUvMpMQjt_gRbkBAN-vTo2',
+  file_name: '[SubsPlease] Seihantai na Kimi to Boku - 16 (480p) [A7750FD7].mkv',
+  file_size: '390979885',
+  icon_link: '',
+  id: 'VP-fIUuapMQjt_gRbkBAN-vRo2',
+  kind: 'drive#task',
+  message: 'Saving',
+  name: '[SubsPlease] Seihantai na Kimi to Boku - 16 (480p) [A7750FD7].mkv',
+  params: { predict_speed: '73300775185', predict_type: '3' },
+  phase: 'PHASE_TYPE_RUNNING',
+  progress: 0,
+  space: '',
+  status_size: 1,
+  statuses: [],
+  third_task_id: '',
+  type: 'offline',
+  updated_time: '2026-08-23T05:08:46.886+08:00',
+  user_id: 'ajkiHm3BXtONwUyG'
+}
     console.log(data)
   let tr = await pollForProg(
     data.file_id,
