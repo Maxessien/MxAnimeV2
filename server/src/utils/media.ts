@@ -20,26 +20,42 @@ import { ThirdPartyMappings } from "../types/anizip.js";
 import { Tasks } from "../types/show.js";
 import {
   ParsedTorrentioStream,
+  PikPakMediaLink,
+  PikPakResponse,
+  PikPakTaskResponse,
   SeedrTransfer,
   TorrentioResponse,
 } from "../types/torrentio.js";
 import { createMagnetUri, getTorrentioApi } from "./shows.js";
 
+const PYTHON_SERVER_URL = process.env.PYTHON_SERVER_URL;
+
 const pollForProg = async (
-  torrId: string,
-  tkn: string,
+  fileId: string,
+  taskId: string,
   pollUpdate: (prog: number) => void,
 ) => {
-  const url = `https://seedr.cc/rest/transfer/${torrId}`;
-  let transfer: SeedrTransfer | undefined;
+  let transfer: PikPakResponse | undefined;
 
-  while (!transfer || transfer.progress < 101) {
-    const { data } = await axios.get<SeedrTransfer>(url, {
-      headers: { Authorization: `Bearer ${tkn}` },
-    });
-    pollUpdate(data.progress);
+  let prog = 0;
+  let progInc = 21;
+
+  while (!transfer || transfer.status !== "done") {
+    const { data } = await axios.get<PikPakResponse>(
+      `${PYTHON_SERVER_URL}/status`,
+      {
+        params: { file_id: fileId, task_id: taskId },
+      },
+    );
+    pollUpdate(prog);
     transfer = data;
+
+    if ((prog + progInc) < 99) prog += progInc;
+
+    if (progInc > 1) progInc -= 5;
   }
+
+  pollUpdate(100)
 
   return transfer;
 };
@@ -51,17 +67,11 @@ const downloadTorrent = async (
   baseProg: number = 0,
   maxProg: number = 25,
 ) => {
-  const res = await seedr.addMagnet(magnetUri);
-  const accessTkn = seedr.token;
-
-  if (!accessTkn) {
-    downloadTasks.set(taskId, { epInfo, progress: 0, status: "error" });
-    return null;
-  }
+  const { data } = await axios.post<PikPakTaskResponse>(`${PYTHON_SERVER_URL}/task`, {magUri: magnetUri})
 
   let tr = await pollForProg(
-    res.user_torrent_id.toString(),
-    accessTkn,
+    data.file_id,
+    data.id,
     (prog) => {
       downloadTasks.set(taskId, {
         epInfo,
@@ -71,22 +81,19 @@ const downloadTorrent = async (
     },
   );
 
-  const vids = await seedr.getVideos();
-
-  return vids.flat().find(({ fid }) => fid === tr.folder_created_id) ?? null;
+  return tr.info
 };
 
 const compressTorrent = async (
-  vid: SeedrVideo,
+  vid: PikPakMediaLink,
   taskId: number,
   epInfo: Tasks["epInfo"],
   fileName?: string,
   baseProg: number = 25,
   maxProg: number = 100,
 ): Promise<void> => {
-  console.log("compressTorrent", vid.id);
+  console.log("compressTorrent", vid);
 
-  const file = await seedr.getFile(vid.id);
   const key = `videos/${fileName ?? randomUUID()}.mkv`;
 
   // Create a temporary local path to store the processed video
@@ -94,7 +101,7 @@ const compressTorrent = async (
   const tempOutpPath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
 
   // Download the input file to the temporary input path
-  const response = await axios.get(file.url, { responseType: "stream" });
+  const response = await axios.get(vid.url, { responseType: "stream" });
 
   await new Promise<void>((resolve, reject) => {
     const writer = createWriteStream(tempInpPath);
@@ -148,7 +155,8 @@ const compressTorrent = async (
             downloadTasks.set(taskId, {
               epInfo,
               status: "pending",
-              progress: percent * ((maxProg - baseProg - 10) / 100) + baseProg + 10,
+              progress:
+                percent * ((maxProg - baseProg - 10) / 100) + baseProg + 10,
             });
         })
         .on("end", () => {
@@ -232,7 +240,7 @@ const compressTorrent = async (
     try {
       await fs.unlink(tempInpPath);
       await fs.unlink(tempOutpPath);
-      await clnUpTorrent(vid.id);
+      // await clnUpTorrent(vid.id);
       console.log("Cleaned up temp file:", tempInpPath, tempOutpPath);
     } catch (cleanupErr) {
       // Temp file might not have been created if it failed early
@@ -252,7 +260,7 @@ const dlAndCompress = async (
     throw new Error("Failed to download torrent");
   }
 
-  await compressTorrent(vid, taskId, epInfo);
+  await compressTorrent(vid?.[0], taskId, epInfo);
 };
 
 const clnUpTorrent = async (id: string | number, maxRetries: number = 3) => {
@@ -312,7 +320,9 @@ const getAnimeTorrent = async (
 export {
   ALLOWED,
   clnUpTorrent,
-  compressTorrent, dlAndCompress, downloadTorrent,
-  getAnimeTorrent, QUALITY
+  compressTorrent,
+  dlAndCompress,
+  downloadTorrent,
+  getAnimeTorrent,
+  QUALITY,
 };
-

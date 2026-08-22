@@ -2,7 +2,10 @@ from flask import Flask, request, jsonify
 from pikpakapi import PikPakApi, DownloadStatus, PikpakException
 from os import environ
 from dotenv import load_dotenv
+from types.types import PikPakFileInfo
+from typing import Union
 import asyncio
+from utils.util import parse_pikpak_info
 
 load_dotenv()
 
@@ -34,12 +37,21 @@ async def get_status():
 
         st = await pikpak.get_task_status(task_id, file_id)
 
-        info = None
+        info: Union[PikPakFileInfo, None] = None
 
         if st == DownloadStatus.done:
             info = await pikpak.get_download_url(file_id)
+        elif st == DownloadStatus.error:
+            return jsonify("Download failed"), 500
+        elif st == DownloadStatus.not_found:
+            return jsonify("Download not found"), 404
 
-        return jsonify({"status": str(st).replace("DownloadStatus.", ""), "info": info})
+        return jsonify(
+            {
+                "status": str(st).replace("DownloadStatus.", ""),
+                "info": parse_pikpak_info(info) if info else None,
+            }
+        )
     except PikpakException as err:
         return jsonify(err), 500
 

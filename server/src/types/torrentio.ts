@@ -64,3 +64,45 @@ export interface SeedrTransfer {
   parent: number;
   timestamp: string; // ISO / UTC Date string format
 }
+
+export interface PikPakMediaLink {
+  url: string;
+  token: string;
+  expire: string; // ISO Date String
+  type: string;
+  fallbacks: any[];
+  mirrors: any[];
+}
+
+export interface PikPakResponse {
+  info: PikPakMediaLink[];
+  status: string;
+}
+
+export interface PikPakTaskParams {
+  predict_speed: string;
+  predict_type: string;
+}
+
+export interface PikPakTaskResponse {
+  callback: string;
+  created_time: string; // ISO 8601 Date String
+  file_id: string;
+  file_name: string;
+  file_size: string; // Kept as string to match payload type
+  icon_link: string;
+  id: string;
+  kind: string;
+  message: string;
+  name: string;
+  params: PikPakTaskParams;
+  phase: 'PHASE_TYPE_RUNNING' | 'PHASE_TYPE_COMPLETE' | 'PHASE_TYPE_ERROR' | string; // Strong typed phase
+  progress: number;
+  space: string;
+  status_size: number;
+  statuses: any[]; // Adjust type if statuses items contain specific structural properties
+  third_task_id: string;
+  type: string;
+  updated_time: string; // ISO 8601 Date String
+  user_id: string;
+}
