@@ -70,6 +70,7 @@ const downloadTorrent = async (
 ) => {
   const { data } = await axios.post<PikPakTaskResponse>(`${PYTHON_SERVER_URL}/task`, {magUri: magnetUri})
 
+    console.log(data)
   let tr = await pollForProg(
     data.file_id,
     data.id,
