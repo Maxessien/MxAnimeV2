@@ -39,6 +39,8 @@ const pollForProg = async (
 
   let prog = 0;
   let progInc = 21;
+  
+    console.log(fileId, taskId)
 
   while (!transfer || transfer.status !== "done") {
     const { data } = await axios.get<PikPakResponse>(
@@ -47,7 +49,6 @@ const pollForProg = async (
         params: { file_id: fileId, task_id: taskId },
       },
     );
-    console.log(data)
     pollUpdate(prog);
     transfer = data;
 
