@@ -35,6 +35,8 @@ async def get_status():
     try:
         (file_id, task_id) = (request.args.get("file_id"), request.args.get("task_id"))
 
+        if not file_id or task_id: return jsonify("id missing"), 500
+
         st = await pikpak.get_task_status(task_id, file_id)
 
         info: Union[PikPakFileInfo, None] = None
