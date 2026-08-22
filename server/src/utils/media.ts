@@ -125,7 +125,16 @@ const compressTorrent = async (
   const tempOutpPath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
 
   // Download the input file to the temporary input path
-  const response = await axios.get(vid.url, { responseType: "stream" });
+  const response = await axios.get(vid.url, { responseType: "stream", onDownloadProgress: (e) => {  
+    if (e.total) {  
+      const frac = e.loaded / e.total; // 0..1  
+      downloadTasks.set(taskId, {  
+        epInfo,  
+        status: "pending",  
+        progress: frac * 10 * ((maxProg - baseProg) / 100) + baseProg,  
+      });  
+    }  
+  },  });
 
   await new Promise<void>((resolve, reject) => {
     const writer = createWriteStream(tempInpPath);
