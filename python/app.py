@@ -2,7 +2,7 @@ from flask import Flask, request, jsonify
 from pikpakapi import PikPakApi, DownloadStatus, PikpakException
 from os import environ
 from dotenv import load_dotenv
-from types.types import PikPakFileInfo
+from models.types import PikPakFileInfo
 from typing import Union
 import asyncio
 from utils.util import parse_pikpak_info
