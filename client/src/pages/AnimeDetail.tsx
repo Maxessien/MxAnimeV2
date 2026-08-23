@@ -113,8 +113,11 @@ export default function AnimeDetail() {
   if (!anime) return null;
 
   return (
-    <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
+<div className="relative w-full">
+	<div className="absolute top-5 left-3 z-99">
       <BackBtn />
+	</div>
+    <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
       {dlPopup.active && dlPopup.info && (
         <AnimeEpisodesDl
           closeFn={() => setDlPopup({ active: false, info: null })}
@@ -145,5 +148,6 @@ export default function AnimeDetail() {
         </div>
       </div>
     </div>
+</div>
   );
 }

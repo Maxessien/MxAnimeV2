@@ -4,9 +4,7 @@ import { useLocation } from "wouter";
 const BackBtn = () => {
   const [_, setLocation] = useLocation();
 
-  // Wouter uses relative path or string paths. 
-  // If '-1' doesn't work natively in your setup, use: window.history.back()
-  const handleBack = () => setLocation("-1");
+  const handleBack = () => window.history.back();
 
   return (
     <div className="flex w-full justify-start py-3">

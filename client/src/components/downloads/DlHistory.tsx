@@ -60,7 +60,7 @@ const DlHistory = ({
                   </div>
                 )}
               </Link>
-              <button
+              {/* <button
                 onClick={() =>
                   remove.mutateAsync((lt) =>
                     lt.filter((v) => v.mal_id !== entry.mal_id),
@@ -70,7 +70,7 @@ const DlHistory = ({
                 className="absolute top-2 right-2 p-1.5 rounded-full bg-background/80 backdrop-blur-md text-muted-foreground hover:text-destructive shadow-sm border opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <X size={14} />
-              </button>
+              </button> */}
               <div>
                 <Link href={`/anime/${entry.mal_id}`}>
                   <h3 className="font-semibold text-sm leading-tight line-clamp-2 hover:text-primary transition-colors">

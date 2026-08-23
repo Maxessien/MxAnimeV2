@@ -23,6 +23,7 @@ export default function Downloads() {
 
   useEffect(() => {
     const increment = () => triggerRender((prev) => prev + 1);
+    
     ongoingDownloadQueue.addEventListener("modify", increment);
     ongoingDownloadQueue.addEventListener("status_update", increment);
     ongoingDownloadQueue.addEventListener("prog_update", increment);
@@ -57,18 +58,15 @@ export default function Downloads() {
             <DownloadIcon size={32} className="text-primary" />
             Downloads
           </h1>
-          <p className="text-muted-foreground mt-2">
-            Titles you've saved on this device for quick offline reference.
-          </p>
         </div>
-        {tab === "downloads" && json.downloads.length > 0 && (
+        {/* {tab === "downloads" && json.downloads.length > 0 && (
           <button
             onClick={() => clear.mutateAsync()}
             className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-muted hover:bg-destructive hover:text-destructive-foreground transition-colors"
           >
             <Trash2 size={16} /> Clear All
           </button>
-        )}
+        )} */}
       </div>
 
       <div className="border-b border-border">
