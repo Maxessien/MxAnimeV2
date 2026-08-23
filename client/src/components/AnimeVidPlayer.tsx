@@ -52,7 +52,7 @@ export default function AnimeVidPlayer({ items, initialIndex = 0, className = ''
     const v = videoRef.current;
     if (!v) return;
     if (src) {
-      v.src = src;
+      v.src = convertFileSrc(src);
       v.load();
       v.play().catch(() => {});
     } else {
@@ -111,11 +111,11 @@ export default function AnimeVidPlayer({ items, initialIndex = 0, className = ''
         <div className="lg:col-span-2 space-y-4">
           
           {/* Responsive Video Canvas with modern 16:9 Aspect Ratio aspect-video fallback */}
-          <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-black shadow-lg">
+          <div className="aspect-video w-full overflow-hidden rounded-xl bg-black shadow-lg">
             <video 
               src={convertFileSrc(src || "")} 
               ref={videoRef} 
-              className="absolute top-0 left-0 w-full h-full object-contain bg-black" 
+              className="w-full h-full object-contain" 
               controls={false} 
             />
           </div>

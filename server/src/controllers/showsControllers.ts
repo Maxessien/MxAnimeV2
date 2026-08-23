@@ -5,14 +5,9 @@ import { downloadTasks } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
 import { AniZipMetadata } from "../types/anizip.js";
 import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
-import {
-  ALLOWED,
-  compressTorrent,
-  dlAndCompress,
-  downloadTorrent,
-  getAnimeTorrent,
-} from "../utils/media.js";
+import { ALLOWED, dlAndCompress, getAnimeTorrent } from "../utils/media.js";
 import { handler } from "../utils/shows.js";
+import { ParsedTorrentioStream } from "../types/torrentio.js";
 
 const downloadEpisode = async (req: Request, res: Response) =>
   handler(res, async () => {
@@ -111,7 +106,7 @@ const getDownloadStatus = async (req: Request, res: Response) =>
 
 const addEpisode = (req: Request, res: Response) =>
   handler(res, async () => {
-    const { mal_id, eId, sId } = req.body;
+    const { mal_id, eId, sId, quality, mag_uri } = req.body;
 
     if (!mal_id || !eId || !sId)
       return res
@@ -122,6 +117,7 @@ const addEpisode = (req: Request, res: Response) =>
       malId: mal_id.toString(),
       eId: eId.toString(),
       sId: sId.toString(),
+      ...(mag_uri ? { magnetUri: mag_uri } : {}),
     })
       .select(["malId", "quality", "eId", "sId"])
       .lean();
@@ -130,30 +126,39 @@ const addEpisode = (req: Request, res: Response) =>
       return res.status(SUCCESS.OK).json(hasIdx);
     }
 
-    const {
-      data: { mappings },
-    } = await axios.get<AniZipMetadata>(
-      `https://api.ani.zip/mappings?mal_id=${mal_id}`,
-    );
+    let anime: (Pick<ParsedTorrentioStream, "magUri"> & {
+      info: { video: { resolution: string | undefined } } | null | undefined;
+    })[] = [];
 
-    if (!mappings.imdb_id && !mappings.themoviedb_id)
-      return res
-        .status(CLIENT_ERROR.BAD_REQUEST)
-        .json({ message: "ID not found" });
+    if (!quality || !mag_uri) {
+      const {
+        data: { mappings },
+      } = await axios.get<AniZipMetadata>(
+        `https://api.ani.zip/mappings?mal_id=${mal_id}`,
+      );
 
-    const { filteredQuality } = await getAnimeTorrent(
-      mappings,
-      sId.toString(),
-      eId.toString(),
-    );
+      if (!mappings.imdb_id && !mappings.themoviedb_id)
+        return res
+          .status(CLIENT_ERROR.BAD_REQUEST)
+          .json({ message: "ID not found" });
 
-    if (!filteredQuality || filteredQuality.length === 0)
-      return res
-        .status(CLIENT_ERROR.NOT_FOUND)
-        .json({ message: "Torrents not found" });
+      const { filteredQuality } = await getAnimeTorrent(
+        mappings,
+        sId.toString(),
+        eId.toString(),
+      );
+
+      if (!filteredQuality || filteredQuality.length === 0)
+        return res
+          .status(CLIENT_ERROR.NOT_FOUND)
+          .json({ message: "Torrents not found" });
+
+      anime = filteredQuality;
+    } else
+      anime = [{ magUri: mag_uri, info: { video: { resolution: quality } } }];
 
     const eps = await Episode.insertMany(
-      filteredQuality.map((v) => ({
+      anime.map((v) => ({
         eId: eId.toString(),
         sId: sId.toString(),
         isCompressed: false,
