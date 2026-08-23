@@ -6,6 +6,7 @@ import {
   AnimeTrailer,
 } from "@/components/anime-details";
 import { AnimeEpisodesDl } from "@/components/anime-details/AnimeEpisodesDl";
+import BackBtn from "@/components/layout/BackBtn";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnimeEpisodes, useAnimeFull } from "@/hooks/use-jikan";
 import { useJson } from "@/hooks/use-json";
@@ -113,6 +114,7 @@ export default function AnimeDetail() {
 
   return (
     <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
+      <BackBtn />
       {dlPopup.active && dlPopup.info && (
         <AnimeEpisodesDl
           closeFn={() => setDlPopup({ active: false, info: null })}

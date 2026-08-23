@@ -19,7 +19,7 @@ export function AnimeDetailHero({
   epIds,
 }: AnimeDetailHeroProps) {
   const coverImage =
-    anime.images?.webp?.large_image_url || anime.images?.jpg?.large_image_url;
+    anime.images?.webp?.large_image_url || anime.images?.jpg?.large_image_url || "";
 
   const { add, json } = useJson<AnimeSummary>({
     type: "downloads",
@@ -89,11 +89,11 @@ export function AnimeDetailHero({
               </Badge>
             )}
             {anime.type && <Badge variant="outline">{anime.type}</Badge>}
-            {anime.rating && (
+            {/* {anime.rating && (
               <Badge variant="outline" className="opacity-70">
                 {anime.rating}
               </Badge>
-            )}
+            )} */}
           </div>
 
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-extrabold tracking-tight mb-2 text-foreground">

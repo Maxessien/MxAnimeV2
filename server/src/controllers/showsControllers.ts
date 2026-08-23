@@ -61,6 +61,7 @@ const downloadEpisode = async (req: Request, res: Response) =>
 
     void dlAndCompress(taskId, epInfo, ep.magnetUri).catch((error) => {
       console.error("Episode download task failed:", error);
+      downloadTasks.set(taskId, { status: "error", progress: 0, epInfo });
     });
 
     downloadTasks.set(taskId, {

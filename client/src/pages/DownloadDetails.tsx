@@ -1,4 +1,5 @@
 import AnimeVidPlayer from "@/components/AnimeVidPlayer";
+import BackBtn from "@/components/layout/BackBtn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -39,6 +40,7 @@ const DownloadDetails = () => {
   if (eps.length === 0)
     return (
       <div className="py-12">
+        <BackBtn />
         <Card className="p-6">
           <CardHeader>
             <CardTitle>No downloads found</CardTitle>
@@ -59,6 +61,7 @@ const DownloadDetails = () => {
 
   return (
     <div className="space-y-6 py-8">
+      <BackBtn />
       {/* Banner from first entry */}
       {first && (
         <div className="relative -mx-4 md:-mx-8 mb-8">

@@ -274,13 +274,13 @@ const dlAndCompress = async (
   await compressTorrent(vid?.[0], taskId, epInfo);
 };
 
-const clnUpTorrent = async (id: string | number, maxRetries: number = 3) => {
-  for (let i = 0; i < maxRetries; i++) {
-    const contents = await seedr.deleteFile(id);
+// const clnUpTorrent = async (id: string | number, maxRetries: number = 3) => {
+//   for (let i = 0; i < maxRetries; i++) {
+//     const contents = await seedr.deleteFile(id);
 
-    if (contents.result && contents.success) return contents;
-  }
-};
+//     if (contents.result && contents.success) return contents;
+//   }
+// };
 
 const QUALITY: Record<string, boolean> = {
   1080: false,
@@ -330,7 +330,6 @@ const getAnimeTorrent = async (
 
 export {
   ALLOWED,
-  clnUpTorrent,
   compressTorrent,
   dlAndCompress,
   downloadTorrent,
