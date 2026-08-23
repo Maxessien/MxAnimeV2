@@ -19,7 +19,9 @@ export function AnimeDetailHero({
   epIds,
 }: AnimeDetailHeroProps) {
   const coverImage =
-    anime.images?.webp?.large_image_url || anime.images?.jpg?.large_image_url || "";
+    anime.images?.webp?.large_image_url ||
+    anime.images?.jpg?.large_image_url ||
+    "";
 
   const { add, json } = useJson<AnimeSummary>({
     type: "downloads",
@@ -38,6 +40,8 @@ export function AnimeDetailHero({
           episode: {
             ep: id,
             path: "",
+            quality: 0,
+            season: 1,
           },
           score: anime.score,
         });
@@ -142,9 +146,7 @@ export function AnimeDetailHero({
             disabled={
               isPending ||
               isDownloaded ||
-              downloadQueue
-                .traverse()
-                .some((v) => v.mal_id === anime.mal_id)
+              downloadQueue.traverse().some((v) => v.mal_id === anime.mal_id)
             }
           >
             {isPending ? (
