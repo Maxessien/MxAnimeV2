@@ -35,22 +35,46 @@ async def get_status():
     try:
         (file_id, task_id) = (request.args.get("file_id"), request.args.get("task_id"))
 
-        if not file_id or not task_id: return jsonify("id missing"), 500
+        if not task_id:
+            return jsonify("id missing"), 500
 
-        st = await pikpak.get_task_status(task_id, file_id)
+        # if file_id:
+        #     st = await pikpak.get_task_status(task_id, file_id)
 
-        info: Union[PikPakFileInfo, None] = None
+        #     info: Union[PikPakFileInfo, None] = None
 
-        if st == DownloadStatus.done:
-            info = await pikpak.get_download_url(file_id)
-        elif st == DownloadStatus.error:
-            return jsonify("Download failed"), 500
-        elif st == DownloadStatus.not_found:
-            return jsonify("Download not found"), 404
+        #     if st == DownloadStatus.done:
+        #         info = await pikpak.get_download_url(file_id)
+        #     elif st == DownloadStatus.error:
+        #         return jsonify("Download failed"), 500
+        #     elif st == DownloadStatus.not_found:
+        #         return jsonify("Download not found"), 404
+
+        off_list = dict(await pikpak.offline_list(
+            phase=[
+                "PHASE_TYPE_RUNNING",
+                "PHASE_TYPE_ERROR",
+                "PHASE_TYPE_COMPLETE",
+                "PHASE_TYPE_PENDING",
+            ]
+        ))
+
+        itm: Union[PikPakFileInfo, None] = None
+        info = None
+
+        tasks: list[PikPakFileInfo] = off_list.get("tasks")
+
+        if tasks:
+            for tsk in tasks:
+                if tsk["id"] == task_id: itm = tsk
+
+        if not itm: return jsonify("Download not found"), 404
+        elif itm.get("phase") == "PHASE_TYPE_ERROR": return jsonify("Download failed"), 500
+        elif itm.get("phase") == "PHASE_TYPE_COMPLETE": info = await pikpak.get_download_url(itm.get("file_id"))
 
         return jsonify(
             {
-                "status": str(st).replace("DownloadStatus.", ""),
+                "status": "done" if itm.get("phase") == "PHASE_TYPE_COMPLETE" else "downloading",
                 "info": parse_pikpak_info(info) if info else None,
             }
         )
