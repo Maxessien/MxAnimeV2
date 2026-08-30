@@ -7,14 +7,12 @@ import { createReadStream, createWriteStream, promises as fs } from "fs";
 import { _QueryFilter } from "mongoose";
 import os from "os";
 import path from "path";
-import { SeedrVideo } from "seedr";
 import {
   CLOUDFARE_APP_BUCKET,
   cloudflareClient,
   downloadTasks,
   ffmpeg,
   malIdSubplMap,
-  seedr,
   subsplease,
 } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
@@ -25,8 +23,7 @@ import {
   PikPakMediaLink,
   PikPakResponse,
   PikPakTaskResponse,
-  SeedrTransfer,
-  TorrentioResponse,
+  TorrentioResponse
 } from "../types/torrentio.js";
 import { createMagnetUri, getTorrentioApi } from "./shows.js";
 
@@ -341,10 +338,10 @@ const getSubplTorrent = async (
   const mapping = malIdSubplMap.get(malId);
 
   if (!mapping) return null;
-
+  
   const show = await subsplease.getShow(mapping.slug);
   let torr: ParsedTorrentioStream[] | null = null;
-
+  
   for (const ep of show.episodes) {
     if (Number(ep.episode) === Number(eid)) {
       const parsedTitle = parse(mapping.title);
@@ -368,5 +365,6 @@ export {
   downloadTorrent,
   getAnimeTorrent,
   getSubplTorrent,
-  QUALITY,
+  QUALITY
 };
+
