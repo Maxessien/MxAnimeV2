@@ -13,7 +13,9 @@ import {
   cloudflareClient,
   downloadTasks,
   ffmpeg,
+  malIdSubplMap,
   seedr,
+  subsplease,
 } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
 import { ThirdPartyMappings } from "../types/anizip.js";
@@ -39,8 +41,8 @@ const pollForProg = async (
 
   let prog = 0;
   let progInc = 21;
-  
-    console.log(fileId, taskId)
+
+  console.log(fileId, taskId);
 
   while (!transfer || transfer.status !== "done") {
     const { data } = await axios.get<PikPakResponse>(
@@ -52,12 +54,12 @@ const pollForProg = async (
     pollUpdate(prog);
     transfer = data;
 
-    if ((prog + progInc) < 99) prog += progInc;
+    if (prog + progInc < 99) prog += progInc;
 
     if (progInc > 1) progInc -= 5;
   }
 
-  pollUpdate(100)
+  pollUpdate(100);
 
   return transfer;
 };
@@ -69,23 +71,22 @@ const downloadTorrent = async (
   baseProg: number = 0,
   maxProg: number = 25,
 ) => {
-  const { data } = await axios.post<PikPakTaskResponse>(`${PYTHON_SERVER_URL}/task`, {magUri: magnetUri})
-
-  console.log(data)
-  
-  let tr = await pollForProg(
-    data.file_id,
-    data.id,
-    (prog) => {
-      downloadTasks.set(taskId, {
-        epInfo,
-        progress: prog * ((maxProg - baseProg) / 100) + baseProg,
-        status: "pending",
-      });
-    },
+  const { data } = await axios.post<PikPakTaskResponse>(
+    `${PYTHON_SERVER_URL}/task`,
+    { magUri: magnetUri },
   );
 
-  return tr.info
+  console.log(data);
+
+  let tr = await pollForProg(data.file_id, data.id, (prog) => {
+    downloadTasks.set(taskId, {
+      epInfo,
+      progress: prog * ((maxProg - baseProg) / 100) + baseProg,
+      status: "pending",
+    });
+  });
+
+  return tr.info;
 };
 
 const compressTorrent = async (
@@ -105,16 +106,19 @@ const compressTorrent = async (
   const tempOutpPath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
 
   // Download the input file to the temporary input path
-  const response = await axios.get(vid.url, { responseType: "stream", onDownloadProgress: (e) => {  
-    if (e.total) {  
-      const frac = e.loaded / e.total; // 0..1  
-      downloadTasks.set(taskId, {  
-        epInfo,  
-        status: "pending",  
-        progress: frac * 10 * ((maxProg - baseProg) / 100) + baseProg,  
-      });  
-    }  
-  },  });
+  const response = await axios.get(vid.url, {
+    responseType: "stream",
+    onDownloadProgress: (e) => {
+      if (e.total) {
+        const frac = e.loaded / e.total; // 0..1
+        downloadTasks.set(taskId, {
+          epInfo,
+          status: "pending",
+          progress: frac * 10 * ((maxProg - baseProg) / 100) + baseProg,
+        });
+      }
+    },
+  });
 
   await new Promise<void>((resolve, reject) => {
     const writer = createWriteStream(tempInpPath);
@@ -330,11 +334,39 @@ const getAnimeTorrent = async (
   return { filteredQuality };
 };
 
+const getSubplTorrent = async (
+  malId: string | number,
+  eid: string | number,
+): Promise<null | ParsedTorrentioStream[]> => {
+  const mapping = malIdSubplMap.get(malId);
+
+  if (!mapping) return null;
+
+  const show = await subsplease.getShow(mapping.slug);
+  let torr: ParsedTorrentioStream[] | null = null;
+
+  for (const ep of show.episodes) {
+    if (Number(ep.episode) === Number(eid)) {
+      const parsedTitle = parse(mapping.title);
+      
+      torr = ep.downloads.map(({ res, magnet }) => ({
+        info: parsedTitle
+          ? { ...parsedTitle, video: { resolution: res, term: undefined } }
+          : null,
+        magUri: magnet,
+      }));
+    }
+  }
+
+  return torr;
+};
+
 export {
   ALLOWED,
   compressTorrent,
   dlAndCompress,
   downloadTorrent,
   getAnimeTorrent,
+  getSubplTorrent,
   QUALITY,
 };

@@ -55,12 +55,12 @@ export function AnimeEpisodes({
               style={{ animationDelay: `${index * 30}ms` }}
             >
               <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/10 text-primary font-mono font-bold flex items-center justify-center text-sm">
-                {`${episode.episodeNumber || index + 1}`}
+                {`${episode.episodeNumber || episode.episode || index + 1}`}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="font-medium truncate group-hover:text-primary transition-colors">
-                    {`Episode ${episode.episodeNumber || index + 1}`}
+                    {`Episode ${episode.episodeNumber || episode.episode || index + 1}`}
                   </span>
                   {!episode.hasAired && (
                     <span className="text-sm bg-muted px-2 py-1 rounded-md text-muted-foreground">

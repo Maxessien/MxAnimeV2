@@ -5,7 +5,12 @@ import { downloadTasks } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
 import { AniZipMetadata } from "../types/anizip.js";
 import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
-import { ALLOWED, dlAndCompress, getAnimeTorrent } from "../utils/media.js";
+import {
+  ALLOWED,
+  dlAndCompress,
+  getAnimeTorrent,
+  getSubplTorrent,
+} from "../utils/media.js";
 import { handler } from "../utils/shows.js";
 import { ParsedTorrentioStream } from "../types/torrentio.js";
 
@@ -131,22 +136,24 @@ const addEpisode = (req: Request, res: Response) =>
     })[] = [];
 
     if (!quality || !mag_uri) {
-      const {
-        data: { mappings },
-      } = await axios.get<AniZipMetadata>(
-        `https://api.ani.zip/mappings?mal_id=${mal_id}`,
-      );
+      let filteredQuality = await getSubplTorrent(mal_id, eId.toString());
 
-      if (!mappings.imdb_id && !mappings.themoviedb_id)
-        return res
-          .status(CLIENT_ERROR.BAD_REQUEST)
-          .json({ message: "ID not found" });
+      if (!filteredQuality) {
+        const {
+          data: { mappings },
+        } = await axios.get<AniZipMetadata>(
+          `https://api.ani.zip/mappings?mal_id=${mal_id}`,
+        );
 
-      const { filteredQuality } = await getAnimeTorrent(
-        mappings,
-        sId.toString(),
-        eId.toString(),
-      );
+        if (!mappings.imdb_id && !mappings.themoviedb_id)
+          return res
+            .status(CLIENT_ERROR.BAD_REQUEST)
+            .json({ message: "ID not found" });
+
+        filteredQuality = (
+          await getAnimeTorrent(mappings, sId.toString(), eId.toString())
+        ).filteredQuality;
+      }
 
       if (!filteredQuality || filteredQuality.length === 0)
         return res

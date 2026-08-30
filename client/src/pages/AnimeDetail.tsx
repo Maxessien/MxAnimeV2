@@ -49,7 +49,7 @@ export default function AnimeDetail() {
       season: string | number;
       quality: number;
     }) => {
-      console.log(downloadQueue)
+      console.log(downloadQueue);
       if (!anime) return;
       downloadQueue.push({
         mal_id: anime.mal_id,
@@ -73,7 +73,9 @@ export default function AnimeDetail() {
     ? Object.entries(episodesData.data.episodes).map((v) => ({
         ...v[1],
         hasAired: Boolean(
-          v[1].airDateUtc && new Date(v[1].airDateUtc).getTime() < Date.now(),
+          (v[1].airDateUtc || v[1].airDate || v[1].airdate) &&
+          new Date(v[1].airDateUtc || v[1].airDate || v[1].airdate).getTime() <
+            Date.now(),
         ),
       }))
     : [];
@@ -113,41 +115,41 @@ export default function AnimeDetail() {
   if (!anime) return null;
 
   return (
-<div className="relative w-full">
-	<div className="absolute top-5 left-3 z-99">
-      <BackBtn />
-	</div>
-    <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
-      {dlPopup.active && dlPopup.info && (
-        <AnimeEpisodesDl
-          closeFn={() => setDlPopup({ active: false, info: null })}
-          mutationFn={mutateAsync}
-          episodeInfo={dlPopup.info}
-        />
-      )}
-      <AnimeDetailHero
-        anime={anime}
-        trailerUrl={null}
-        epIds={episodes.map((v, i) => v.episodeNumber ?? i + 1)}
-      />
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-        <AnimeDetailInfo anime={anime} />
-
-        <div className="lg:col-span-2 space-y-12 order-1 lg:order-2">
-          <AnimeSynopsis anime={anime} />
-          <AnimeTrailer animeTitle={anime.title} youtubeId={null} />
-          <AnimeDetailEpisodes
-            anime={anime}
-            episodes={episodes}
-            isLoading={isLoadingEpisodes}
-            isFetching={isFetchingEpisodes}
-            error={episodesError}
-            showDlPopup={(val) => setDlPopup({ active: true, info: val })}
+    <div className="relative w-full">
+      <div className="absolute top-5 left-3 z-99">
+        <BackBtn />
+      </div>
+      <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
+        {dlPopup.active && dlPopup.info && (
+          <AnimeEpisodesDl
+            closeFn={() => setDlPopup({ active: false, info: null })}
+            mutationFn={mutateAsync}
+            episodeInfo={dlPopup.info}
           />
+        )}
+        <AnimeDetailHero
+          anime={anime}
+          trailerUrl={null}
+          epIds={episodes.map((v, i) => v.episodeNumber ?? i + 1)}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+          <AnimeDetailInfo anime={anime} />
+
+          <div className="lg:col-span-2 space-y-12 order-1 lg:order-2">
+            <AnimeSynopsis anime={anime} />
+            <AnimeTrailer animeTitle={anime.title} youtubeId={null} />
+            <AnimeDetailEpisodes
+              anime={anime}
+              episodes={episodes}
+              isLoading={isLoadingEpisodes}
+              isFetching={isFetchingEpisodes}
+              error={episodesError}
+              showDlPopup={(val) => setDlPopup({ active: true, info: val })}
+            />
+          </div>
         </div>
       </div>
     </div>
-</div>
   );
 }

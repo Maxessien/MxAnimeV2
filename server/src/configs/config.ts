@@ -9,6 +9,8 @@ import mongoose from "mongoose";
 import Seedr from "seedr";
 import { Tasks } from "../types/show.js";
 import { resolveFfmpegBinaryPath } from "../utils/ffmpegUtil.js";
+import { readFileSync } from "node:fs";
+import { createSubsplease } from "@maxessien/subsplease";
 
 const cloudflareAccessKey = process.env.CLOUDFARE_ACCESS_KEY || "";
 const cloudflareSecretKey = process.env.CLOUDFARE_SECRET_KEY || "";
@@ -66,12 +68,24 @@ mongoose.connection.on("error", (err) => {
 
 const downloadTasks: Map<number, Tasks> = new Map();
 
+const malIdSubplMap = new Map<number | string, {title: string, slug: string}>();
+
+let file = JSON.parse(readFileSync("subsplease-mal-map.json").toString());
+
+for (const entry of file) {
+  if (entry.mal_id) malIdSubplMap.set(entry.mal_id, {title: entry.title, slug: entry.slug});
+}
+
+const subsplease = createSubsplease()
+
 export {
   CLOUDFARE_APP_BUCKET,
   CLOUDFARE_URL,
   cloudflareClient,
-  downloadTasks, ffmpeg,
+  downloadTasks,
+  ffmpeg,
   mongoose,
   seedr,
-  uploader
+  uploader,
+  malIdSubplMap, subsplease
 };
