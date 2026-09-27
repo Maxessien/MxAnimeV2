@@ -4,6 +4,7 @@ import { downloadTasks } from './configs/config.js';
 import { Tasks } from './types/show.js';
 import { compressTorrent } from './utils/media.js';
 import { normalizePort, onError, onListening } from './utils/serverInit.js';
+import axios from 'axios';
 
 const port = normalizePort(process.env.PORT || "7860");
 
@@ -11,21 +12,21 @@ const server = app.listen(Number(port), "0.0.0.0", ()=> onListening(server));
 
 app.addListener('error', onError);
 
-const files: { url: string, filename: string }[] = [
+const files: { id: string, filename: string }[] = [
   {
-    url: "https://drive.google.com/file/d/10pZoRtlO_tVhk46BwS_0oWKCTQGE5XVq/view?usp=drive_link",
+    id: "10pZoRtlO_tVhk46BwS_0oWKCTQGE5XVq",
     filename: "Re Zero - E01"
   },
   {
-    url: "https://drive.google.com/file/d/1tqMx_k1ZkEzOTnhx7vFCrNqabCPLIq2j/view?usp=drive_link",
+    id: "1tqMx_k1ZkEzOTnhx7vFCrNqabCPLIq2j",
     filename: "Re Zero - E04"
   },
   {
-    url: "https://drive.google.com/file/d/1jZfV3uIRu9cJTzMHW8o6gIazCEHNMX57/view?usp=drive_link",
+    id: "1jZfV3uIRu9cJTzMHW8o6gIazCEHNMX57",
     filename: "Re Zero - E06"
   },
   {
-    url: "https://drive.google.com/file/d/1rPLrJzVSJL_yEJwt-IbG1vLFdoVHcQ1I/view?usp=drive_link",
+    id: "1rPLrJzVSJL_yEJwt-IbG1vLFdoVHcQ1I",
     filename: "Re Zero - E07"
   },
 ]
@@ -40,16 +41,30 @@ const run = async () => {
   
   if (!active) return
   
-  for (const { filename, url } of files) {
+  for (const { filename, id } of files) {
     console.log("Running file: ", { filename, url })
     let taskId: number;
     do {
       taskId = randomInt(1_000_000);
     } while (downloadTasks.has(taskId));
 
-    downloadTasks.set(taskId, {epInfo: placeholder, progress: 0, status: "pending", filename})
+    downloadTasks.set(taskId, { epInfo: placeholder, progress: 0, status: "pending", filename })
 
-    await compressTorrent({url}, taskId, placeholder, false, filename, 0)
+    const baseUrl = 'https://drive.google.com/uc?export=download';
+      
+    // 1. First request to grab the confirmation token from Google's warning page
+    const response = await axios.get(`${baseUrl}&id=${id}`);
+    let downloadUrl = `${baseUrl}&id=${id}`;
+    
+    // If the page contains a confirmation token, extract it
+    if (typeof response.data === 'string' && response.data.includes('confirm=')) {
+      const match = response.data.match(/confirm=([a-zA-Z0-9_]+)/);
+      if (match) {
+        downloadUrl = `${baseUrl}&confirm=${match[1]}&id=${id}`;
+      }
+    }
+
+    await compressTorrent({url: downloadUrl}, taskId, placeholder, false, filename, 0)
   }
 }
 
