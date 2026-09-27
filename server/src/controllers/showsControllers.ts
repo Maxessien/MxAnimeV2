@@ -180,4 +180,16 @@ const addEpisode = (req: Request, res: Response) =>
     return res.status(SUCCESS.CREATED).json(eps);
   });
 
-export { addEpisode, downloadEpisode, getDownloadStatus };
+const getAllTasks = async (req: Request, res: Response) =>
+  handler(res, async () => {
+    const adminKey = process.env.ADMIN_KEY;
+
+    if (!adminKey || adminKey !== req.query.key?.toString())
+      return res.status(CLIENT_ERROR.UNAUTHORIZED).json("Unauthorised access");
+
+    const map = Object.fromEntries(downloadTasks.entries())
+
+    return res.status(SUCCESS.OK).json(map);
+  });
+
+export { addEpisode, downloadEpisode, getDownloadStatus, getAllTasks };

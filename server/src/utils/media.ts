@@ -87,9 +87,10 @@ const downloadTorrent = async (
 };
 
 const compressTorrent = async (
-  vid: PikPakMediaLink,
+  vid: {url: string} | PikPakMediaLink,
   taskId: number,
   epInfo: Tasks["epInfo"],
+  shouldSave: boolean = true,
   fileName?: string,
   baseProg: number = 25,
   maxProg: number = 100,
@@ -214,31 +215,33 @@ const compressTorrent = async (
 
     const uploadedFileUrl = `https://pub-991c552c64ed424ebd8971019038f0ad.r2.dev/${key}`;
 
-    // 3. Probe the file to get its duration, size, etc.
-    const info: FfprobeData = await new Promise((resolve, reject) => {
-      ffmpeg.ffprobe(tempOutpPath, (err, data) => {
-        if (err) reject(err);
-        else resolve(data);
+    if (shouldSave) {
+      // 3. Probe the file to get its duration, size, etc.
+      const info: FfprobeData = await new Promise((resolve, reject) => {
+        ffmpeg.ffprobe(tempOutpPath, (err, data) => {
+          if (err) reject(err);
+          else resolve(data);
+        });
       });
-    });
-
-    await Episode.updateOne(
-      {
-        malId: epInfo.malId.toString(),
-        eId: epInfo.episodeId,
-        sId: epInfo.season,
-        quality: epInfo.quality,
-      } as _QueryFilter<any>,
-      {
-        isCompressed: true,
-        fileUrl: uploadedFileUrl,
-        manageInfo: {
-          key: key,
-          bucket: CLOUDFARE_APP_BUCKET,
+  
+      await Episode.updateOne(
+        {
+          malId: epInfo.malId.toString(),
+          eId: epInfo.episodeId,
+          sId: epInfo.season,
+          quality: epInfo.quality,
+        } as _QueryFilter<any>,
+        {
+          isCompressed: true,
+          fileUrl: uploadedFileUrl,
+          manageInfo: {
+            key: key,
+            bucket: CLOUDFARE_APP_BUCKET,
+          },
+          fileSize: info.format.size,
         },
-        fileSize: info.format.size,
-      },
-    );
+      );
+    }
 
     downloadTasks.set(taskId, {
       epInfo,

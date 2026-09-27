@@ -1,4 +1,3 @@
-import AnimeVidPlayer from "@/components/AnimeVidPlayer";
 import BackBtn from "@/components/layout/BackBtn";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,31 +10,20 @@ import {
 } from "@/components/ui/card";
 import { useJson } from "@/hooks/use-json";
 import { AnimeSummary } from "@/lib/local-store";
-import { useState } from "react";
+import { openPath } from "@tauri-apps/plugin-opener";
 import { FaPlay } from "react-icons/fa";
 import { Link, useRoute } from "wouter";
 
 const DownloadDetails = () => {
   const [, params] = useRoute("/downloads/:id");
   const id = params?.id || "";
-
-  const [vidPlayer, setVidPlayer] = useState<{active: boolean, vids: AnimeSummary[]}>({active: false, vids: []})
-
+  
   const { json } = useJson<AnimeSummary>({
     type: "downloads",
   });
 
   const eps = json.downloads.filter(({ mal_id }) => mal_id.toString() === id);
   const first = eps[0] ?? null;
-
-  //   const handleRemove = (entry: AnimeSummary) => {
-  //     remove.mutate((list) => list.filter((v) => !(v.mal_id === entry.mal_id && v.episode.ep === entry.episode.ep && v.episode.season === entry.episode.season)));
-  //   };
-
-  if (vidPlayer.active && vidPlayer.vids.length > 0) {
-    return <AnimeVidPlayer items={vidPlayer.vids} />
-  }
-
 
   if (eps.length === 0)
     return (
@@ -124,7 +112,7 @@ const DownloadDetails = () => {
               </div>
 
               <button
-              onClick={()=> setVidPlayer({active: true, vids: [entry]})}
+              onClick={()=> openPath(entry.episode.path)}
                 className="rounded-full hover:bg-primary/90 transition-all p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
               ><FaPlay /></button>
             </div>

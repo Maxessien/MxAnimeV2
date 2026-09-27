@@ -4,12 +4,12 @@ import { useJson } from "@/hooks/use-json";
 import { AnimeSummary } from "@/lib/local-store";
 import { ongoingDownloadQueue } from "@/lib/queue";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
-import { Download as DownloadIcon, Trash2 } from "lucide-react";
+import { Download as DownloadIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
 
 export default function Downloads() {
-  const { json, remove, clear } = useJson<AnimeSummary>({
+  const { json, remove } = useJson<AnimeSummary>({
     type: "downloads",
     removeOptions: {
       onSuccess: () => toast.success("Download Removed"),
