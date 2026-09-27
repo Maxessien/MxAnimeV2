@@ -119,6 +119,8 @@ const compressTorrent = async (
     },
   });
 
+  console.log(response)
+
   await new Promise<void>((resolve, reject) => {
     const writer = createWriteStream(tempInpPath);
     response.data.pipe(writer);
