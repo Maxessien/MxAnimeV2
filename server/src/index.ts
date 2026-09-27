@@ -40,7 +40,8 @@ const run = async () => {
   
   if (!active) return
   
-  const promises = files.map(({filename, url}) => {
+  for (const { filename, url } of files) {
+    console.log("Running file: ", { filename, url })
     let taskId: number;
     do {
       taskId = randomInt(1_000_000);
@@ -48,10 +49,8 @@ const run = async () => {
 
     downloadTasks.set(taskId, {epInfo: placeholder, progress: 0, status: "pending", filename})
 
-    return compressTorrent({url}, taskId, placeholder, false, filename, 0)
-  })
-
-  await Promise.allSettled(promises)
+    await compressTorrent({url}, taskId, placeholder, false, filename, 0)
+  }
 }
 
 run()
