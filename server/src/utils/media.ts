@@ -26,6 +26,7 @@ import {
   TorrentioResponse
 } from "../types/torrentio.js";
 import { createMagnetUri, getTorrentioApi } from "./shows.js";
+import { stat } from "fs/promises";
 
 const PYTHON_SERVER_URL = process.env.PYTHON_SERVER_URL;
 
@@ -140,6 +141,8 @@ const compressTorrent = async (
       reject(err);
     });
   });
+
+  console.log("Stat: ", (await stat(tempInpPath)))
 
   try {
     // 1. Run Ffmpeg and output to local temp file
