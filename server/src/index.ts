@@ -42,7 +42,7 @@ const run = async () => {
   if (!active) return
   
   for (const { filename, id } of files) {
-    console.log("Running file: ", { filename, url })
+    console.log("Running file: ", { filename, id })
     let taskId: number;
     do {
       taskId = randomInt(1_000_000);
