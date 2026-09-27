@@ -58,10 +58,15 @@ const run = async () => {
     
     // If the page contains a confirmation token, extract it
     if (typeof response.data === 'string' && response.data.includes('confirm=')) {
-      const match = response.data.match(/confirm=([a-zA-Z0-9_]+)/);
-      if (match) {
-        downloadUrl = `${baseUrl}&confirm=${match[1]}&id=${id}`;
-      }
+      const confirmMatch = response.data.match(/name="confirm"\s+value="([^"]+)"/);
+      const uuidMatch = response.data.match(/name="uuid"\s+value="([^"]+)"/);
+      if (confirmMatch && uuidMatch) {
+            const confirmToken = confirmMatch[1];
+            const uuidToken = uuidMatch[1];
+            
+            // Update target to Google's form submission endpoint with the tokens attached
+            downloadUrl = `${baseUrl}/${id}&export=download&confirm=${confirmToken}&uuid=${uuidToken}`;
+          }
     }
 
     await compressTorrent({url: downloadUrl}, taskId, placeholder, false, filename, 0)
