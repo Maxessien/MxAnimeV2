@@ -119,8 +119,6 @@ const compressTorrent = async (
     },
   });
 
-  console.log(response)
-
   await new Promise<void>((resolve, reject) => {
     const writer = createWriteStream(tempInpPath);
     response.data.pipe(writer);
@@ -143,8 +141,6 @@ const compressTorrent = async (
       reject(err);
     });
   });
-
-  console.log("Stat: ", (await stat(tempInpPath)))
 
   try {
     // 1. Run Ffmpeg and output to local temp file
