@@ -1,28 +1,51 @@
-from typing import TypedDict, List, Dict, Any
+from datetime import datetime
+from typing import Any, TypedDict
+
+
+class PikpakAuthException(Exception):
+    message: str
+
+
+class Credentials(TypedDict):
+    username: str
+    passsword: str
+    remaining_use: int
+    last_login: datetime
+
+
+class PkCreds(TypedDict):
+    creds: list[Credentials]
+    curr_idx: int
+    is_active: bool
+
 
 class PikPakAudit(TypedDict):
     message: str
     status: str
     title: str
 
+
 class PikPakDownloadLink(TypedDict):
     url: str
     token: str
     expire: str
     type: str
-    fallbacks: List[Any]
-    mirrors: List[Any]
+    fallbacks: list[Any]
+    mirrors: list[Any]
+
 
 # Uses Dict[str, ...] because the key "application/octet-stream" changes per file type
-PikPakLinks = Dict[str, PikPakDownloadLink]
+PikPakLinks = dict[str, PikPakDownloadLink]
+
 
 class PikPakMediaLink(TypedDict):
     url: str
     token: str
     expire: str
     type: str
-    fallbacks: List[Any]
-    mirrors: List[Any]
+    fallbacks: list[Any]
+    mirrors: list[Any]
+
 
 class PikPakMedia(TypedDict):
     media_id: str
@@ -37,13 +60,15 @@ class PikPakMedia(TypedDict):
     need_more_quota: bool
     priority: int
     redirect_link: str
-    vip_types: List[Any]
+    vip_types: list[Any]
     link: PikPakMediaLink
+
 
 class PikPakParams(TypedDict):
     original_share_id: str
     platform_icon: str
     url: str
+
 
 class PikPakFileInfo(TypedDict):
     id: str
@@ -68,11 +93,11 @@ class PikPakFileInfo(TypedDict):
     user_modified_time: str
     delete_time: str
     space: str
-    apps: List[Any]
-    tags: List[str]
-    reference_events: List[Any]
+    apps: list[Any]
+    tags: list[str]
+    reference_events: list[Any]
     audit: PikPakAudit
     links: PikPakLinks
-    medias: List[PikPakMedia]
+    medias: list[PikPakMedia]
     params: PikPakParams
     web_content_link: str
