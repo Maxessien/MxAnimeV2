@@ -6,11 +6,11 @@ import ffmpeg from "@ts-ffmpeg/fluent-ffmpeg";
 import { v2 as cloudinary } from "cloudinary";
 import ffprobe from "ffprobe-static";
 import mongoose from "mongoose";
-import Seedr from "seedr";
 import { Tasks } from "../types/show.js";
 import { resolveFfmpegBinaryPath } from "../utils/ffmpegUtil.js";
 import { readFileSync } from "node:fs";
 import { createSubsplease } from "@maxessien/subsplease";
+import { SeedrClient } from "@maxessien/seedr"
 
 const cloudflareAccessKey = process.env.CLOUDFARE_ACCESS_KEY || "";
 const cloudflareSecretKey = process.env.CLOUDFARE_SECRET_KEY || "";
@@ -38,9 +38,6 @@ if (urlMatch) {
     cloud_name: urlMatch[3],
   });
 }
-
-let seedr = new Seedr();
-await seedr.login(process.env.SEEDR_EMAIL, process.env.SEEDR_PASS);
 
 if (process.env.NODE_ENV === "production") {
   console.log("Production detected: Forcing native Linux FFmpeg/FFprobe paths");
@@ -77,6 +74,7 @@ for (const entry of file) {
 }
 
 const subsplease = createSubsplease()
+const seedrCl = await SeedrClient.login(process.env.SEEDR_EMAIL || "", process.env.SEEDR_PASS || "")
 
 export {
   CLOUDFARE_APP_BUCKET,
@@ -85,7 +83,7 @@ export {
   downloadTasks,
   ffmpeg,
   mongoose,
-  seedr,
+  seedrCl,
   uploader,
   malIdSubplMap, subsplease
 };

@@ -13,6 +13,7 @@ import {
   downloadTasks,
   ffmpeg,
   malIdSubplMap,
+  seedrCl,
   subsplease,
 } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
@@ -23,7 +24,7 @@ import {
   PikPakMediaLink,
   PikPakResponse,
   PikPakTaskResponse,
-  TorrentioResponse
+  TorrentioResponse,
 } from "../types/torrentio.js";
 import { createMagnetUri, getTorrentioApi } from "./shows.js";
 import { stat } from "fs/promises";
@@ -87,12 +88,43 @@ const downloadTorrent = async (
   return tr.info;
 };
 
+const downloadTorrentSeedr = async (
+  magnetUri: string,
+  epInfo: Tasks["epInfo"],
+  taskId: number,
+  baseProg: number = 0,
+  maxProg: number = 25,
+) => {
+  const { user_torrent_id } = await seedrCl.tasks.addMagnet(magnetUri);
+  const folder = await seedrCl.tasks.waitForTask(user_torrent_id!, {
+    onProgress: (s) => {
+      downloadTasks.set(taskId, {
+        epInfo,
+        progress: s.progress * ((maxProg - baseProg) / 100) + baseProg,
+        status: "pending",
+      });
+    },
+  });
+
+  const contents = await seedrCl.folders.list(folder!.id);
+  const link = await seedrCl.files.getDownloadUrl(
+    contents.files[0]!.folder_file_id,
+  );
+  return {
+    url: link.url,
+    delFn: async () => {
+      await seedrCl.files.delete(contents.files[0]!.folder_file_id);
+    },
+  };
+};
+
 const compressTorrent = async (
-  vid: {url: string} | PikPakMediaLink,
+  vid: { url: string },
   taskId: number,
   epInfo: Tasks["epInfo"],
   shouldSave: boolean = true,
   fileName?: string,
+  scale?: { width: number; height: number },
   baseProg: number = 25,
   maxProg: number = 100,
 ): Promise<void> => {
@@ -145,7 +177,7 @@ const compressTorrent = async (
   try {
     // 1. Run Ffmpeg and output to local temp file
     await new Promise<void>((resolve, reject) => {
-      ffmpeg(tempInpPath)
+      const command = ffmpeg(tempInpPath)
         .videoCodec("libx265") // Switched to high-efficiency HEVC
         .audioCodec("aac")
         .outputOptions("-crf 26")
@@ -183,8 +215,9 @@ const compressTorrent = async (
             progress: 90 * ((maxProg - baseProg) / 100) + baseProg,
           });
           resolve();
-        })
-        .save(tempOutpPath); // Saves directly to local storage safely
+        });
+      if (scale) command.size(`${scale.width}:${scale.height}`);
+      command.save(tempOutpPath); // Saves directly to local storage safely
     });
 
     // 2. Upload the finished file to Cloudflare R2 using AWS Lib-Storage Upload
@@ -224,7 +257,7 @@ const compressTorrent = async (
           else resolve(data);
         });
       });
-  
+
       await Episode.updateOne(
         {
           malId: epInfo.malId.toString(),
@@ -271,14 +304,30 @@ const dlAndCompress = async (
   epInfo: Tasks["epInfo"],
   magUri: string,
 ) => {
-  const vid = await downloadTorrent(magUri, epInfo, taskId);
+  let url: string | null = null;
+  let cleanUp: (() => Promise<void>) | null = null;
+  
+  try {
+    const sInfo = await downloadTorrentSeedr(magUri, epInfo, taskId);
 
-  if (!vid) {
+    url = sInfo?.url;
+    cleanUp = sInfo?.delFn;
+  } catch (err) {
+    console.log(err);
+  }
+
+  if (!url) {
+    const vid = await downloadTorrent(magUri, epInfo, taskId);
+    url = vid?.[0]?.url;
+  }
+
+  if (url && typeof url === "string") {
+    await compressTorrent({ url }, taskId, epInfo);
+    if (cleanUp) await cleanUp();
+  } else {
     downloadTasks.set(taskId, { epInfo, progress: 0, status: "error" });
     throw new Error("Failed to download torrent");
   }
-
-  await compressTorrent(vid?.[0], taskId, epInfo);
 };
 
 // const clnUpTorrent = async (id: string | number, maxRetries: number = 3) => {
@@ -342,14 +391,14 @@ const getSubplTorrent = async (
   const mapping = malIdSubplMap.get(malId);
 
   if (!mapping) return null;
-  
+
   const show = await subsplease.getShow(mapping.slug);
   let torr: ParsedTorrentioStream[] | null = null;
-  
+
   for (const ep of show.episodes) {
     if (Number(ep.episode) === Number(eid)) {
       const parsedTitle = parse(mapping.title);
-      
+
       torr = ep.downloads.map(({ res, magnet }) => ({
         info: parsedTitle
           ? { ...parsedTitle, video: { resolution: res, term: undefined } }
@@ -369,6 +418,5 @@ export {
   downloadTorrent,
   getAnimeTorrent,
   getSubplTorrent,
-  QUALITY
+  QUALITY,
 };
-
