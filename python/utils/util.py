@@ -4,9 +4,8 @@ from json import loads
 from os import environ
 
 from dotenv import load_dotenv
+from models.types import PikpakAuthException, PkCreds
 from pikpakapi import PikPakApi
-
-from python.models.types import PikpakAuthException, PkCreds
 
 load_dotenv()
 
