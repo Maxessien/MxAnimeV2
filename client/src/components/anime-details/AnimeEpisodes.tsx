@@ -3,7 +3,8 @@ import { downloadQueue } from "@/lib/queue";
 import { Episode } from "@/types/anizip";
 import { Anime } from "@/types/jikan";
 import { ListVideo } from "lucide-react";
-import { FaDownload, FaSpinner } from "react-icons/fa";
+import { FaDownload, FaPlay, FaSpinner } from "react-icons/fa";
+import { useLocation } from "wouter";
 
 type AnimeEpisodesProps = {
   episodes: (Episode & { hasAired: boolean })[];
@@ -26,6 +27,7 @@ export function AnimeEpisodes({
   anime,
   showDlPopup,
 }: AnimeEpisodesProps) {
+  const [_, navigate] = useLocation();
   return (
     <section>
       <div className="flex items-center justify-between mb-6">
@@ -79,34 +81,46 @@ export function AnimeEpisodes({
                 )}
               </div>
               {episode.hasAired && (
-                <button
-                  onClick={() => {
-                    if (
-                      episode.hasAired &&
-                      episode.episodeNumber &&
-                      episode.seasonNumber
-                    )
-                      showDlPopup({
-                        eId: episode.episodeNumber,
-                        mal_id: anime.mal_id,
-                        sId: episode.seasonNumber,
-                      });
-                  }}
-                  className="rounded-full hover:bg-primary/90 transition-all p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
-                >
-                  {!downloadQueue
-                    .traverse()
-                    .find(
-                      (v) =>
-                        v.mal_id === anime.mal_id &&
-                        v.episode.ep === episode.episodeNumber &&
-                        v.episode.season === episode.seasonNumber,
-                    ) ? (
-                    <FaDownload />
-                  ) : (
-                    <FaSpinner className="animate-spin" />
-                  )}
-                </button>
+                <>
+                  <button
+                    onClick={() =>
+                      navigate(
+                        `/stream?mal_id=${anime.mal_id}&ep=${episode.episodeNumber || episode.episode || index + 1}`,
+                      )
+                    }
+                    className="rounded-full hover:bg-primary/90 transition-all p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
+                  >
+                    <FaPlay />
+                  </button>
+                  <button
+                    onClick={() => {
+                      if (
+                        episode.hasAired &&
+                        episode.episodeNumber &&
+                        episode.seasonNumber
+                      )
+                        showDlPopup({
+                          eId: episode.episodeNumber,
+                          mal_id: anime.mal_id,
+                          sId: episode.seasonNumber,
+                        });
+                    }}
+                    className="rounded-full hover:bg-primary/90 transition-all p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
+                  >
+                    {!downloadQueue
+                      .traverse()
+                      .find(
+                        (v) =>
+                          v.mal_id === anime.mal_id &&
+                          v.episode.ep === episode.episodeNumber &&
+                          v.episode.season === episode.seasonNumber,
+                      ) ? (
+                      <FaDownload />
+                    ) : (
+                      <FaSpinner className="animate-spin" />
+                    )}
+                  </button>
+                </>
               )}
             </div>
           ))}

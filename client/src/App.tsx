@@ -16,6 +16,7 @@ import Settings from '@/pages/Settings';
 import NotFound from '@/pages/not-found';
 import { ToastContainer } from 'react-toastify';
 import DownloadDetails from './pages/DownloadDetails';
+import AnimeStream from './pages/AnimeStream';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -36,6 +37,7 @@ function Router() {
         <Route path="/schedule" component={Schedule} />
         <Route path="/search" component={Search} />
         <Route path="/anime/:id" component={AnimeDetail} />
+        <Route path="/stream" component={AnimeStream} />
         <Route path="/history" component={History} />
         <Route path="/downloads" component={Downloads} />
         <Route path="/downloads/:id" component={DownloadDetails} />
