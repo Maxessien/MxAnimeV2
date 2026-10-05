@@ -32,6 +32,7 @@ import {
 } from "../types/torrentio.js";
 import { createMagnetUri, getTorrentioApi } from "./shows.js";
 import { stat } from "fs/promises";
+import { HeadObjectCommand } from "@aws-sdk/client-s3";
 
 const PYTHON_SERVER_URL = process.env.PYTHON_SERVER_URL;
 
@@ -156,6 +157,7 @@ const compressWithCl = async (
   prog: (val: number) => void,
   scale?: { width: number; height: number },
 ) => {
+  prog(20)
   const job = await cloudConvert.jobs.create({
     tasks: {
       import: {
@@ -190,34 +192,22 @@ const compressWithCl = async (
   });
 
   const uploadTask = job.tasks.find((task) => task.name === "import");
-  const convertTask = job.tasks.find((task) => task.name === "convert-op");
-  const exportTask = job.tasks.find((task) => task.name === "export");
 
   if (!uploadTask) {
     throw new Error("Task not found");
   }
 
-  cloudConvert.jobs.subscribeTaskEvent(uploadTask.id, "updated", (ev) => {
-    if (ev.task.status === "processing") prog(25);
-  });
-  if (convertTask)
-    cloudConvert.jobs.subscribeTaskEvent(convertTask.id, "updated", (ev) => {
-      if (ev.task.status === "processing") prog(75);
-    });
-  if (exportTask)
-    cloudConvert.jobs.subscribeTaskEvent(exportTask.id, "updated", (ev) => {
-      if (ev.task.status === "processing") prog(85);
-      if (ev.task.status === "finished") prog(100);
-    });
-
   const inputFile = createReadStream(input);
   await cloudConvert.tasks.upload(uploadTask, inputFile);
+  prog(45)
   const waitedJob = await cloudConvert.jobs.wait(job.id);
 
   if (waitedJob.status === "error") throw new Error("Job Failed");
 
+  prog(90)
   const exportUrl = cloudConvert.jobs.getExportUrls(waitedJob)[0];
 
+  prog(100)
   return exportUrl;
 };
 
@@ -371,15 +361,9 @@ const compressTorrent = async (
 
     if (shouldSave) {
       // 3. Probe the file to get its duration, size, etc.
-      const info: FfprobeData = await new Promise((resolve, reject) => {
-        ffmpeg.ffprobe(
-          isCompressed ? uploadedFileUrl : tempOutpPath,
-          (err, data) => {
-            if (err) reject(err);
-            else resolve(data);
-          },
-        );
-      });
+      const info = await cloudflareClient.send(
+        new HeadObjectCommand({Bucket: CLOUDFARE_APP_BUCKET, Key: key})
+      )
 
       await Episode.updateOne(
         {
@@ -395,7 +379,7 @@ const compressTorrent = async (
             key: key,
             bucket: CLOUDFARE_APP_BUCKET,
           },
-          fileSize: info.format.size,
+          fileSize: info.ContentLength,
         },
       );
     }
