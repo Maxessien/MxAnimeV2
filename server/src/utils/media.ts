@@ -1,9 +1,8 @@
 import { Upload } from "@aws-sdk/lib-storage";
-import { FfprobeData } from "@ts-ffmpeg/fluent-ffmpeg";
 import { parse } from "anitomy";
 import axios from "axios";
 import { randomUUID } from "crypto";
-import { createReadStream, createWriteStream, promises as fs } from "fs";
+import { createReadStream, createWriteStream, existsSync, promises as fs } from "fs";
 import { _QueryFilter } from "mongoose";
 import os from "os";
 import path from "path";
@@ -25,7 +24,6 @@ import { ThirdPartyMappings } from "../types/anizip.js";
 import { Tasks } from "../types/show.js";
 import {
   ParsedTorrentioStream,
-  PikPakMediaLink,
   PikPakResponse,
   PikPakTaskResponse,
   TorrentioResponse,
@@ -157,7 +155,7 @@ const compressWithCl = async (
   prog: (val: number) => void,
   scale?: { width: number; height: number },
 ) => {
-  prog(20)
+  prog(20);
   const job = await cloudConvert.jobs.create({
     tasks: {
       import: {
@@ -175,7 +173,7 @@ const compressWithCl = async (
         audio_codec: "opus",
         audio_bitrate: 96,
         subtitles_mode: "copy",
-        ...(scale?.height ? {height: scale.height} : {}),
+        ...(scale?.height ? { height: scale.height } : {}),
         ...(scale?.width ? { width: scale.width } : {}),
       },
       export: {
@@ -199,15 +197,15 @@ const compressWithCl = async (
 
   const inputFile = createReadStream(input);
   await cloudConvert.tasks.upload(uploadTask, inputFile);
-  prog(45)
+  prog(45);
   const waitedJob = await cloudConvert.jobs.wait(job.id);
 
   if (waitedJob.status === "error") throw new Error("Job Failed");
 
-  prog(90)
+  prog(90);
   const exportUrl = cloudConvert.jobs.getExportUrls(waitedJob)[0];
 
-  prog(100)
+  prog(100);
   return exportUrl;
 };
 
@@ -346,7 +344,8 @@ const compressTorrent = async (
         tempOutpPath,
         key,
         compErr,
-        compProg, scale
+        compProg,
+        scale,
       );
     }
     console.log("Upload completed successfully");
@@ -361,9 +360,11 @@ const compressTorrent = async (
 
     if (shouldSave) {
       // 3. Probe the file to get its duration, size, etc.
-      const info = await cloudflareClient.send(
-        new HeadObjectCommand({Bucket: CLOUDFARE_APP_BUCKET, Key: key})
-      )
+      const info = isCompressed && existsSync(tempOutpPath)
+        ? await cloudflareClient.send(
+            new HeadObjectCommand({ Bucket: CLOUDFARE_APP_BUCKET, Key: key }),
+          )
+        : { ContentLength: (await stat(tempOutpPath)).size };
 
       await Episode.updateOne(
         {
