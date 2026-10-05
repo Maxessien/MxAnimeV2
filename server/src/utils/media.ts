@@ -148,7 +148,7 @@ const downloadToDisk = async (
   });
 };
 
-const compressWithCl = async (s3Key: string, input: string) => {
+const compressWithCl = async (s3Key: string, input: string, prog: (val: number)=> void ) => {
   const job = await cloudConvert.jobs.create({
     tasks: {
       "import": {
@@ -180,17 +180,83 @@ const compressWithCl = async (s3Key: string, input: string) => {
   })
 
   const uploadTask = job.tasks.find(task => task.name === 'import');
+  const convertTask = job.tasks.find(task => task.name === 'convert-op');
+  const exportTask = job.tasks.find(task => task.name === 'export');
 
   if (!uploadTask) {
     throw new Error("Task not found")
   }
-  
+
+  cloudConvert.jobs.subscribeTaskEvent(uploadTask.id, "updated", (ev) => {
+    if (ev.task.status === "processing") prog(25)
+  })
+  if (convertTask) cloudConvert.jobs.subscribeTaskEvent(convertTask.id, "updated", (ev) => {
+    if (ev.task.status === "processing") prog(75)
+  })
+  if (exportTask) cloudConvert.jobs.subscribeTaskEvent(exportTask.id, "updated", (ev) => {
+    if (ev.task.status === "processing") prog(85)
+    if (ev.task.status === "finished") prog(100)
+  })
+
   const inputFile = createReadStream(input);
   await cloudConvert.tasks.upload(uploadTask, inputFile);
   const waitedJob = await cloudConvert.jobs.wait(job.id)
   const exportUrl = cloudConvert.jobs.getExportUrls(waitedJob)[0]
 
   return exportUrl
+}
+
+const compressWithFfmpeg = async (input: string, output: string, key: string, onError: ()=> void, prog: (val: number)=> void, scale?: { width: number; height: number }) => {
+  // 1. Run Ffmpeg and output to local temp file
+  await new Promise<void>((resolve, reject) => {
+    const command = ffmpeg(input)
+      .videoCodec("libx265") // Switched to high-efficiency HEVC
+      .audioCodec("aac")
+      .outputOptions("-crf 32")
+      .outputOptions("-preset medium")
+      .audioChannels(2)
+      .audioBitrate("96k")
+      .outputOptions("-pix_fmt yuv420p") // Forces standard 8-bit web color format
+      .outputOptions("-tag:v hvc1") // Tells Apple/Chrome devices exactly how to decode the stream
+      .outputOptions("-movflags +faststart")
+      .format("matroska")
+      .on("start", (command) => console.log("ffmpeg start", command))
+      .on("error", (err) => {
+        console.error("ffmpeg error", err);
+        onError()
+        reject(err);
+      })
+      .on("progress", ({ percent }) => {
+        if (percent && percent >= 10) prog(percent - 10)
+      })
+      .on("end", () => {
+        console.log("ffmpeg processing done");
+        prog(90)
+        resolve();
+      });
+    if (scale) command.size(`${scale.width}:${scale.height}`);
+    command.save(output); // Saves directly to local storage safely
+  });
+
+  // 2. Upload the finished file to Cloudflare R2 using AWS Lib-Storage Upload
+  console.log("Uploading file to Cloudflare R2...");
+  const fileStream = createReadStream(output);
+
+  const parallelUploads3 = new Upload({
+    client: cloudflareClient,
+    params: {
+      Bucket: CLOUDFARE_APP_BUCKET,
+      Key: key,
+      Body: fileStream,
+      ContentType: "video/x-matroska",
+    },
+    // Optional configurations for tuning performance
+    queueSize: 4,
+    partSize: 1024 * 1024 * 5, // 5MB chunks
+    leavePartsOnError: false,
+  });
+
+  await parallelUploads3.done();
 }
 
 const compressTorrent = async (
@@ -237,71 +303,31 @@ const compressTorrent = async (
   // Download the input file to the temporary input path
   await downloadToDisk(vid.url, tempInpPath, onFinish, onError, prog)
 
+  const compErr = ()=> downloadTasks.set(taskId, {
+    epInfo,
+    status: "error",
+    progress: downloadTasks.get(taskId)?.progress || 10,
+  });
+
+  const compProg = (percent: number)=> downloadTasks.set(taskId, {
+    epInfo,
+    status: "pending",
+    progress:
+      percent * ((maxProg - baseProg - 10) / 100) + baseProg + 10,
+  });
+
   try {
-    // 1. Run Ffmpeg and output to local temp file
-    await new Promise<void>((resolve, reject) => {
-      const command = ffmpeg(tempInpPath)
-        .videoCodec("libx265") // Switched to high-efficiency HEVC
-        .audioCodec("aac")
-        .outputOptions("-crf 32")
-        .outputOptions("-preset medium")
-        .audioChannels(2)
-        .audioBitrate("96k")
-        .outputOptions("-pix_fmt yuv420p") // Forces standard 8-bit web color format
-        .outputOptions("-tag:v hvc1") // Tells Apple/Chrome devices exactly how to decode the stream
-        .outputOptions("-movflags +faststart")
-        .format("matroska")
-        .on("start", (command) => console.log("ffmpeg start", command))
-        .on("error", (err) => {
-          console.error("ffmpeg error", err);
-          downloadTasks.set(taskId, {
-            epInfo,
-            status: "error",
-            progress: downloadTasks.get(taskId)?.progress || 10,
-          });
-          reject(err);
-        })
-        .on("progress", ({ percent }) => {
-          if (percent)
-            downloadTasks.set(taskId, {
-              epInfo,
-              status: "pending",
-              progress:
-                percent * ((maxProg - baseProg - 10) / 100) + baseProg + 10,
-            });
-        })
-        .on("end", () => {
-          console.log("ffmpeg processing done");
-          downloadTasks.set(taskId, {
-            epInfo,
-            status: "pending",
-            progress: 90 * ((maxProg - baseProg) / 100) + baseProg,
-          });
-          resolve();
-        });
-      if (scale) command.size(`${scale.width}:${scale.height}`);
-      command.save(tempOutpPath); // Saves directly to local storage safely
-    });
-
-    // 2. Upload the finished file to Cloudflare R2 using AWS Lib-Storage Upload
-    console.log("Uploading file to Cloudflare R2...");
-    const fileStream = createReadStream(tempOutpPath);
-
-    const parallelUploads3 = new Upload({
-      client: cloudflareClient,
-      params: {
-        Bucket: CLOUDFARE_APP_BUCKET,
-        Key: key,
-        Body: fileStream,
-        ContentType: "video/x-matroska",
-      },
-      // Optional configurations for tuning performance
-      queueSize: 4,
-      partSize: 1024 * 1024 * 5, // 5MB chunks
-      leavePartsOnError: false,
-    });
-
-    await parallelUploads3.done();
+    let isCompressed = false
+    try {
+      await compressWithCl(key, tempInpPath, compProg)
+      isCompressed = true
+    } catch (err) {
+      console.log(err)
+    }
+    
+    if (!isCompressed) {
+      await compressWithFfmpeg(tempInpPath, tempOutpPath, key, compErr, compProg)
+    }
     console.log("Upload completed successfully");
 
     downloadTasks.set(taskId, {
