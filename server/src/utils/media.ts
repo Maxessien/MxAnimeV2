@@ -8,6 +8,7 @@ import { _QueryFilter } from "mongoose";
 import os from "os";
 import path from "path";
 import {
+  cloudConvert,
   CLOUDFARE_APP_BUCKET,
   cloudflareClient,
   downloadTasks,
@@ -118,6 +119,80 @@ const downloadTorrentSeedr = async (
   };
 };
 
+
+const downloadToDisk = async (
+  inputUrl: string,
+  outputPath: string,
+  onFinish: () => void,
+  onError: () => void,
+  prog: (e: any) => void,
+) => {
+  const response = await axios.get(inputUrl, {
+    responseType: "stream",
+    onDownloadProgress: prog,
+  });
+
+  await new Promise<void>((resolve, reject) => {
+    const writer = createWriteStream(outputPath);
+    response.data.pipe(writer);
+    writer.on("finish", () => {
+      console.log("Download finished successfully.");
+      onFinish()
+      resolve();
+    });
+    writer.on("error", (err) => {
+      console.error("Write stream error during download:", err);
+      onError()
+      reject(err);
+    });
+  });
+};
+
+const compressWithCl = async (s3Key: string, input: string) => {
+  const job = await cloudConvert.jobs.create({
+    tasks: {
+      "import": {
+        operation: "import/upload",
+      },
+      "convert-op": {
+        operation: "convert",
+        input: "import",
+        output_format: "mkv",
+        input_format: "mkv",
+        engine: "ffmpeg",
+        video_codec: "x265",
+        crf: 35,
+        preset: "medium",
+        audio_codec: "opus",
+        audio_bitrate: 96,
+        subtitles_mode: "copy"
+      },
+      "export": {
+        operation: "export/s3",
+        access_key_id: process.env.CLOUDFARE_ACCESS_KEY || "",
+        bucket: CLOUDFARE_APP_BUCKET,
+        secret_access_key: process.env.CLOUDFARE_SECRET_KEY || "",
+        input: "convert-op",
+        region: "auto",
+        key: s3Key
+      }
+    }
+  })
+
+  const uploadTask = job.tasks.find(task => task.name === 'import');
+
+  if (!uploadTask) {
+    throw new Error("Task not found")
+  }
+  
+  const inputFile = createReadStream(input);
+  await cloudConvert.tasks.upload(uploadTask, inputFile);
+  const waitedJob = await cloudConvert.jobs.wait(job.id)
+  const exportUrl = cloudConvert.jobs.getExportUrls(waitedJob)[0]
+
+  return exportUrl
+}
+
 const compressTorrent = async (
   vid: { url: string },
   taskId: number,
@@ -136,10 +211,8 @@ const compressTorrent = async (
   const tempInpPath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
   const tempOutpPath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
 
-  // Download the input file to the temporary input path
-  const response = await axios.get(vid.url, {
-    responseType: "stream",
-    onDownloadProgress: (e) => {
+  const {prog, onFinish, onError} = {
+    prog: (e: any) => {
       if (e.total) {
         const frac = e.loaded / e.total; // 0..1
         downloadTasks.set(taskId, {
@@ -149,30 +222,20 @@ const compressTorrent = async (
         });
       }
     },
-  });
+    onFinish: ()=> downloadTasks.set(taskId, {
+      epInfo,
+      status: "pending",
+      progress: 10 * ((maxProg - baseProg) / 100) + baseProg,
+    }),
+    onError: ()=> downloadTasks.set(taskId, {
+      epInfo,
+      status: "error",
+      progress: 10 * ((maxProg - baseProg) / 100) + baseProg,
+    })
+  }
 
-  await new Promise<void>((resolve, reject) => {
-    const writer = createWriteStream(tempInpPath);
-    response.data.pipe(writer);
-    writer.on("finish", () => {
-      console.log("Download finished successfully.");
-      downloadTasks.set(taskId, {
-        epInfo,
-        status: "pending",
-        progress: 10 * ((maxProg - baseProg) / 100) + baseProg,
-      });
-      resolve();
-    });
-    writer.on("error", (err) => {
-      console.error("Write stream error during download:", err);
-      downloadTasks.set(taskId, {
-        epInfo,
-        status: "error",
-        progress: 10 * ((maxProg - baseProg) / 100) + baseProg,
-      });
-      reject(err);
-    });
-  });
+  // Download the input file to the temporary input path
+  await downloadToDisk(vid.url, tempInpPath, onFinish, onError, prog)
 
   try {
     // 1. Run Ffmpeg and output to local temp file
@@ -180,7 +243,7 @@ const compressTorrent = async (
       const command = ffmpeg(tempInpPath)
         .videoCodec("libx265") // Switched to high-efficiency HEVC
         .audioCodec("aac")
-        .outputOptions("-crf 26")
+        .outputOptions("-crf 32")
         .outputOptions("-preset medium")
         .audioChannels(2)
         .audioBitrate("96k")
@@ -306,7 +369,7 @@ const dlAndCompress = async (
 ) => {
   let url: string | null = null;
   let cleanUp: (() => Promise<void>) | null = null;
-  
+
   try {
     const sInfo = await downloadTorrentSeedr(magUri, epInfo, taskId);
 

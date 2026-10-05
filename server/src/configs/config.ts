@@ -10,7 +10,8 @@ import { Tasks } from "../types/show.js";
 import { resolveFfmpegBinaryPath } from "../utils/ffmpegUtil.js";
 import { readFileSync } from "node:fs";
 import { createSubsplease } from "@maxessien/subsplease";
-import { SeedrClient } from "@maxessien/seedr"
+import { SeedrClient } from "@maxessien/seedr";
+import CloudConvert from "cloudconvert";
 
 const cloudflareAccessKey = process.env.CLOUDFARE_ACCESS_KEY || "";
 const cloudflareSecretKey = process.env.CLOUDFARE_SECRET_KEY || "";
@@ -65,16 +66,24 @@ mongoose.connection.on("error", (err) => {
 
 const downloadTasks: Map<number, Tasks> = new Map();
 
-const malIdSubplMap = new Map<number | string, {title: string, slug: string}>();
+const malIdSubplMap = new Map<
+  number | string,
+  { title: string; slug: string }
+>();
 
 let file = JSON.parse(readFileSync("subsplease-mal-map.json").toString());
 
 for (const entry of file) {
-  if (entry.mal_id) malIdSubplMap.set(entry.mal_id, {title: entry.title, slug: entry.slug});
+  if (entry.mal_id)
+    malIdSubplMap.set(entry.mal_id, { title: entry.title, slug: entry.slug });
 }
 
-const subsplease = createSubsplease()
-const seedrCl = await SeedrClient.login(process.env.SEEDR_EMAIL || "", process.env.SEEDR_PASS || "")
+const subsplease = createSubsplease();
+const seedrCl = await SeedrClient.login(
+  process.env.SEEDR_EMAIL || "",
+  process.env.SEEDR_PASS || "",
+);
+const cloudConvert = new CloudConvert(process.env.CL_API_KEY || "");
 
 export {
   CLOUDFARE_APP_BUCKET,
@@ -85,5 +94,7 @@ export {
   mongoose,
   seedrCl,
   uploader,
-  malIdSubplMap, subsplease
+  malIdSubplMap,
+  subsplease,
+  cloudConvert,
 };
