@@ -13,8 +13,18 @@ import { createSubsplease } from "@maxessien/subsplease";
 import { SeedrClient } from "@maxessien/seedr";
 import CloudConvert from "cloudconvert";
 
-const cloudflareAccessKey = process.env.CLOUDFARE_ACCESS_KEY || "";
-const cloudflareSecretKey = process.env.CLOUDFARE_SECRET_KEY || "";
+const getEnvWithThrow = (varName: string) => {
+  if (!varName || typeof varName !== "string")
+    throw new Error("Variable name is required");
+
+  const val = process.env[varName];
+
+  if (!val) throw new Error(`Environment variable ${varName} not found`);
+  else return val;
+};
+
+const cloudflareAccessKey = getEnvWithThrow("CLOUDFARE_ACCESS_KEY");
+const cloudflareSecretKey = getEnvWithThrow("CLOUDFARE_SECRET_KEY");
 const CLOUDFARE_URL =
   "https://dc18e8090b44f06d5139bf4673fc3e4b.r2.cloudflarestorage.com";
 const CLOUDFARE_APP_BUCKET = "mxanime";
@@ -30,7 +40,7 @@ const cloudflareClient = new S3Client({
 });
 
 // Parse CLOUDINARY_URL and configure
-const cloudinaryUrl = process.env.CLOUDINARY_URL || "";
+const cloudinaryUrl = getEnvWithThrow("CLOUDINARY_URL");
 const urlMatch = cloudinaryUrl.match(/cloudinary:\/\/([^:]+):([^@]+)@(.+)/);
 if (urlMatch) {
   cloudinary.config({
@@ -40,7 +50,7 @@ if (urlMatch) {
   });
 }
 
-if (process.env.NODE_ENV === "production") {
+if (getEnvWithThrow("NODE_ENV") === "production") {
   console.log("Production detected: Forcing native Linux FFmpeg/FFprobe paths");
   ffmpeg.setFfmpegPath("/usr/bin/ffmpeg");
   ffmpeg.setFfprobePath("/usr/bin/ffprobe");
@@ -53,7 +63,7 @@ if (process.env.NODE_ENV === "production") {
 const uploader = cloudinary.uploader;
 
 try {
-  await mongoose.connect(process.env.MONGO_URI || "");
+  await mongoose.connect(getEnvWithThrow("MONGO_URI"));
   //mongoose.connection.dropDatabase();
   console.log("Connected to mongodb server");
 } catch (err) {
@@ -80,14 +90,17 @@ for (const entry of file) {
 
 const subsplease = createSubsplease();
 const seedrCl = await SeedrClient.login(
-  process.env.SEEDR_EMAIL || "",
-  process.env.SEEDR_PASS || "",
+  getEnvWithThrow("SEEDR_EMAIL"),
+  getEnvWithThrow("SEEDR_PASS"),
 );
-const cloudConvert = new CloudConvert(process.env.CL_API_KEY || "");
+const cloudConvert = new CloudConvert(getEnvWithThrow("CL_API_KEY"));
 
 export {
+  getEnvWithThrow,
   CLOUDFARE_APP_BUCKET,
   CLOUDFARE_URL,
+  cloudflareSecretKey,
+  cloudflareAccessKey,
   cloudflareClient,
   downloadTasks,
   ffmpeg,
