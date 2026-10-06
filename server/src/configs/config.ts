@@ -41,14 +41,8 @@ if (urlMatch) {
   });
 }
 
-if (getEnvWithThrow("NODE_ENV") === "production") {
-  console.log("Production detected: Forcing native Linux FFmpeg/FFprobe paths");
-  ffmpeg.setFfmpegPath("/usr/bin/ffmpeg");
-  ffmpeg.setFfprobePath("/usr/bin/ffprobe");
-} else {
-  ffmpeg.setFfmpegPath(resolveFfmpegBinaryPath() ?? "");
-  ffmpeg.setFfprobePath(ffprobe.path);
-}
+ffmpeg.setFfmpegPath(resolveFfmpegBinaryPath() ?? "");
+ffmpeg.setFfprobePath(ffprobe.path);
 
 const uploader = cloudinary.uploader;
 
