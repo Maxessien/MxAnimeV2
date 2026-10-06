@@ -360,7 +360,7 @@ const compressTorrent = async (
 
     if (shouldSave) {
       // 3. Probe the file to get its duration, size, etc.
-      const info = isCompressed && existsSync(tempOutpPath)
+      const info = isCompressed && !existsSync(tempOutpPath)
         ? await cloudflareClient.send(
             new HeadObjectCommand({ Bucket: CLOUDFARE_APP_BUCKET, Key: key }),
           )

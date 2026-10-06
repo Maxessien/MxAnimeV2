@@ -41,7 +41,9 @@ if (urlMatch) {
   });
 }
 
-ffmpeg.setFfmpegPath(resolveFfmpegBinaryPath() ?? "");
+const ffmpegPath = resolveFfmpegBinaryPath()
+
+ffmpeg.setFfmpegPath(ffmpegPath ?? "");
 ffmpeg.setFfprobePath(ffprobe.path);
 
 const uploader = cloudinary.uploader;
