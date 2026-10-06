@@ -137,7 +137,7 @@ async function downloadAnime(
         taskId: taskId.toString(),
       });
 
-      await mutateAsync({
+      if (path) await mutateAsync({
         anime: {
           ...info,
           episode: {

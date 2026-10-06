@@ -69,8 +69,8 @@ export default function AnimeDetail() {
     },
   });
 
-  const episodes = episodesData?.data?.episodes
-    ? Object.entries(episodesData.data.episodes).map((v) => ({
+  const episodes = episodesData?.episodes
+    ? Object.entries(episodesData.episodes).map((v) => ({
         ...v[1],
         hasAired: Boolean(
           (v[1].airDateUtc || v[1].airDate || v[1].airdate) &&

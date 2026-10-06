@@ -152,9 +152,18 @@ export const useAnimeCharacters = (id: string | number) => {
 };
 
 export const useAnimeEpisodes = (id: string | number) => {
-  return useQuery<AxiosResponse<AniZipMetadata>>({
+  return useQuery<AniZipMetadata>({
     queryKey: ["anime-episodes", id],
-    queryFn: () => axios.get<AniZipMetadata>(`https://api.ani.zip/mappings?mal_id=${id}`),
+    queryFn: async() => {
+      const { data } = await axios.get<AniZipMetadata>(`https://api.ani.zip/mappings?mal_id=${id}`)
+      const filteredEps: AniZipMetadata["episodes"] = {}
+
+      for (const key in data.episodes) {
+        if (Number.isFinite(Number(key))) filteredEps[key] = data.episodes[key]
+      }
+
+      return {...data, episodes: filteredEps}
+    },
     enabled: !!id,
     staleTime: 5 * 60 * 1000,
   });
