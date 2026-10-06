@@ -48,7 +48,7 @@ export default function Downloads() {
       ongoingDownloadQueue.removeEventListener("modify", increment);
       ongoingDownloadQueue.removeEventListener("status_update", increment);
       ongoingDownloadQueue.removeEventListener("prog_update", increment);
-      downloadQueue.addEventListener("modify", increment)
+      downloadQueue.removeEventListener("modify", increment)
       if (unlisten) unlisten();
     };
   }, []);
