@@ -25,6 +25,7 @@ export default function Downloads() {
   useEffect(() => {
     const increment = () => triggerRender((prev) => prev + 1);
 
+    downloadQueue.addEventListener("modify", increment)
     ongoingDownloadQueue.addEventListener("modify", increment);
     ongoingDownloadQueue.addEventListener("status_update", increment);
     ongoingDownloadQueue.addEventListener("prog_update", increment);
@@ -47,6 +48,7 @@ export default function Downloads() {
       ongoingDownloadQueue.removeEventListener("modify", increment);
       ongoingDownloadQueue.removeEventListener("status_update", increment);
       ongoingDownloadQueue.removeEventListener("prog_update", increment);
+      downloadQueue.addEventListener("modify", increment)
       if (unlisten) unlisten();
     };
   }, []);
@@ -60,14 +62,6 @@ export default function Downloads() {
             Downloads
           </h1>
         </div>
-        {/* {tab === "downloads" && json.downloads.length > 0 && (
-          <button
-            onClick={() => clear.mutateAsync()}
-            className="flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium bg-muted hover:bg-destructive hover:text-destructive-foreground transition-colors"
-          >
-            <Trash2 size={16} /> Clear All
-          </button>
-        )} */}
       </div>
 
       <div className="border-b border-border">
