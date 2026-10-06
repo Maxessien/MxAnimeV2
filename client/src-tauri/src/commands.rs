@@ -188,6 +188,7 @@ pub async fn dl_file(
     };
 
     if broke_early {
+        drop(f);
         let _ = fs::remove_file(path);
         return Err(String::from("cancelled download"));
     }

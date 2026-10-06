@@ -74,12 +74,12 @@ class OngoingDlQueue extends Queue<OngoingDl> {
     if (val) val.isCancelled = true
 
     if (shouldInvoke) {
-      await invoke("cancel_dl", {id: taskId})
+      await invoke("cancel_dl", {id: taskId.toString()})
     }
   }
 }
 
-export const downloadQueue = new Queue<AnimeSummary>();
+export const downloadQueue = new Queue<AnimeSummary & {queueId: string}>();
 export const ongoingDownloadQueue = new OngoingDlQueue();
 
 export default Queue;

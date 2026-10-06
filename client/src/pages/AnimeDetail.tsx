@@ -62,6 +62,7 @@ export default function AnimeDetail() {
           quality,
         },
         score: anime.score,
+        queueId: window.crypto.randomUUID()
       });
 
       if (!downloadQueue.isProcessing) await downloadAnime(add.mutateAsync);
