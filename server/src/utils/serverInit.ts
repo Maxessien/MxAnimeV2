@@ -42,4 +42,14 @@ function normalizePort(val: string): number | string | false {
   return false;
 }
 
-export {normalizePort, onError, onListening}
+const getEnvWithThrow = (varName: string) => {
+  if (!varName || typeof varName !== "string")
+    throw new Error("Variable name is required");
+
+  const val = process.env[varName];
+
+  if (!val) throw new Error(`Environment variable ${varName} not found`);
+  else return val;
+};
+
+export {normalizePort, onError, onListening, getEnvWithThrow}

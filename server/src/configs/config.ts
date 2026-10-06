@@ -1,5 +1,5 @@
-// import { config } from "dotenv";
-// config()
+import { config } from "dotenv";
+config()
 
 import { S3Client } from "@aws-sdk/client-s3";
 import ffmpeg from "@ts-ffmpeg/fluent-ffmpeg";
@@ -12,16 +12,7 @@ import { readFileSync } from "node:fs";
 import { createSubsplease } from "@maxessien/subsplease";
 import { SeedrClient } from "@maxessien/seedr";
 import CloudConvert from "cloudconvert";
-
-const getEnvWithThrow = (varName: string) => {
-  if (!varName || typeof varName !== "string")
-    throw new Error("Variable name is required");
-
-  const val = process.env[varName];
-
-  if (!val) throw new Error(`Environment variable ${varName} not found`);
-  else return val;
-};
+import { getEnvWithThrow } from "../utils/serverInit.js";
 
 const cloudflareAccessKey = getEnvWithThrow("CLOUDFARE_ACCESS_KEY");
 const cloudflareSecretKey = getEnvWithThrow("CLOUDFARE_SECRET_KEY");
@@ -59,12 +50,10 @@ if (getEnvWithThrow("NODE_ENV") === "production") {
   ffmpeg.setFfprobePath(ffprobe.path);
 }
 
-// const uploader = process.env.NODE_ENV === "development" ? offlineCloudinary : cloudinary.uploader
 const uploader = cloudinary.uploader;
 
 try {
   await mongoose.connect(getEnvWithThrow("MONGO_URI"));
-  //mongoose.connection.dropDatabase();
   console.log("Connected to mongodb server");
 } catch (err) {
   console.log(err);
