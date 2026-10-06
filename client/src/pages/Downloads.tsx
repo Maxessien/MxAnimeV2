@@ -1,8 +1,9 @@
 import DlHistory from "@/components/downloads/DlHistory";
 import OngoingDlCard from "@/components/downloads/OngoingDlCard";
+import WatingCard from "@/components/downloads/WaitingCard";
 import { useJson } from "@/hooks/use-json";
 import { AnimeSummary } from "@/lib/local-store";
-import { ongoingDownloadQueue } from "@/lib/queue";
+import { downloadQueue, ongoingDownloadQueue } from "@/lib/queue";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { Download as DownloadIcon } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -23,7 +24,7 @@ export default function Downloads() {
 
   useEffect(() => {
     const increment = () => triggerRender((prev) => prev + 1);
-    
+
     ongoingDownloadQueue.addEventListener("modify", increment);
     ongoingDownloadQueue.addEventListener("status_update", increment);
     ongoingDownloadQueue.addEventListener("prog_update", increment);
@@ -108,6 +109,9 @@ export default function Downloads() {
             {ongoingDownloadQueue.traverse().map((val, idx) => (
               <OngoingDlCard key={idx} {...val} />
             ))}
+            {downloadQueue.traverse().map((val, i) => <WatingCard anime={{
+              image: val.image, title: `${val.title} - Episode ${val.episode.ep}`
+            }} key={i} />)}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center text-center py-16 gap-3 border-2 border-dashed rounded-2xl">

@@ -28,6 +28,8 @@ export function AnimeEpisodes({
   showDlPopup,
 }: AnimeEpisodesProps) {
   const [_, navigate] = useLocation();
+  const airedTotal = episodes.filter(v => v.hasAired).length
+
   return (
     <section>
       <div className="flex items-center justify-between mb-6">
@@ -83,11 +85,12 @@ export function AnimeEpisodes({
               {episode.hasAired && (
                 <>
                   <button
-                    onClick={() =>
+                    onClick={() => {
+                      console.log("navigating....")
                       navigate(
-                        `/stream?mal_id=${anime.mal_id}&ep=${episode.episodeNumber || episode.episode || index + 1}`,
+                        `/stream?mal_id=${anime.mal_id}&title=${anime.title}&total=${airedTotal}&ep=${episode.episodeNumber || episode.episode || index + 1}`,
                       )
-                    }
+                    }}
                     className="rounded-full hover:bg-primary/90 transition-all p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
                   >
                     <FaPlay />

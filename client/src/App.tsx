@@ -32,12 +32,12 @@ function Router() {
     <Shell>
       <Switch>
         <Route path="/" component={Home} />
+        <Route path="/stream" component={AnimeStream} />
         <Route path="/top" component={TopAnime} />
         <Route path="/seasons" component={Seasons} />
         <Route path="/schedule" component={Schedule} />
         <Route path="/search" component={Search} />
         <Route path="/anime/:id" component={AnimeDetail} />
-        <Route path="/stream" component={AnimeStream} />
         <Route path="/history" component={History} />
         <Route path="/downloads" component={Downloads} />
         <Route path="/downloads/:id" component={DownloadDetails} />

@@ -49,7 +49,6 @@ export default function AnimeDetail() {
       season: string | number;
       quality: number;
     }) => {
-      console.log(downloadQueue);
       if (!anime) return;
       downloadQueue.push({
         mal_id: anime.mal_id,
@@ -130,7 +129,6 @@ export default function AnimeDetail() {
         <AnimeDetailHero
           anime={anime}
           trailerUrl={null}
-          epIds={episodes.map((v, i) => v.episodeNumber ?? i + 1)}
         />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">

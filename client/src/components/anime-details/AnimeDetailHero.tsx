@@ -1,54 +1,20 @@
 import { Badge } from "@/components/ui/badge";
-import { useJson } from "@/hooks/use-json";
-import { AnimeSummary, downloadAnime } from "@/lib/local-store";
-import { downloadQueue } from "@/lib/queue";
 import { AnimeFull } from "@/types/jikan";
-import { useMutation } from "@tanstack/react-query";
-import { Check, Download, Star } from "lucide-react";
-import { FaSpinner } from "react-icons/fa";
+import { Star } from "lucide-react";
 
 type AnimeDetailHeroProps = {
   anime: AnimeFull;
   trailerUrl?: string | null;
-  epIds: (string | number)[];
 };
 
 export function AnimeDetailHero({
   anime,
   trailerUrl,
-  epIds,
 }: AnimeDetailHeroProps) {
   const coverImage =
     anime.images?.webp?.large_image_url ||
     anime.images?.jpg?.large_image_url ||
     "";
-
-  const { add, json } = useJson<AnimeSummary>({
-    type: "downloads",
-  });
-
-  const isDownloaded = json.downloads.some((v) => v.mal_id === anime.mal_id);
-
-  const { mutateAsync, isPending } = useMutation({
-    mutationFn: async () => {
-      epIds.forEach((id) => {
-        downloadQueue.push({
-          mal_id: anime.mal_id,
-          title: anime.title,
-          image: anime.images.webp.large_image_url,
-          type: anime.type,
-          episode: {
-            ep: id,
-            path: "",
-            quality: 0,
-            season: 1,
-          },
-          score: anime.score,
-        });
-      });
-      if (!downloadQueue.isProcessing) await downloadAnime(add.mutateAsync);
-    },
-  });
 
   return (
     <div className="relative -mt-8 -mx-4 md:-mx-8 mb-8 md:mb-16">
@@ -58,7 +24,6 @@ export function AnimeDetailHero({
             src={`${trailerUrl}&autoplay=1&mute=1&controls=0&loop=1`}
             className="w-full h-[150%] mt-[-10%] opacity-40 pointer-events-none scale-110 object-cover"
             title={`${anime.title} banner trailer`}
-            frameBorder="0"
             allow="autoplay; encrypted-media"
           />
         ) : (
@@ -93,11 +58,6 @@ export function AnimeDetailHero({
               </Badge>
             )}
             {anime.type && <Badge variant="outline">{anime.type}</Badge>}
-            {/* {anime.rating && (
-              <Badge variant="outline" className="opacity-70">
-                {anime.rating}
-              </Badge>
-            )} */}
           </div>
 
           <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-display font-extrabold tracking-tight mb-2 text-foreground">
@@ -135,31 +95,6 @@ export function AnimeDetailHero({
               </span>
             </div>
           </div>
-
-          <button
-            onClick={() => mutateAsync()}
-            className={`mt-4 flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl font-medium text-sm w-fit mx-auto md:mx-0 transition-colors ${
-              isDownloaded
-                ? "bg-primary/10 text-primary border border-primary/30 hover:bg-destructive/10 hover:text-destructive hover:border-destructive/30"
-                : "bg-secondary text-secondary-foreground hover:bg-secondary/80"
-            }`}
-            disabled={
-              isPending ||
-              isDownloaded ||
-              downloadQueue.traverse().some((v) => v.mal_id === anime.mal_id)
-            }
-          >
-            {isPending ? (
-              <>
-                <FaSpinner className="animate-spin" />
-              </>
-            ) : (
-              <>
-                {isDownloaded ? <Check size={16} /> : <Download size={16} />}
-                {isDownloaded ? "Downloaded" : "Download all"}
-              </>
-            )}
-          </button>
         </div>
       </div>
     </div>

@@ -1,6 +1,9 @@
+import { ongoingDownloadQueue } from "@/lib/queue";
 import { OngoingDl, Tasks } from "@/types/apiResponses";
+import { toast } from "react-toastify";
+import { Button } from "../ui/button";
 
-const OngoingDlCard = ({ anime, curr, status, total }: OngoingDl) => {
+const OngoingDlCard = ({ anime, curr, status, total, id }: OngoingDl) => {
     if (!status) return <></>
 
   const progress =
@@ -15,6 +18,15 @@ const OngoingDlCard = ({ anime, curr, status, total }: OngoingDl) => {
     completed: "Downloading...",
     error: "Download Failed",
   };
+
+  const cancelOngoing = async () => {
+    try {
+      ongoingDownloadQueue.cancel(id, status.status === "completed")
+    } catch (err) {
+      console.log(err)
+      toast.error("Clean up Failed")
+    }
+  }
 
   return (
     <div className="relative overflow-hidden rounded-2xl border bg-card/80 backdrop-blur-sm shadow-sm transition-all hover:shadow-md hover:border-primary/30">
@@ -70,6 +82,10 @@ const OngoingDlCard = ({ anime, curr, status, total }: OngoingDl) => {
             </>
           )}
         </div>
+
+        <Button onClick={cancelOngoing} className="bg-secondary text-primary rounded-full hover:scale-[1.05] cursor-pointer transition-all">
+          Cancel
+        </Button>
       </div>
     </div>
   );

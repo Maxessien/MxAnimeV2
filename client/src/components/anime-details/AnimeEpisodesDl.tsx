@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import { BACKEND_URL } from "@/lib/local-store";
 import { DbEpisode } from "@/types/apiResponses";
 import { UseMutateAsyncFunction, useQuery } from "@tanstack/react-query";
-import axios from "axios";
 import { FaSpinner } from "react-icons/fa";
 import { HiX } from "react-icons/hi";
 
@@ -19,7 +18,7 @@ export function AnimeEpisodesDl({
     {
       eid: string | number;
       season: string | number;
-      quality: number
+      quality: number;
     },
     unknown
   >;
@@ -27,14 +26,18 @@ export function AnimeEpisodesDl({
   const { data, isFetching } = useQuery({
     queryKey: ["episode_info", eId, mal_id, sId],
     queryFn: async () => {
-      const res = await axios.post<
-        Pick<DbEpisode, "eId" | "malId" | "quality" | "sId">[]
-      >(`${BACKEND_URL}/show/ep`, {
-        mal_id,
-        eId,
-        sId,
-      });
-      return res.data;
+      const f = await fetch(`${BACKEND_URL}/show/ep`, {
+        method: "POST",
+        body: JSON.stringify({
+          mal_id,
+          eId,
+          sId,
+        }),
+        headers: {"Content-Type": "application/json"}
+      })
+      if (!f.ok) throw new Error("Fetch fail")
+      const res: Pick<DbEpisode, "eId" | "malId" | "quality" | "sId">[] = await f.json();
+      return res;
     },
     staleTime: Infinity,
     refetchOnWindowFocus: false,
@@ -44,9 +47,11 @@ export function AnimeEpisodesDl({
   return (
     <div className="flex justify-center items-center backdrop-blur-3xl z-99999 fixed top-0 left-0 w-screen h-screen">
       <div className="bg-muted/30 p-6 max-w-140 rounded-2xl border">
-      <div className="flex justify-end items-center">
-        <button onClick={closeFn} className="text-2xl font-medium"><HiX /></button>
-      </div>
+        <div className="flex justify-end items-center">
+          <button onClick={closeFn} className="text-2xl font-medium">
+            <HiX />
+          </button>
+        </div>
         <h2 className="font-bold text-lg mb-2">Download Quality</h2>
         <p className="text-muted-foreground text-sm mb-6">
           Choose quality to download file with
@@ -64,8 +69,8 @@ export function AnimeEpisodesDl({
               <Button
                 key={`${eId}-${sId}-${quality}`}
                 onClick={() => {
-                  mutationFn({ eid: eId, season: sId, quality })
-                  closeFn()
+                  mutationFn({ eid: eId, season: sId, quality });
+                  closeFn();
                 }}
                 variant="secondary"
                 className="min-w-20 cursor-pointer hover:brightness-110 transition-all"

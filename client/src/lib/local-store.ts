@@ -53,6 +53,8 @@ async function downloadAnime(
 
   const { mal_id, episode } = info;
 
+  let ongoingAdded: {active: boolean, taskId: string | number} = {active: false, taskId: ""}
+
   try {
     const {
       data: { taskId, isCompressed, episode: ep },
@@ -95,9 +97,16 @@ async function downloadAnime(
       total: 100,
       status: status?.status ?? null,
       id: taskId,
+      isCancelled: false
     });
 
-    while (!status || status.status.status === "pending") {
+    ongoingAdded = {
+      active: true, taskId
+    }
+
+    let ongoing = ongoingDownloadQueue.traverse().find(v => v.id === taskId)
+
+    while ((!status || status.status.status === "pending") && ongoing && !ongoing.isCancelled) {
       const { data } = await axios.get<DownloadStatus>(
         `${BACKEND_URL}/show/status/${taskId}`,
       );
@@ -108,6 +117,8 @@ async function downloadAnime(
 
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
+
+    if (!status) throw new Error("Status not found")
 
     if (status.status.status === "completed" && status.episode) {
       const safeTitle = info.title.replace(/[<>:"/\\|?*]/g, "_");
@@ -144,6 +155,7 @@ async function downloadAnime(
   } catch (err) {
     console.log("Failed download", err);
     downloadQueue.isProcessing = false;
+    if (ongoingAdded.active) ongoingDownloadQueue.removeById(ongoingAdded.taskId)
     toast.error(`${info.title} - Episode ${episode.ep} download failed`);
     return downloadAnime(mutateAsync);
   }
