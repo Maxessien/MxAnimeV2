@@ -113,6 +113,8 @@ const addEpisode = (req: Request, res: Response) =>
   handler(res, async () => {
     const { mal_id, eId, sId, quality, mag_uri } = req.body;
 
+    conole.log(mal_id, eId, sId)
+
     if (!mal_id || !eId || !sId)
       return res
         .status(CLIENT_ERROR.BAD_REQUEST)
