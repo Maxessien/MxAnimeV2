@@ -8,6 +8,7 @@ use tauri::{AppHandle, Emitter, Manager};
 use tokio::{
     fs::{create_dir_all, write, File},
     io::{AsyncReadExt, AsyncWriteExt},
+    sync::RwLock,
 };
 
 use futures_util::{StreamExt, TryFutureExt};
@@ -16,7 +17,12 @@ use futures_util::{StreamExt, TryFutureExt};
 pub struct ByteProgress {
     pub current: usize,
     pub total: usize,
-    pub task_id: String
+    pub task_id: String,
+}
+
+pub struct CancelFlag {
+    pub active: bool,
+    pub id: String,
 }
 
 async fn check_path(path: PathBuf) -> Result<(bool, PathBuf), String> {
@@ -98,7 +104,22 @@ pub async fn get_json_file(app: AppHandle, sub_path: String) -> Result<String, S
 }
 
 #[tauri::command]
-pub async fn dl_file(app: tauri::AppHandle, url: String, save_as: String, task_id: String) -> Result<PathBuf, String> {
+pub async fn cancel_dl(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    let state = app.state::<RwLock<CancelFlag>>();
+    let mut cancel = state.write().await;
+
+    *cancel = CancelFlag { active: true, id };
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn dl_file(
+    app: tauri::AppHandle,
+    url: String,
+    save_as: String,
+    task_id: String,
+) -> Result<PathBuf, String> {
     let cl = Client::new();
 
     let res = cl
@@ -132,8 +153,15 @@ pub async fn dl_file(app: tauri::AppHandle, url: String, save_as: String, task_i
 
     let app_clone = app.clone();
 
+    let state = app.state::<RwLock<CancelFlag>>();
+    let cancel = state.read().await;
+
     while let Some(byte) = str.next().await {
         let b = byte.map_err(|_| "Failed to read stream")?;
+
+        if cancel.active && cancel.id == task_id {
+            break;
+        }
 
         curr += b.len();
         let _ = f.write_all(&b).await;
@@ -144,12 +172,18 @@ pub async fn dl_file(app: tauri::AppHandle, url: String, save_as: String, task_i
                 ByteProgress {
                     current: curr,
                     total,
-                    task_id: task_id.clone()
+                    task_id: task_id.clone(),
                 },
             );
             last_emit = Instant::now();
         };
     }
+
+    let mut cancel = state.write().await;
+    *cancel = CancelFlag {
+        active: false,
+        id: String::new(),
+    };
 
     let _ = f.flush().await;
 
