@@ -109,7 +109,7 @@ export default function Downloads() {
             {ongoingDownloadQueue.traverse().map((val, idx) => (
               <OngoingDlCard key={idx} {...val} />
             ))}
-            {downloadQueue.traverse().map((val, i) => <WatingCard queueIdx={i} anime={{
+            {downloadQueue.traverse().map((val, i) => <WatingCard queueId={val.queueId} anime={{
               image: val.image, title: `${val.title} - Episode ${val.episode.ep}`
             }} key={i} />)}
           </div>

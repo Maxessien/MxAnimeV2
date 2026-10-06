@@ -8,8 +8,8 @@ const WatingCard = ({ anime, queueId }: { anime: Pick<AnimeSummary, "image" | "t
   const increment = () => triggerRender((prev) => prev + 1);
 
   const removeWaiting = () => {
-    const item = downloadQueue.traverse().findIndex(v => v.queueId === queueId)
-    downloadQueue.removeAt(item)
+    const idx = downloadQueue.traverse().findIndex(v => v.queueId === queueId)
+    downloadQueue.removeAt(idx)
     increment()
   }
 
