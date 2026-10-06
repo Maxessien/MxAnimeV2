@@ -16,3 +16,4 @@ PikPakAPI==0.1.11
 Werkzeug==3.1.8
 python-dotenv==1.2.3
 asgiref==3.12.1
+gunicorn==26.2.0

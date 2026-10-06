@@ -5,34 +5,29 @@ from typing import Union
 from dotenv import load_dotenv
 from flask import Flask, jsonify, request
 from models.types import PikPakFileInfo
-from pikpakapi import PikpakException
-from utils.util import PIKPAK_CREDENTIALS, parse_pikpak_info, pikpak, pikpak_auth
+from pikpakapi import PikPakApi, PikpakException
+from utils.util import PIKPAK_CREDENTIALS, parse_pikpak_info, pikpak_auth
 
 load_dotenv()
 
+pikpak: PikPakApi
 
 app = Flask(__name__)
 
-def init_app():
-    try:
-        # Gets the running loop that Flask[async] is using
-        loop = asyncio.get_running_loop()
-    except RuntimeError:
-        # Fallback if the loop hasn't started yet
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
-    
-    # Schedules auth function to run once inside the loop
-    loop.create_task(pikpak_auth())
+async def assign():
+    global pikpak
+    pikpak = await pikpak_auth()
 
-init_app()
-
+asyncio.run(assign())
 
 
 @app.route("/task", methods=["POST"])
 async def add_task():
     try:
-        if PIKPAK_CREDENTIALS["creds"][PIKPAK_CREDENTIALS["curr_idx"]]["remaining_use"] == 0:
+        if (
+            PIKPAK_CREDENTIALS["creds"][PIKPAK_CREDENTIALS["curr_idx"]]["remaining_use"]
+            == 0
+        ):
             PIKPAK_CREDENTIALS["curr_idx"] += 1
             await pikpak_auth()
         magUri = dict(request.get_json()).get("magUri")
@@ -40,7 +35,9 @@ async def add_task():
             return jsonify("Magnet uri is missing"), 4
         r = await pikpak.offline_download(file_url=magUri)
 
-        PIKPAK_CREDENTIALS["creds"][PIKPAK_CREDENTIALS["curr_idx"]]["remaining_use"] -= 1
+        PIKPAK_CREDENTIALS["creds"][PIKPAK_CREDENTIALS["curr_idx"]][
+            "remaining_use"
+        ] -= 1
 
         return jsonify(r.get("task")), 201
     except PikpakException as err:

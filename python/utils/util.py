@@ -1,6 +1,5 @@
-import asyncio
 from datetime import datetime, timezone
-from json import loads
+from json import JSONDecodeError, loads
 from os import environ
 
 from dotenv import load_dotenv
@@ -10,8 +9,6 @@ from pikpakapi import PikPakApi
 load_dotenv()
 
 PIKPAK_CREDENTIALS: PkCreds = {"curr_idx": 0, "creds": [], "is_active": False}
-
-pikpak: PikPakApi
 
 
 def parse_pikpak_info(info):
@@ -27,8 +24,14 @@ def parseEnvIntoCreds():
     if not usernames or not passwords:
         return {"success": False}
 
-    parsed_username = loads(usernames)
-    parsed_password = loads(passwords)
+    try:
+        parsed_username = loads(usernames)
+    except JSONDecodeError:
+        parsed_username = usernames
+    try:
+        parsed_password = loads(passwords)
+    except JSONDecodeError:
+        parsed_password = passwords
 
     if isinstance(parsed_username, str) or isinstance(parsed_password, str):
         PIKPAK_CREDENTIALS["creds"].append(
@@ -89,13 +92,7 @@ async def get_remaining_free_tasks(client: PikPakApi):
         create_time_raw = task.get("created_time")
 
         if create_time_raw:
-            # Convert string/int timestamp to a datetime object
-            timestamp = int(float(create_time_raw))
-            # Handle millisecond timestamps if necessary
-            if timestamp > 9999999999:
-                timestamp /= 1000
-
-            task_date = datetime.fromtimestamp(timestamp, timezone.utc)
+            task_date = datetime.fromisoformat(create_time_raw)
 
             # If the task was started after midnight UTC today, count it
             if task_date >= today_midnight_utc:
@@ -118,8 +115,6 @@ async def pikpak_auth():
 
     curr_info = PIKPAK_CREDENTIALS["creds"][idx]
 
-    global pikpak
-
     pikpak = PikPakApi(username=curr_info["username"], password=curr_info["passsword"])
 
     await pikpak.login()
@@ -129,3 +124,5 @@ async def pikpak_auth():
     if remaining == 0:
         PIKPAK_CREDENTIALS["curr_idx"] += 1
         return await pikpak_auth()
+    else:
+        return pikpak
