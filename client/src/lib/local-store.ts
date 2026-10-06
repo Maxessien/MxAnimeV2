@@ -108,13 +108,13 @@ async function downloadAnime(
       taskId,
     };
 
-    let ongoing = ongoingDownloadQueue.traverse().find((v) => v.id === taskId);
+    while (!status || status.status.status === "pending") {
+      const ongoing = ongoingDownloadQueue
+        .traverse()
+        .find((v) => v.id === taskId);
 
-    while (
-      (!status || status.status.status === "pending") &&
-      ongoing &&
-      !ongoing.isCancelled
-    ) {
+      if (ongoing && ongoing.isCancelled) break;
+
       const { data } = await axios.get<DownloadStatus>(
         `${BACKEND_URL}/show/status/${taskId}`,
       );
@@ -123,7 +123,7 @@ async function downloadAnime(
 
       status = data;
 
-      await new Promise((resolve) => setTimeout(resolve, 2000));
+      await new Promise((resolve) => setTimeout(resolve, 3000));
     }
 
     if (!status) throw new Error("Status not found");

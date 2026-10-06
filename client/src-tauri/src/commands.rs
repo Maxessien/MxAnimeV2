@@ -119,7 +119,7 @@ pub async fn dl_file(
     url: String,
     save_as: String,
     task_id: String,
-) -> Result<PathBuf, String> {
+) -> Result<Option<PathBuf>, String> {
     let cl = Client::new();
 
     let res = cl
@@ -190,10 +190,10 @@ pub async fn dl_file(
     if broke_early {
         drop(f);
         let _ = fs::remove_file(path);
-        return Err(String::from("cancelled download"));
+        return Ok(None);
     }
 
     let _ = f.flush().await;
 
-    Ok(path)
+    Ok(Some(path))
 }
