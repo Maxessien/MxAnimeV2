@@ -11,7 +11,8 @@ pub fn run() {
             commands::save_watch_history,
             commands::save_dl_history,
             commands::get_json_file,
-            commands::dl_file
+            commands::dl_file,
+            commands::cancel_dl
         ])
         .manage(RwLock::new(commands::CancelFlag {
             active: false,

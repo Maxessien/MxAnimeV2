@@ -53,7 +53,10 @@ async function downloadAnime(
 
   const { mal_id, episode } = info;
 
-  let ongoingAdded: {active: boolean, taskId: string | number} = {active: false, taskId: ""}
+  let ongoingAdded: { active: boolean; taskId: string | number } = {
+    active: false,
+    taskId: "",
+  };
 
   try {
     const {
@@ -97,16 +100,21 @@ async function downloadAnime(
       total: 100,
       status: status?.status ?? null,
       id: taskId,
-      isCancelled: false
+      isCancelled: false,
     });
 
     ongoingAdded = {
-      active: true, taskId
-    }
+      active: true,
+      taskId,
+    };
 
-    let ongoing = ongoingDownloadQueue.traverse().find(v => v.id === taskId)
+    let ongoing = ongoingDownloadQueue.traverse().find((v) => v.id === taskId);
 
-    while ((!status || status.status.status === "pending") && ongoing && !ongoing.isCancelled) {
+    while (
+      (!status || status.status.status === "pending") &&
+      ongoing &&
+      !ongoing.isCancelled
+    ) {
       const { data } = await axios.get<DownloadStatus>(
         `${BACKEND_URL}/show/status/${taskId}`,
       );
@@ -118,7 +126,7 @@ async function downloadAnime(
       await new Promise((resolve) => setTimeout(resolve, 2000));
     }
 
-    if (!status) throw new Error("Status not found")
+    if (!status) throw new Error("Status not found");
 
     if (status.status.status === "completed" && status.episode) {
       const safeTitle = info.title.replace(/[<>:"/\\|?*]/g, "_");
@@ -147,17 +155,16 @@ async function downloadAnime(
       toast.error(`${info.title} - Episode ${episode.ep} download failed`);
 
     ongoingDownloadQueue.removeById(taskId);
-
+  } catch (err) {
+    console.log("Failed download", err);
+    if (ongoingAdded.active)
+      ongoingDownloadQueue.removeById(ongoingAdded.taskId);
+    toast.error(`${info.title} - Episode ${episode.ep} download failed`);
+  } finally {
     if (downloadQueue.traverse().length > 0) return downloadAnime(mutateAsync);
     else {
       downloadQueue.isProcessing = false;
     }
-  } catch (err) {
-    console.log("Failed download", err);
-    downloadQueue.isProcessing = false;
-    if (ongoingAdded.active) ongoingDownloadQueue.removeById(ongoingAdded.taskId)
-    toast.error(`${info.title} - Episode ${episode.ep} download failed`);
-    return downloadAnime(mutateAsync);
   }
 }
 

@@ -3,17 +3,12 @@ import { downloadQueue } from "@/lib/queue";
 import { useState } from "react";
 import { Button } from "../ui/button";
 
-const WatingCard = ({ anime }: { anime: Pick<AnimeSummary, "image" | "title"> }) => {
+const WatingCard = ({ anime, queueIdx }: { anime: Pick<AnimeSummary, "image" | "title">, queueIdx: number }) => {
   const [_, triggerRender] = useState(0);
   const increment = () => triggerRender((prev) => prev + 1);
 
   const removeWaiting = () => {
-    const idx = downloadQueue.traverse()
-      .findIndex(
-        v => `${v.title} - Episode ${v.episode.ep}` === anime.title &&
-        v.image === anime.image
-      )
-    downloadQueue.removeAt(idx)
+    downloadQueue.removeAt(queueIdx)
     increment()
   }
 

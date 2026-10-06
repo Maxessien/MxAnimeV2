@@ -6,7 +6,7 @@ use std::{
 };
 use tauri::{AppHandle, Emitter, Manager};
 use tokio::{
-    fs::{create_dir_all, write, File},
+    fs::{self, create_dir_all, write, File},
     io::{AsyncReadExt, AsyncWriteExt},
     sync::RwLock,
 };
@@ -154,12 +154,14 @@ pub async fn dl_file(
     let app_clone = app.clone();
 
     let state = app.state::<RwLock<CancelFlag>>();
-    let cancel = state.read().await;
+    let mut broke_early = false;
 
     while let Some(byte) = str.next().await {
+        let cancel = state.read().await;
         let b = byte.map_err(|_| "Failed to read stream")?;
 
         if cancel.active && cancel.id == task_id {
+            broke_early = true;
             break;
         }
 
@@ -184,6 +186,11 @@ pub async fn dl_file(
         active: false,
         id: String::new(),
     };
+
+    if broke_early {
+        let _ = fs::remove_file(path);
+        return Err(String::from("cancelled download"));
+    }
 
     let _ = f.flush().await;
 

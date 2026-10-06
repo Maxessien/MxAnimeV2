@@ -70,8 +70,8 @@ class OngoingDlQueue extends Queue<OngoingDl> {
   }
 
   async cancel(taskId: OngoingDl["id"], shouldInvoke: boolean) {
-    const val = ongoingDownloadQueue.traverse().find(v => v.id === taskId)
-    if (val) val.isCancelled === true
+    const val = ongoingDownloadQueue.traverse().find(v => v.id == taskId)
+    if (val) val.isCancelled = true
 
     if (shouldInvoke) {
       await invoke("cancel_dl", {id: taskId})

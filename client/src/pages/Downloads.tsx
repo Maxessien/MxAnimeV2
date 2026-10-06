@@ -104,12 +104,12 @@ export default function Downloads() {
       <div>
         {tab === "downloads" ? (
           <DlHistory json={json} remove={remove} />
-        ) : ongoingDownloadQueue.traverse().length > 0 ? (
+        ) : ongoingDownloadQueue.traverse().length > 0 || downloadQueue.traverse().length > 0 ? (
           <div className="space-y-3">
             {ongoingDownloadQueue.traverse().map((val, idx) => (
               <OngoingDlCard key={idx} {...val} />
             ))}
-            {downloadQueue.traverse().map((val, i) => <WatingCard anime={{
+            {downloadQueue.traverse().map((val, i) => <WatingCard queueIdx={i} anime={{
               image: val.image, title: `${val.title} - Episode ${val.episode.ep}`
             }} key={i} />)}
           </div>

@@ -86,7 +86,6 @@ export function AnimeEpisodes({
                 <>
                   <button
                     onClick={() => {
-                      console.log("navigating....")
                       navigate(
                         `/stream?mal_id=${anime.mal_id}&title=${anime.title}&total=${airedTotal}&ep=${episode.episodeNumber || episode.episode || index + 1}`,
                       )

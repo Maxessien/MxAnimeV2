@@ -5,7 +5,6 @@ import { useSearchParams } from "wouter";
 import BackBtn from "@/components/layout/BackBtn";
 
 const AnimeStream = () => {
-  console.log("navigate");
   const [searchParam, setSearchParam] = useSearchParams();
 
   const malId = searchParam.get("mal_id");
