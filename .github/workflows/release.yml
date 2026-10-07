@@ -18,7 +18,7 @@ jobs:
             args: ''
           - platform: 'windows-latest'
             args: ''
-          
+
     runs-on: ${{ matrix.platform }}
     steps:
       - uses: actions/checkout@v4
@@ -41,7 +41,9 @@ jobs:
 
       # If you are using pnpm or yarn, change this to matching install command
       - name: install frontend dependencies
-        run: npm install
+        run: |
+          cd client
+          npm install
 
       - name: Build and Release Desktop
         uses: tauri-apps/tauri-action@v0
@@ -62,29 +64,31 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      
+
       - name: setup node
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          
+
       - name: install java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu'
           java-version: '17'
-          
+
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
           targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
-          
+
       - name: install frontend dependencies
-        run: npm install
-        
+        run: |
+          cd client
+          npm install
+
       - name: Build Android
         run: npm run tauri android build -- --apk
-        
+
         # 1. Securely sign the APK using the correct universal folder path
       - name: Sign Android APK
         id: sign_app
