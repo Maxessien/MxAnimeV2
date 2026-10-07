@@ -87,7 +87,9 @@ jobs:
           npm install
 
       - name: Build Android
-        run: npm run tauri android build -- --apk
+        run: |
+          cd client
+          npm run tauri android build -- --apk
 
         # 1. Securely sign the APK using the correct universal folder path
       - name: Sign Android APK
