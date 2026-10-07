@@ -13,14 +13,6 @@ export function AnimeSynopsis({ anime }: AnimeSynopsisProps) {
       <p className="text-muted-foreground leading-relaxed text-base sm:text-lg whitespace-pre-line">
         {anime.synopsis || "No synopsis available for this title."}
       </p>
-      {anime.background && (
-        <div className="mt-6 p-4 bg-muted/50 rounded-xl border border-dashed">
-          <h4 className="font-semibold text-sm mb-2 uppercase tracking-wider text-muted-foreground">
-            Background
-          </h4>
-          <p className="text-sm leading-relaxed">{anime.background}</p>
-        </div>
-      )}
     </section>
   );
 }

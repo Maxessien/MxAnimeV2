@@ -3,7 +3,6 @@ import { useQuery } from "@tanstack/react-query";
 import {
   Anime,
   AnimeCharacter,
-  AnimeEpisode,
   AnimeFull,
   AnimeOrderBy,
   AnimeSeason,
@@ -20,7 +19,7 @@ import {
 } from "@/lib/mal-transform";
 import { fetchJikan, fetchMal, MAL_DEFAULT_FIELDS } from "@/lib/jikan";
 import { AniZipMetadata } from "@/types/anizip";
-import axios, { AxiosResponse } from "axios";
+import axios from "axios";
 
 // --- MAL SUPPORTED ENDPOINTS ---
 

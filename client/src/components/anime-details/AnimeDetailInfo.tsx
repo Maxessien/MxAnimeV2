@@ -9,9 +9,6 @@ type AnimeDetailInfoProps = {
 export function AnimeDetailInfo({ anime }: AnimeDetailInfoProps) {
   const genres = [
     ...(anime.genres || []),
-    ...(anime.explicit_genres || []),
-    ...(anime.themes || []),
-    ...(anime.demographics || []),
   ];
 
   return (
@@ -33,19 +30,9 @@ export function AnimeDetailInfo({ anime }: AnimeDetailInfoProps) {
             </span>
           </li>
           <li className="flex justify-between border-b border-border/50 pb-2">
-            <span className="text-muted-foreground">Duration</span>
-            <span className="font-medium text-right">{anime.duration}</span>
-          </li>
-          <li className="flex justify-between border-b border-border/50 pb-2">
             <span className="text-muted-foreground">Season</span>
             <span className="font-medium text-right capitalize">
               {anime.season} {anime.year}
-            </span>
-          </li>
-          <li className="flex justify-between border-b border-border/50 pb-2">
-            <span className="text-muted-foreground">Broadcast</span>
-            <span className="font-medium text-right">
-              {anime.broadcast?.string || "Unknown"}
             </span>
           </li>
           <li className="flex justify-between border-b border-border/50 pb-2">

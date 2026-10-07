@@ -1,9 +1,6 @@
 import { FaArrowLeft } from "react-icons/fa";
-import { useLocation } from "wouter";
 
 const BackBtn = () => {
-  const [_, setLocation] = useLocation();
-
   const handleBack = () => window.history.back();
 
   return (

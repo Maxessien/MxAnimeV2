@@ -18,7 +18,7 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost; media-src 'self' asset: https://asset.localhost",
+      "csp": "default-src 'self'; img-src 'self' asset: https://asset.localhost https: data:; media-src 'self' asset: https://asset.localhost; connect-src 'self' https: ipc: http://ipc.localhost",
       "assetProtocol": {
         "enable": true,
         "scope": ["$APPDATA/**"]

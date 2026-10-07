@@ -1,11 +1,11 @@
 import { JsonFiles } from "@/hooks/use-json";
 import { AnimeSummary } from "@/lib/local-store";
 import { UseMutationResult } from "@tanstack/react-query";
-import { DownloadIcon, X } from "lucide-react";
+import { DownloadIcon } from "lucide-react";
 import { Link } from "wouter";
 
 const DlHistory = ({
-  json, remove
+  json
 }: {
   json: Record<JsonFiles, AnimeSummary[]>;
   remove: UseMutationResult<
