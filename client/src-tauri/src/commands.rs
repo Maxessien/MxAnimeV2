@@ -18,6 +18,7 @@ pub struct ByteProgress {
     pub current: usize,
     pub total: usize,
     pub task_id: String,
+    pub title: String,
 }
 
 pub struct CancelFlag {
@@ -141,7 +142,7 @@ pub async fn dl_file(
 
     let (_, dl_path_l) = check_path(dl_path).await?;
 
-    let path = dl_path_l.join(save_as);
+    let path = dl_path_l.join(save_as.clone());
 
     let mut f = File::create(path.clone())
         .map_err(|_| "Failed to create file")
@@ -175,6 +176,7 @@ pub async fn dl_file(
                     current: curr,
                     total,
                     task_id: task_id.clone(),
+                    title: save_as.clone(),
                 },
             );
             last_emit = Instant::now();

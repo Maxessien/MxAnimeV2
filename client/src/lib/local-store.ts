@@ -5,6 +5,11 @@ import { invoke } from "@tauri-apps/api/core";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { downloadQueue, ongoingDownloadQueue } from "./queue";
+import {
+  isPermissionGranted,
+  sendNotification,
+} from "@tauri-apps/plugin-notification";
+import { isMobile } from "./utils";
 
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -50,6 +55,7 @@ async function downloadAnime(
 ) {
   downloadQueue.isProcessing = true;
   const info = downloadQueue.pop();
+  const safeTitle = info.title.replace(/[<>:"/\\|?*]/g, "_");
 
   const { mal_id, episode } = info;
 
@@ -108,6 +114,16 @@ async function downloadAnime(
       taskId,
     };
 
+    const granted = await isPermissionGranted();
+
+    if (granted && isMobile)
+      sendNotification({
+        title: `${safeTitle} - Episode ${episode.ep}.mkv`,
+        body: "Processing - 0%",
+        ongoing: true,
+        id: Number(taskId),
+      });
+
     while (!status || status.status.status === "pending") {
       const ongoing = ongoingDownloadQueue
         .traverse()
@@ -119,6 +135,14 @@ async function downloadAnime(
         `${BACKEND_URL}/show/status/${taskId}`,
       );
 
+      if (granted && isMobile)
+        sendNotification({
+          title: `${safeTitle} - Episode ${episode.ep}.mkv`,
+          body: `Processing - ${data.status.progress}%`,
+          ongoing: true,
+          id: Number(taskId),
+        });
+
       ongoingDownloadQueue.updateStatus(taskId, data.status);
 
       status = data;
@@ -129,30 +153,45 @@ async function downloadAnime(
     if (!status) throw new Error("Status not found");
 
     if (status.status.status === "completed" && status.episode) {
-      const safeTitle = info.title.replace(/[<>:"/\\|?*]/g, "_");
-
       const path = await invoke<string>("dl_file", {
         url: status.episode.fileUrl,
         saveAs: `${safeTitle} - Episode ${episode.ep}.mkv`,
         taskId: taskId.toString(),
       });
 
-      if (path) await mutateAsync({
-        anime: {
-          ...info,
-          episode: {
-            ep: episode.ep,
-            path,
-            season: episode.season,
-            quality: episode.quality,
+      if (path)
+        await mutateAsync({
+          anime: {
+            ...info,
+            episode: {
+              ep: episode.ep,
+              path,
+              season: episode.season,
+              quality: episode.quality,
+            },
           },
-        },
-        type: "downloads",
-      });
+          type: "downloads",
+        });
+
+      if (granted)
+        sendNotification({
+          title: `${safeTitle} - Episode ${episode.ep}.mkv`,
+          body: "Download complete",
+          ongoing: false,
+          id: Number(taskId),
+        });
     }
 
-    if (status.status.status === "error")
+    if (status.status.status === "error") {
+      if (granted)
+        sendNotification({
+          title: `${safeTitle} - Episode ${episode.ep}.mkv`,
+          body: "Download failed",
+          ongoing: false,
+          id: Number(taskId),
+        });
       toast.error(`${info.title} - Episode ${episode.ep} download failed`);
+    }
 
     ongoingDownloadQueue.removeById(taskId);
   } catch (err) {

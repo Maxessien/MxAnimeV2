@@ -4,7 +4,9 @@ import WatingCard from "@/components/downloads/WaitingCard";
 import { useJson } from "@/hooks/use-json";
 import { AnimeSummary } from "@/lib/local-store";
 import { downloadQueue, ongoingDownloadQueue } from "@/lib/queue";
+import { isMobile } from "@/lib/utils";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { isPermissionGranted, sendNotification } from "@tauri-apps/plugin-notification";
 import { Download as DownloadIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
@@ -30,26 +32,13 @@ export default function Downloads() {
     ongoingDownloadQueue.addEventListener("status_update", increment);
     ongoingDownloadQueue.addEventListener("prog_update", increment);
 
-    let unlisten: UnlistenFn | undefined;
-
-    listen<{
-      current: number;
-      total: number;
-      task_id: string;
-    }>("dl_progress", ({ payload }) =>{
-      ongoingDownloadQueue.updateProg(payload.task_id, {
-        curr: payload.current / (1024 * 1024),
-        total: payload.total / (1024 * 1024),
-      })
-    },
-    ).then((fn) => (unlisten = fn));
 
     return () => {
       ongoingDownloadQueue.removeEventListener("modify", increment);
       ongoingDownloadQueue.removeEventListener("status_update", increment);
       ongoingDownloadQueue.removeEventListener("prog_update", increment);
       downloadQueue.removeEventListener("modify", increment)
-      if (unlisten) unlisten();
+
     };
   }, []);
 

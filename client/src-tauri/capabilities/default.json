@@ -2,20 +2,32 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Capability for the main window",
-  "windows": ["main"],
+  "windows": [
+    "main"
+  ],
   "permissions": [
     "core:default",
     {
       "identifier": "opener:allow-open-path",
-      "allow": [{ "path": "**" }]
+      "allow": [
+        {
+          "path": "**"
+        }
+      ]
     },
     "http:default",
     {
       "identifier": "http:allow-fetch",
       "allow": [
-        { "url": "https://api.myanimelist.net/v2/*" },
-        { "url": "https://api.jikan.moe/v4/*" }
+        {
+          "url": "https://api.myanimelist.net/v2/*"
+        },
+        {
+          "url": "https://api.jikan.moe/v4/*"
+        }
       ]
-    }
+    },
+    "notification:default",
+    "os:default"
   ]
 }
