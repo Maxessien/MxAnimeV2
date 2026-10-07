@@ -1,0 +1,343 @@
+{
+  "timezone": "Etc/GMT",
+  "schedule": {
+    "Monday": [
+      {
+        "title": "Doumo, Suki na Hito ni Horegusuri wo Irai sareta Majo desu.",
+        "page": "doumo-suki-na-hito-ni-horegusuri-wo-irai-sareta-majo-desu",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160033.jpg",
+        "time": "12:30"
+      },
+      {
+        "title": "Tensei Goblin dakedo Shitsumon Aru",
+        "page": "tensei-goblin-dakedo-shitsumon-aru",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/159941.jpg",
+        "time": "13:00"
+      },
+      {
+        "title": "PSYREN",
+        "page": "psyren",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160405.jpg",
+        "time": "14:30"
+      }
+    ],
+    "Tuesday": [
+      {
+        "title": "Kyouran Reijou Nia Liston",
+        "page": "kyouran-reijou-nia-liston",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/159223.jpg",
+        "time": "12:55"
+      },
+      {
+        "title": "Shiotaiou no Satou-san ga Ore ni dake Amai",
+        "page": "shiotaiou-no-satou-san-ga-ore-ni-dake-amai",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160129.jpg",
+        "time": "13:30"
+      },
+      {
+        "title": "Battle Spirits Re - Zekkai no Kuu",
+        "page": "battle-spirits-re-zekkai-no-kuu",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/159762.jpg",
+        "time": "14:30"
+      },
+      {
+        "title": "Choujun! Choujou-senpai",
+        "page": "choujun-choujou-senpai",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160335.jpg",
+        "time": "14:45"
+      },
+      {
+        "title": "Chii Fuyo",
+        "page": "chii-fuyo",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160339.jpg",
+        "time": "15:30"
+      },
+      {
+        "title": "Chitose-kun wa Ramune Bin no Naka",
+        "page": "chitose-kun-wa-ramune-bin-no-naka",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2025/10/151233.jpg",
+        "time": "16:30"
+      },
+      {
+        "title": "Sora wa Akai Kawa no Hotori",
+        "page": "sora-wa-akai-kawa-no-hotori",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/07/158138.jpg",
+        "time": "17:30"
+      }
+    ],
+    "Wednesday": [
+      {
+        "title": "Tantei wa Mou, Shindeiru. S2",
+        "page": "tantei-wa-mou-shindeiru-s2",
+        "imageUrl": "https://subsplease.org/",
+        "time": "12:30"
+      },
+      {
+        "title": "Sasaki to Pii-chan S2",
+        "page": "sasaki-to-pii-chan-s2",
+        "imageUrl": "https://subsplease.org/",
+        "time": "13:00"
+      },
+      {
+        "title": "Sekai Saikyou no Majo, Hajimemashita",
+        "page": "sekai-saikyou-no-majo-hajimemashita",
+        "imageUrl": "https://subsplease.org/",
+        "time": "13:00"
+      },
+      {
+        "title": "Magic Knight Rayearth (2026)",
+        "page": "magic-knight-rayearth-2026",
+        "imageUrl": "https://subsplease.org/",
+        "time": "14:46"
+      },
+      {
+        "title": "Juuou Mujin Dandivine",
+        "page": "juuou-mujin-dandivine",
+        "imageUrl": "https://subsplease.org/",
+        "time": "15:30"
+      },
+      {
+        "title": "Tensei Shitara Ken Deshita S2",
+        "page": "tensei-shitara-ken-deshita-s2",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/09/159559.jpg",
+        "time": "15:30"
+      },
+      {
+        "title": "Kikansha no Mahou wa Tokubetsu desu",
+        "page": "kikansha-no-mahou-wa-tokubetsu-desu",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2023/10/138532.jpg",
+        "time": "15:45"
+      },
+      {
+        "title": "The Prince of Tennis II - U-17 World Cup Final Member Selection Match",
+        "page": "the-prince-of-tennis-ii-u-17-world-cup-final-member-selection-match",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/09/159518.jpg",
+        "time": "16:00"
+      }
+    ],
+    "Thursday": [
+      {
+        "title": "FX Senshi Kurumi-chan",
+        "page": "fx-senshi-kurumi-chan",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/09/159275.jpg",
+        "time": "12:30"
+      },
+      {
+        "title": "Tetsuryou! Meet with Tetsudou Musume",
+        "page": "tetsuryou-meet-with-tetsudou-musume",
+        "imageUrl": "https://subsplease.org/",
+        "time": "16:00"
+      },
+      {
+        "title": "Tsuihou sareta Tensei Juukishi wa Game Chishiki de Musou suru",
+        "page": "tsuihou-sareta-tensei-juukishi-wa-game-chishiki-de-musou-suru",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/07/158711.jpg",
+        "time": "16:00"
+      },
+      {
+        "title": "Hyouken no Majutsushi ga Sekai wo Suberu S2",
+        "page": "hyouken-no-majutsushi-ga-sekai-wo-suberu-s2",
+        "imageUrl": "https://subsplease.org/",
+        "time": "16:28"
+      }
+    ],
+    "Friday": [
+      {
+        "title": "Link Click S3",
+        "page": "link-click-s3",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/09/159496.jpg",
+        "time": "03:00"
+      },
+      {
+        "title": "Toaru Anbu no Item",
+        "page": "toaru-anbu-no-item",
+        "imageUrl": "https://subsplease.org/",
+        "time": "13:30"
+      },
+      {
+        "title": "Hotaru no Yomeiri",
+        "page": "hotaru-no-yomeiri",
+        "imageUrl": "https://subsplease.org/",
+        "time": "14:30"
+      },
+      {
+        "title": "Kusuriya no Hitorigoto",
+        "page": "kusuriya-no-hitorigoto",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2023/10/138033.jpg",
+        "time": "15:00"
+      },
+      {
+        "title": "Tougen Anki - Nikko Kegon no Taki-hen",
+        "page": "tougen-anki-nikko-kegon-no-taki-hen",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160147.jpg",
+        "time": "16:00"
+      },
+      {
+        "title": "Uchi no Otouto-domo ga Sumimasen",
+        "page": "uchi-no-otouto-domo-ga-sumimasen",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/07/156345.jpg",
+        "time": "16:30"
+      }
+    ],
+    "Saturday": [
+      {
+        "title": "Keroro Gunsou (2026)",
+        "page": "keroro-gunsou-2026",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160110.jpg",
+        "time": "01:00"
+      },
+      {
+        "title": "Rilakkuma",
+        "page": "rilakkuma",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/04/155696.jpg",
+        "time": "01:00"
+      },
+      {
+        "title": "Shuiro no Kamen",
+        "page": "shuiro-no-kamen",
+        "imageUrl": "https://subsplease.org/",
+        "time": "09:30"
+      },
+      {
+        "title": "Detective Conan",
+        "page": "detective-conan",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2020/10/75199.jpg",
+        "time": "11:30"
+      },
+      {
+        "title": "Romelia Senki",
+        "page": "romelia-senki",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160008.jpg",
+        "time": "13:00"
+      },
+      {
+        "title": "Tensei shita Daiseijo wa, Seijo de Aru Koto wo Hitakakusu",
+        "page": "tensei-shita-daiseijo-wa-seijo-de-aru-koto-wo-hitakakusu",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/156338.jpg",
+        "time": "13:00"
+      },
+      {
+        "title": "Yasei no Last Boss ga Arawareta!",
+        "page": "yasei-no-last-boss-ga-arawareta",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2025/09/145051.jpg",
+        "time": "13:30"
+      },
+      {
+        "title": "Kyoufu Collector",
+        "page": "kyoufu-collector",
+        "imageUrl": "https://subsplease.org/",
+        "time": "14:45"
+      },
+      {
+        "title": "Black Clover",
+        "page": "black-clover",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2020/10/88336.jpg",
+        "time": "15:00"
+      },
+      {
+        "title": "Zombie Sagashitemasu",
+        "page": "zombie-sagashitemasu",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160025.jpg",
+        "time": "15:00"
+      },
+      {
+        "title": "VERTEX FORCE",
+        "page": "vertex-force",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160012.jpg",
+        "time": "16:00"
+      },
+      {
+        "title": "Magical Explorer",
+        "page": "magical-explorer",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160106.jpg",
+        "time": "16:30"
+      },
+      {
+        "title": "Kashita Maryoku wa Revo Barai de Kyousei Choushuu",
+        "page": "kashita-maryoku-wa-revo-barai-de-kyousei-choushuu",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/159735.jpg",
+        "time": "18:00"
+      }
+    ],
+    "Sunday": [
+      {
+        "title": "Meitantei Precure!",
+        "page": "meitantei-precure",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/02/154944.jpg",
+        "time": "01:30"
+      },
+      {
+        "title": "Ace of Diamond Act II S2",
+        "page": "ace-of-diamond-act-ii-s2",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/04/154245.jpg",
+        "time": "09:00"
+      },
+      {
+        "title": "Ao Ashi S2",
+        "page": "ao-ashi-s2",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/158726.jpg",
+        "time": "09:00"
+      },
+      {
+        "title": "Ojisan wa Kawaii Mono ga Osuki.",
+        "page": "ojisan-wa-kawaii-mono-ga-osuki",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/159256.jpg",
+        "time": "14:00"
+      },
+      {
+        "title": "Saikyosoubi",
+        "page": "saikyosoubi",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/160053.jpg",
+        "time": "14:00"
+      },
+      {
+        "title": "Shinja Zero no Megami-sama to Hajimeru Isekai Kouryaku",
+        "page": "shinja-zero-no-megami-sama-to-hajimeru-isekai-kouryaku",
+        "imageUrl": "https://subsplease.org/",
+        "time": "14:30"
+      },
+      {
+        "title": "Tempal - Item no Chikara",
+        "page": "tempal-item-no-chikara",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/09/160022.jpg",
+        "time": "14:30"
+      },
+      {
+        "title": "Yowaki Max",
+        "page": "yowaki-max",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/159886.jpg",
+        "time": "14:30"
+      },
+      {
+        "title": "Tensei Kizoku, Kantei Skill de Nariagaru",
+        "page": "tensei-kizoku-kantei-skill-de-nariagaru",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2024/04/139538.jpg",
+        "time": "15:00"
+      },
+      {
+        "title": "Hotel Inhumans S2",
+        "page": "hotel-inhumans-s2",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/159928.jpg",
+        "time": "15:15"
+      },
+      {
+        "title": "Dragon Ball Super - Beerus",
+        "page": "dragon-ball-super-beerus",
+        "imageUrl": "https://subsplease.org/",
+        "time": "16:00"
+      },
+      {
+        "title": "Kanata kara",
+        "page": "kanata-kara",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/159816.jpg",
+        "time": "16:00"
+      },
+      {
+        "title": "Dark Summoner to Dekiteiru",
+        "page": "dark-summoner-to-dekiteiru",
+        "imageUrl": "https://subsplease.org/wp-content/uploads/2026/10/159860.jpg",
+        "time": "16:20"
+      }
+    ]
+  }
+}

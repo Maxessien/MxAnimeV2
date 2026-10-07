@@ -20,6 +20,9 @@ jobs:
             args: ''
 
     runs-on: ${{ matrix.platform }}
+    defaults:
+          run:
+            working-directory: ./client
     steps:
       - uses: actions/checkout@v4
 
@@ -41,9 +44,7 @@ jobs:
 
       # If you are using pnpm or yarn, change this to matching install command
       - name: install frontend dependencies
-        run: |
-          cd client
-          npm install
+        run: npm install
 
       - name: Build and Release Desktop
         uses: tauri-apps/tauri-action@v0
@@ -60,6 +61,9 @@ jobs:
   build-android:
     needs: build-and-release
     runs-on: ubuntu-latest
+    defaults:
+          run:
+            working-directory: ./client
     permissions:
       contents: write
     steps:
@@ -82,14 +86,10 @@ jobs:
           targets: aarch64-linux-android, armv7-linux-androideabi, i686-linux-android, x86_64-linux-android
 
       - name: install frontend dependencies
-        run: |
-          cd client
-          npm install
+        run: npm install
 
       - name: Build Android
-        run: |
-          cd client
-          npm run tauri android build -- --apk
+        run: npm run tauri android build -- --apk
 
         # 1. Securely sign the APK using the correct universal folder path
       - name: Sign Android APK
