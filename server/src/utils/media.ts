@@ -530,9 +530,9 @@ const getSubplTorrent = async (
   }
 };
 
-const getNyaaTorrents = async (malId: number, episode: number) => {
+const getNyaaTorrents = async (malId: number, episode: number, season: number) => {
   try {
-    const torrents = await findTorrents({ malId, episode })
+    const torrents = await findTorrents({ malId, episode, season })
   
     let parsed: { [res: string]: {magUri: string, resolution: string, seeders: number} } = {}
   
