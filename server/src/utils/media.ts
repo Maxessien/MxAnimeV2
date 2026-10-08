@@ -153,14 +153,18 @@ const compressWithCl = async (
   s3Key: string,
   input: string,
   prog: (val: number) => void,
+  inputType: "local" | "url",
   scale?: { width: number; height: number },
 ) => {
   prog(20);
   const job = await cloudConvert.jobs.create({
     tasks: {
-      import: {
-        operation: "import/upload",
-      },
+      import: inputType === "url" ?
+        {
+        operation: "import/url",
+        url: input
+        } :
+        { operation: "import/upload" },
       "convert-op": {
         operation: "convert",
         input: "import",
@@ -195,8 +199,10 @@ const compressWithCl = async (
     throw new Error("Task not found");
   }
 
-  const inputFile = createReadStream(input);
-  await cloudConvert.tasks.upload(uploadTask, inputFile);
+  if (inputType === "local") {
+    const inputFile = createReadStream(input);
+    await cloudConvert.tasks.upload(uploadTask, inputFile);
+  }
   prog(45);
   const waitedJob = await cloudConvert.jobs.wait(job.id);
 
@@ -287,33 +293,33 @@ const compressTorrent = async (
   const tempInpPath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
   const tempOutpPath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
 
-  const { prog, onFinish, onError } = {
-    prog: (e: any) => {
-      if (e.total) {
-        const frac = e.loaded / e.total; // 0..1
-        downloadTasks.set(taskId, {
-          epInfo,
-          status: "pending",
-          progress: frac * 10 * ((maxProg - baseProg) / 100) + baseProg,
-        });
-      }
-    },
-    onFinish: () =>
-      downloadTasks.set(taskId, {
-        epInfo,
-        status: "pending",
-        progress: 10 * ((maxProg - baseProg) / 100) + baseProg,
-      }),
-    onError: () =>
-      downloadTasks.set(taskId, {
-        epInfo,
-        status: "error",
-        progress: 10 * ((maxProg - baseProg) / 100) + baseProg,
-      }),
-  };
+  // const { prog, onFinish, onError } = {
+  //   prog: (e: any) => {
+  //     if (e.total) {
+  //       const frac = e.loaded / e.total; // 0..1
+  //       downloadTasks.set(taskId, {
+  //         epInfo,
+  //         status: "pending",
+  //         progress: frac * 10 * ((maxProg - baseProg) / 100) + baseProg,
+  //       });
+  //     }
+  //   },
+  //   onFinish: () =>
+  //     downloadTasks.set(taskId, {
+  //       epInfo,
+  //       status: "pending",
+  //       progress: 10 * ((maxProg - baseProg) / 100) + baseProg,
+  //     }),
+  //   onError: () =>
+  //     downloadTasks.set(taskId, {
+  //       epInfo,
+  //       status: "error",
+  //       progress: 10 * ((maxProg - baseProg) / 100) + baseProg,
+  //     }),
+  // };
 
   // Download the input file to the temporary input path
-  await downloadToDisk(vid.url, tempInpPath, onFinish, onError, prog);
+  // await downloadToDisk(vid.url, tempInpPath, onFinish, onError, prog);
 
   const compErr = () =>
     downloadTasks.set(taskId, {
@@ -332,7 +338,7 @@ const compressTorrent = async (
   try {
     let isCompressed = false;
     try {
-      await compressWithCl(key, tempInpPath, compProg, scale);
+      await compressWithCl(key, vid.url, compProg, "url", scale);
       isCompressed = true;
     } catch (err) {
       console.log(err);
@@ -340,7 +346,7 @@ const compressTorrent = async (
 
     if (!isCompressed) {
       await compressWithFfmpeg(
-        tempInpPath,
+        vid.url,
         tempOutpPath,
         key,
         compErr,
