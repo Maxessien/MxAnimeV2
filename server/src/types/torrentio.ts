@@ -18,9 +18,9 @@ export interface TorrentioStream {
   behaviorHints?: TorrentioBehaviorHints;
 }
 
-export interface ParsedTorrentioStream extends TorrentioStream {
-  info: AnitomyResult | null | undefined;
+export interface ParsedTorrentioStream {
   magUri: string | null;
+  resolution: string | null
 }
 
 export interface TorrentioBehaviorHints {

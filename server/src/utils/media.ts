@@ -31,6 +31,8 @@ import {
 import { createMagnetUri, getTorrentioApi } from "./shows.js";
 import { stat } from "fs/promises";
 import { HeadObjectCommand } from "@aws-sdk/client-s3";
+import findTorrents, { Torrent } from "mal-nyaa"
+
 
 const PYTHON_SERVER_URL = process.env.PYTHON_SERVER_URL;
 
@@ -473,19 +475,21 @@ const getAnimeTorrent = async (
 
   const { data: torrRes } = await axios.get<TorrentioResponse>(torrentioUrl);
 
-  const parsed: ParsedTorrentioStream[] = torrRes.streams.map((v) => ({
-    info: v.name ? parse(v.name) : null,
+  const parsed: ParsedTorrentioStream[] = torrRes.streams.map((v) => {
+    const parsed = v.name ? parse(v.name) : null
+    return {
     magUri:
       v.infoHash && v.sources ? createMagnetUri(v.infoHash, v.sources) : null,
-    ...v,
-  }));
+    resolution: parsed?.video.resolution ?? null
+  }
+  });
 
   const filteredQuality: ParsedTorrentioStream[] = [];
 
   for (let info of parsed) {
     if (QUALITY[1080] && QUALITY[720] && QUALITY[360] && QUALITY[480]) break;
 
-    let resolution = info.info?.video?.resolution
+    let resolution = info.resolution
       ?.toLowerCase()
       ?.replace("p", "");
 
@@ -502,28 +506,51 @@ const getSubplTorrent = async (
   malId: string | number,
   eid: string | number,
 ): Promise<null | ParsedTorrentioStream[]> => {
-  const mapping = malIdSubplMap.get(malId);
-
-  if (!mapping) return null;
-
-  const show = await subsplease.getShow(mapping.slug);
-  let torr: ParsedTorrentioStream[] | null = null;
-
-  for (const ep of show.episodes) {
-    if (Number(ep.episode) === Number(eid)) {
-      const parsedTitle = parse(mapping.title);
-
-      torr = ep.downloads.map(({ res, magnet }) => ({
-        info: parsedTitle
-          ? { ...parsedTitle, video: { resolution: res, term: undefined } }
-          : null,
-        magUri: magnet,
-      }));
+  try {
+    const mapping = malIdSubplMap.get(malId);
+  
+    if (!mapping) return null;
+  
+    const show = await subsplease.getShow(mapping.slug);
+    let torr: ParsedTorrentioStream[] | null = null;
+  
+    for (const ep of show.episodes) {
+      if (Number(ep.episode) === Number(eid)) {
+        torr = ep.downloads.map(({ res, magnet }) => ({
+          resolution: res,
+          magUri: magnet,
+        }));
+      }
     }
+  
+    return torr;
+  } catch (err) {
+    console.log(err)
+    return null
   }
-
-  return torr;
 };
+
+const getNyaaTorrents = async (malId: number, episode: number) => {
+  try {
+    const torrents = await findTorrents({ malId, episode })
+  
+    let parsed: { [res: string]: {magUri: string, resolution: string, seeders: number} } = {}
+  
+    for (const entry of torrents) {
+      const { resolution, seeders, magnet } = entry
+      if (!resolution) continue
+      if (!parsed[resolution] || parsed[resolution].seeders < seeders)
+        parsed[resolution] = { magUri: magnet, resolution, seeders }
+    }
+  
+    const filtered = Object.values(parsed)
+  
+    return filtered.length > 0 ? filtered : null
+  } catch (err) {
+    console.log(err)
+    return null
+  }
+}
 
 export {
   ALLOWED,
@@ -532,5 +559,6 @@ export {
   downloadTorrent,
   getAnimeTorrent,
   getSubplTorrent,
+  getNyaaTorrents,
   QUALITY,
 };

@@ -9,6 +9,7 @@ import {
   ALLOWED,
   dlAndCompress,
   getAnimeTorrent,
+  getNyaaTorrents,
   getSubplTorrent,
 } from "../utils/media.js";
 import { handler } from "../utils/shows.js";
@@ -131,12 +132,12 @@ const addEpisode = (req: Request, res: Response) =>
       return res.status(SUCCESS.OK).json(hasIdx);
     }
 
-    let anime: (Pick<ParsedTorrentioStream, "magUri"> & {
-      info: { video: { resolution: string | undefined } } | null | undefined;
-    })[] = [];
+    let anime: ParsedTorrentioStream[] = [];
 
     if (!quality || !mag_uri) {
       let filteredQuality = await getSubplTorrent(mal_id, eId.toString());
+
+      if (!filteredQuality) filteredQuality = await getNyaaTorrents(Number(mal_id), Number(eId))
 
       if (!filteredQuality) {
         const {
@@ -162,7 +163,7 @@ const addEpisode = (req: Request, res: Response) =>
 
       anime = filteredQuality;
     } else
-      anime = [{ magUri: mag_uri, info: { video: { resolution: quality } } }];
+      anime = [{ magUri: mag_uri, resolution: quality }];
 
     const eps = await Episode.insertMany(
       anime.map((v) => ({
@@ -172,7 +173,7 @@ const addEpisode = (req: Request, res: Response) =>
         magnetUri: v.magUri,
         malId: mal_id.toString(),
         quality: Number(
-          v.info?.video.resolution?.toLowerCase().replace("p", ""),
+          v.resolution?.toLowerCase().replace("p", ""),
         ),
       })),
     );
