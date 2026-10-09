@@ -137,11 +137,8 @@ const addEpisode = (req: Request, res: Response) =>
     if (!quality || !mag_uri) {
       let filteredQuality = await getSubplTorrent(mal_id, eId.toString());
 
-      console.log(filteredQuality, "subplease")
-
       if (!filteredQuality) filteredQuality = await getNyaaTorrents(Number(mal_id), Number(eId), Number(sId))
 
-      console.log(filteredQuality, "nyaa.si")
       if (!filteredQuality) {
         const {
           data: { mappings },
@@ -157,8 +154,6 @@ const addEpisode = (req: Request, res: Response) =>
         filteredQuality = (
           await getAnimeTorrent(mappings, sId.toString(), eId.toString())
         ).filteredQuality;
-
-        console.log(filteredQuality, "torrentio")
       }
 
       if (!filteredQuality || filteredQuality.length === 0)
