@@ -439,7 +439,11 @@ const dlAndCompress = async (
 
   if (url && typeof url === "string") {
     await compressTorrent({ url }, taskId, epInfo);
-    if (cleanUp) await cleanUp();
+    try {
+      if (cleanUp) await cleanUp();
+    } catch (err) {
+      console.log(err)
+    }
   } else {
     downloadTasks.set(taskId, { epInfo, progress: 0, status: "error" });
     throw new Error("Failed to download torrent");
