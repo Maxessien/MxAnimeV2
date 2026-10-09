@@ -476,15 +476,20 @@ const getAnimeTorrent = async (
     `${mappings.imdb_id || mappings.themoviedb_id}:${sid}:${eId}`,
     "series",
   );
+  
+  const res = await fetch(torrentioUrl, { method: "GET", headers: {"Content-Type": "application/json"} });
 
-  const { data: torrRes } = await axios.get<TorrentioResponse>(torrentioUrl);
+  if (!res.ok) throw new Error("Fetch fail")
+
+  const torrRes: TorrentioResponse = await res.json()
 
   const parsed: ParsedTorrentioStream[] = torrRes.streams.map((v) => {
     const parsed = v.name ? parse(v.name) : null
     return {
     magUri:
       v.infoHash && v.sources ? createMagnetUri(v.infoHash, v.sources) : null,
-    resolution: parsed?.video.resolution ?? null
+      resolution: parsed?.video.resolution ?? null
+        size: parsed?.file.
   }
   });
 

@@ -146,8 +146,6 @@ const addEpisode = (req: Request, res: Response) =>
           `https://api.ani.zip/mappings?mal_id=${mal_id}`,
           );
 
-        console.log(mappings, "mappings")
-
         if (!mappings.imdb_id && !mappings.themoviedb_id)
           return res
             .status(CLIENT_ERROR.BAD_REQUEST)
