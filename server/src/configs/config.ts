@@ -70,7 +70,7 @@ let file = JSON.parse(readFileSync("subsplease-mal-map.json").toString());
 
 for (const entry of file) {
   if (entry.mal_id)
-    malIdSubplMap.set(entry.mal_id, { title: entry.title, slug: entry.slug });
+    malIdSubplMap.set(entry.mal_id, { title: entry.title, slug: entry.subpleaseSlug });
 }
 
 const subsplease = createSubsplease();
