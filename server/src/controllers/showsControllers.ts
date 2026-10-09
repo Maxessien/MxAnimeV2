@@ -137,14 +137,16 @@ const addEpisode = (req: Request, res: Response) =>
     if (!quality || !mag_uri) {
       let filteredQuality = await getSubplTorrent(mal_id, eId.toString());
 
-      if (!filteredQuality) filteredQuality = await getNyaaTorrents(Number(mal_id), Number(eId), Number(sId))
+      // if (!filteredQuality) filteredQuality = await getNyaaTorrents(Number(mal_id), Number(eId), Number(sId))
 
       if (!filteredQuality) {
         const {
           data: { mappings },
         } = await axios.get<AniZipMetadata>(
           `https://api.ani.zip/mappings?mal_id=${mal_id}`,
-        );
+          );
+
+        console.log(mappings, "mappings")
 
         if (!mappings.imdb_id && !mappings.themoviedb_id)
           return res
