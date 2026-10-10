@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser());  
 
 app.use("/assets", express.static(join(process.cwd(), "src/assets")))
-app.use("/", (_: Request, res: Response)=> res.sendFile(join(process.cwd(), "src/assets/index.html")))
+app.get("/", (_: Request, res: Response)=> res.sendFile(join(process.cwd(), "src/assets/index.html")))
 app.use("/show", showRoutes)  
   
   
