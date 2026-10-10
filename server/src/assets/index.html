@@ -1,0 +1,50 @@
+<!DOCTYPE html>  
+<html lang="en">  
+<head>  
+  <meta charset="UTF-8" />  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />  
+  <title>MxAnime Server</title>
+  <link rel="stylesheet" href="/assets/index.css">
+  <link rel="icon" href="/assets/icon-tran.png">
+</head>  
+<body>  
+  <div class="card">  
+    <div class="brand">  
+      <div class="logo-wrap">
+          <img class="logo" src="/assets/icon.png" alt="/logo">
+      </div>
+      <h1>MxAnime Server</h1> 
+    </div>  
+    <p class="subtitle">  
+      Backend API for downloading and managing anime episodes.  
+      This is the service root — use the endpoints below to interact with the API.  
+    </p>
+  
+    <div class="status">
+      <span class="dot"></span> Server is running  
+    </div>  
+  
+    <div class="section-title">Available Endpoints</div>  
+    <div class="endpoints">  
+      <div class="endpoint">  
+        <span class="method get">GET</span>  
+        <span class="path">/show/download</span>  
+      </div>  
+      <div class="endpoint">  
+        <span class="method post">POST</span>  
+        <span class="path">/show/ep</span>  
+      </div>  
+      <div class="endpoint">  
+        <span class="method get">GET</span>  
+        <span class="path">/show/status/:id</span>  
+      </div>  
+      <div class="endpoint">  
+        <span class="method get">GET</span>  
+        <span class="path">/show/tasks</span>  
+      </div>  
+    </div>  
+  
+    <footer>MxAnime &middot; Powered by Express</footer>  
+  </div>  
+</body>  
+</html>
