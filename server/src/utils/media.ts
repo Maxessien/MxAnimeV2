@@ -476,7 +476,7 @@ const getAnimeTorrent = async (
     `${mappings.imdb_id || mappings.themoviedb_id}:${sid}:${eId}`,
     "series",
   );
-  
+
   const res = await fetch(torrentioUrl, { method: "GET", headers: {"Content-Type": "application/json"} });
 
   if (!res.ok) throw new Error("Fetch fail")
@@ -488,8 +488,8 @@ const getAnimeTorrent = async (
     return {
     magUri:
       v.infoHash && v.sources ? createMagnetUri(v.infoHash, v.sources) : null,
-      resolution: parsed?.video.resolution ?? null
-        size: parsed?.file.
+    resolution: parsed?.video.resolution ?? null,
+    // size: parsed?.file.
   }
   });
 
@@ -517,12 +517,12 @@ const getSubplTorrent = async (
 ): Promise<null | ParsedTorrentioStream[]> => {
   try {
     const mapping = malIdSubplMap.get(malId);
-  
+
     if (!mapping) return null;
-  
+
     const show = await subsplease.getShow(mapping.slug);
     let torr: ParsedTorrentioStream[] | null = null;
-  
+
     for (const ep of show.episodes) {
       if (Number(ep.episode) === Number(eid)) {
         torr = ep.downloads.map(({ res, magnet }) => ({
@@ -531,7 +531,7 @@ const getSubplTorrent = async (
         }));
       }
     }
-  
+
     return torr;
   } catch (err) {
     console.log(err)
@@ -542,18 +542,18 @@ const getSubplTorrent = async (
 const getNyaaTorrents = async (malId: number, episode: number, season: number) => {
   try {
     const torrents = await findTorrents({ malId, episode, season })
-  
+
     let parsed: { [res: string]: {magUri: string, resolution: string, seeders: number} } = {}
-  
+
     for (const entry of torrents) {
       const { resolution, seeders, magnet } = entry
       if (!resolution) continue
       if (!parsed[resolution] || parsed[resolution].seeders < seeders)
         parsed[resolution] = { magUri: magnet, resolution, seeders }
     }
-  
+
     const filtered = Object.values(parsed)
-  
+
     return filtered.length > 0 ? filtered : null
   } catch (err) {
     console.log(err)
