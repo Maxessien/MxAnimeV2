@@ -5,6 +5,7 @@ import {
   AnimeSynopsis,
   AnimeTrailer,
 } from "@/components/anime-details";
+import { EpisodeEntry } from "@/components/anime-details/AnimeEpisodes";
 import { AnimeEpisodesDl } from "@/components/anime-details/AnimeEpisodesDl";
 import BackBtn from "@/components/layout/BackBtn";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +13,8 @@ import { useAnimeEpisodes, useAnimeFull } from "@/hooks/use-jikan";
 import { useJson } from "@/hooks/use-json";
 import { AnimeSummary, downloadAnime } from "@/lib/local-store";
 import { downloadQueue } from "@/lib/queue";
+import { AugmentedAnimeMedia } from "@/types/anilink";
+import { AniZipMetadata } from "@/types/anizip";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
 import { useRoute } from "wouter";
@@ -62,23 +65,52 @@ export default function AnimeDetail() {
           quality,
         },
         score: anime.score,
-        queueId: window.crypto.randomUUID()
+        queueId: window.crypto.randomUUID(),
       });
 
       if (!downloadQueue.isProcessing) await downloadAnime(add.mutateAsync);
     },
   });
 
-  const episodes = episodesData?.episodes
-    ? Object.entries(episodesData.episodes).map((v) => ({
-        ...v[1],
-        hasAired: Boolean(
-          (v[1].airDateUtc || v[1].airDate || v[1].airdate) &&
-          new Date(v[1].airDateUtc || v[1].airDate || v[1].airdate).getTime() <
-            Date.now(),
-        ),
-      }))
-    : [];
+  const anilinkEp = episodesData as AugmentedAnimeMedia;
+  const anizipEp = episodesData as AniZipMetadata;
+
+  const episodes: EpisodeEntry[] = episodesData?.isAnilist
+    ? anilinkEp?.airingSchedule.nodes &&
+      anilinkEp?.airingSchedule.nodes.length > 0
+      ? anilinkEp.airingSchedule.nodes.map(({ airingAt, episode }) => ({
+          episode,
+          hasAired: new Date((airingAt * 1000)).getTime() < Date.now(),
+          airDate: airingAt * 1000,
+          episodeNumber: episode,
+          seasonNumber: anilinkEp.seasonNumber,
+        }))
+      : Array(anilinkEp.nextAiringEpisode.episode)
+          .fill("v")
+          .map((_, idx, arr) => ({
+            episodeNumber: idx + 1,
+            seasonNumber: anilinkEp.seasonNumber,
+            episode: idx + 1,
+            hasAired: idx + 1 < arr.length,
+            airDate:
+              (anilinkEp.nextAiringEpisode.airingAt -
+                3600 * 24 * 7 * (idx + 1)) *
+              1000,
+          }))
+    : anizipEp?.episodes
+      ? Object.entries(anizipEp.episodes).map((v) => ({
+          episode: v[1].episodeNumber || Number(v[1].episode),
+          airDate: v[1].airDate || v[1].airDateUtc || v[1].airdate,
+          hasAired: Boolean(
+            (v[1].airDateUtc || v[1].airDate || v[1].airdate) &&
+            new Date(
+              v[1].airDateUtc || v[1].airDate || v[1].airdate,
+            ).getTime() < Date.now(),
+          ),
+          episodeNumber: v[1].episodeNumber,
+          seasonNumber: v[1].seasonNumber,
+        }))
+      : [];
 
   const [dlPopup, setDlPopup] = useState<{
     active: boolean;
@@ -114,9 +146,15 @@ export default function AnimeDetail() {
 
   if (!anime) return null;
 
+  const trailerUrl = episodesData?.isAnilist
+    ? anilinkEp.trailer.site === "youtube"
+      ? `https://www.youtube.com/embed/${anilinkEp.trailer.id}`
+      : null
+    : null;
+
   return (
     <div className="relative w-full">
-      <div className="absolute top-5 left-3 z-99">
+      <div className="absolute left-3 top-0 z-99">
         <BackBtn />
       </div>
       <div className="flex flex-col gap-8 pb-20 animate-in fade-in duration-500">
@@ -127,17 +165,14 @@ export default function AnimeDetail() {
             episodeInfo={dlPopup.info}
           />
         )}
-        <AnimeDetailHero
-          anime={anime}
-          trailerUrl={null}
-        />
+        <AnimeDetailHero anime={anime} trailerUrl={null} />
+        <AnimeTrailer animeTitle={anime.title} url={trailerUrl} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           <AnimeDetailInfo anime={anime} />
 
           <div className="lg:col-span-2 space-y-12 order-1 lg:order-2">
             <AnimeSynopsis anime={anime} />
-            <AnimeTrailer animeTitle={anime.title} youtubeId={null} />
             <AnimeDetailEpisodes
               anime={anime}
               episodes={episodes}

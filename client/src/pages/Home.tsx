@@ -1,11 +1,29 @@
-import { AnimeCard, AnimeCardSkeleton } from '@/components/AnimeCard';
-import { useSeasonsNow, useTopAnime } from '@/hooks/use-jikan';
-import { ArrowRight, Loader2, PlayCircle } from 'lucide-react';
-import { Link } from 'wouter';
+import { AnimeCard, RecentEpisodeAnimeCard } from "@/components/AnimeCard";
+import HomeSection from "@/components/layout/HomeSection";
+import {
+  useRecentlyReleased,
+  useSeasonsNow,
+  useTopAnime,
+} from "@/hooks/use-jikan";
+import { Loader2, PlayCircle } from "lucide-react";
+import { Link } from "wouter";
 
 export default function Home() {
-  const { data: trending, isLoading: isLoadingTrending, error: trendingError } = useSeasonsNow(1);
-  const { data: top, isLoading: isLoadingTop, error: topError } = useTopAnime(1, 'bypopularity');
+  const {
+    data: trending,
+    isLoading: isLoadingTrending,
+    error: trendingError,
+  } = useSeasonsNow(1);
+  const {
+    data: top,
+    isLoading: isLoadingTop,
+    error: topError,
+  } = useTopAnime(1, "bypopularity");
+  const {
+    data: recent,
+    isLoading: isLoadingRecent,
+    error: recentError,
+  } = useRecentlyReleased(1, 10);
 
   const spotlight = trending?.data?.[0];
 
@@ -58,83 +76,83 @@ export default function Home() {
         )}
       </section>
 
+      {/* Recently Released Section */}
+      <HomeSection
+        title="Recently Aired"
+        subTitle="Most recently aired episodes"
+        isError={Boolean(recentError)}
+        isLoading={isLoadingRecent}
+        viewAllHref="/latest"
+        viewAllText="View Latest"
+        list={
+          <>
+            {recent?.data.slice(0, 6).map((anime, i: number) => (
+              <div
+                key={anime.media.id}
+                className="animate-in fade-in zoom-in-95 duration-500"
+                style={{
+                  animationDelay: `${i * 100}ms`,
+                  animationFillMode: "both",
+                }}
+              >
+                <RecentEpisodeAnimeCard anime={anime} />
+              </div>
+            ))}
+          </>
+        }
+      />
+
       {/* Airing Now Section */}
-      <section>
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold font-display tracking-tight flex items-center gap-3">
-              <span className="w-2 h-8 bg-primary rounded-full inline-block" />
-              Airing This Season
-            </h2>
-            <p className="text-muted-foreground mt-1 ml-5 text-sm md:text-base">The hottest shows broadcasting right now.</p>
-          </div>
-          <Link href="/seasons" className="hidden md:flex text-muted-foreground hover:text-primary items-center gap-1 text-sm font-medium transition-colors bg-muted px-4 py-2 rounded-full">
-            Browse Seasons <ArrowRight size={16} />
-          </Link>
-        </div>
-
-        {trendingError && (
-          <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
-            Failed to load airing anime.
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-10">
-          {isLoadingTrending
-            ? Array.from({ length: 6 }).map((_, i) => <AnimeCardSkeleton key={i} />)
-            : trending?.data?.slice(1, 7).map((anime: any, i: number) => (
-                <div key={anime.mal_id} className="animate-in fade-in zoom-in-95 duration-500" style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'both' }}>
-                  <AnimeCard anime={anime} />
-                </div>
-              ))
-          }
-        </div>
-
-        <div className="mt-8 md:hidden flex justify-center">
-          <Link href="/seasons" className="text-muted-foreground hover:text-primary flex items-center gap-1 text-sm font-medium transition-colors bg-muted px-6 py-3 rounded-full w-full justify-center">
-            Browse Seasons <ArrowRight size={16} />
-          </Link>
-        </div>
-      </section>
+      <HomeSection
+        isError={Boolean(trendingError)}
+        title="Airing This Season"
+        subTitle="The hottest shows broadcasting right now."
+        viewAllHref="/seasons"
+        viewAllText="Browse Seasons"
+        isLoading={isLoadingTrending}
+        list={
+          <>
+            {trending?.data?.slice(1, 7).map((anime: any, i: number) => (
+              <div
+                key={anime.mal_id}
+                className="animate-in fade-in zoom-in-95 duration-500"
+                style={{
+                  animationDelay: `${i * 100}ms`,
+                  animationFillMode: "both",
+                }}
+              >
+                <AnimeCard anime={anime} />
+              </div>
+            ))}
+          </>
+        }
+      />
 
       {/* Top Anime Section */}
-      <section>
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-2xl md:text-3xl font-bold font-display tracking-tight flex items-center gap-3">
-              <span className="w-2 h-8 bg-primary rounded-full inline-block" />
-              Most Popular
-            </h2>
-            <p className="text-muted-foreground mt-1 ml-5 text-sm md:text-base">All-time fan favorites and trending classics.</p>
-          </div>
-          <Link href="/top" className="hidden md:flex text-muted-foreground hover:text-primary items-center gap-1 text-sm font-medium transition-colors bg-muted px-4 py-2 rounded-full">
-            View All Top Anime <ArrowRight size={16} />
-          </Link>
-        </div>
-
-        {topError && (
-          <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
-            Failed to load popular anime.
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-10">
-          {isLoadingTop
-            ? Array.from({ length: 6 }).map((_, i) => <AnimeCardSkeleton key={i} />)
-            : top?.data?.slice(0, 6).map((anime: any, i: number) => (
-                <div key={anime.mal_id} className="animate-in fade-in zoom-in-95 duration-500" style={{ animationDelay: `${i * 100}ms`, animationFillMode: 'both' }}>
-                  <AnimeCard anime={anime} />
-                </div>
-              ))
-          }
-        </div>
-
-        <div className="mt-8 md:hidden flex justify-center">
-          <Link href="/top" className="text-muted-foreground hover:text-primary flex items-center gap-1 text-sm font-medium transition-colors bg-muted px-6 py-3 rounded-full w-full justify-center">
-            View All Top Anime <ArrowRight size={16} />
-          </Link>
-        </div>
-      </section>
+      <HomeSection
+        isError={Boolean(topError)}
+        isLoading={isLoadingTop}
+        list={
+          <>
+            {top?.data?.slice(0, 6).map((anime: any, i: number) => (
+              <div
+                key={anime.mal_id}
+                className="animate-in fade-in zoom-in-95 duration-500"
+                style={{
+                  animationDelay: `${i * 100}ms`,
+                  animationFillMode: "both",
+                }}
+              >
+                <AnimeCard anime={anime} />
+              </div>
+            ))}
+          </>
+        }
+        title="Most Popular"
+        subTitle="All-time fan favorites and trending classics."
+        viewAllHref="/top"
+        viewAllText="View All Top Anime"
+      />
     </div>
   );
 }

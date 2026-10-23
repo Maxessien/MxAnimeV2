@@ -149,7 +149,7 @@ export default function TopAnime() {
               ))}
             </div>
 
-            {data?.pagination && data.pagination.last_visible_page > 1 && (
+            {data?.pagination && data.pagination.last_visible_page >= 1 && (
               <div className="flex items-center justify-center gap-4 pt-8 border-t">
                 <button
                   onClick={() => {

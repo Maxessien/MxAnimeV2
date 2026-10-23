@@ -1,13 +1,20 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadQueue } from "@/lib/queue";
-import { Episode } from "@/types/anizip";
 import { Anime } from "@/types/jikan";
 import { ListVideo } from "lucide-react";
 import { FaDownload, FaPlay, FaSpinner } from "react-icons/fa";
 import { useLocation } from "wouter";
 
+export interface EpisodeEntry {
+  episode: number;
+  hasAired: boolean;
+  airDate: number | string | undefined;
+  seasonNumber: number | undefined,
+  episodeNumber: number | undefined
+}
+
 type AnimeEpisodesProps = {
-  episodes: (Episode & { hasAired: boolean })[];
+  episodes: EpisodeEntry[];
   isLoading: boolean;
   isFetching: boolean;
   error: unknown;

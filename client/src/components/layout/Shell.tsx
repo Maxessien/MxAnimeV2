@@ -1,11 +1,12 @@
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
-import { Calendar, CalendarClock, Download, Flame, History, Search, Settings, Trophy } from 'lucide-react';
+import { Calendar, CalendarClock, Download, Flame, History, Search, Settings, Trophy, Tv } from 'lucide-react';
 import { Link, useLocation } from 'wouter';
 
 const navItems = [
   { href: '/', label: 'Home', icon: Flame },
+  { href: '/latest', label: 'Latest', icon: Tv },
   { href: '/top', label: 'Top Anime', icon: Trophy },
   { href: '/seasons', label: 'Seasons', icon: Calendar },
   { href: '/schedule', label: 'Schedule', icon: CalendarClock },

@@ -20,6 +20,22 @@ import {
 import { fetchJikan, fetchMal, MAL_DEFAULT_FIELDS } from "@/lib/jikan";
 import { AniZipMetadata } from "@/types/anizip";
 import axios from "axios";
+import { anilinkService, getRecentlyReleasedEpisodes } from "@/lib/anilink";
+import { AugmentedAnimeMedia, PaginatedRecentEpisodes } from "@/types/anilink";
+
+// --- ANILIST SUPPORTED ENDPOINTS ---
+
+export const useRecentlyReleased = (page: number, perPage?: number) => {
+  return useQuery<PaginatedRecentEpisodes>({
+    queryKey: ["recently-released", page, perPage],
+    queryFn: async () => {
+      const res = await getRecentlyReleasedEpisodes(page, perPage);
+      return res;
+    },
+    staleTime: 10 * 60 * 1000,
+    refetchOnWindowFocus: false,
+  });
+};
 
 // --- MAL SUPPORTED ENDPOINTS ---
 
@@ -50,7 +66,8 @@ export const useTopAnime = (
       });
       return transformMalSearchToJikan(data);
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -74,7 +91,8 @@ export const useSeasonsNow = (page = 1) => {
       });
       return transformMalSearchToJikan(data) as JikanPaginatedResponse<Anime>;
     },
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -94,7 +112,8 @@ export const useSeason = (
       return transformMalSearchToJikan(data) as JikanPaginatedResponse<Anime>;
     },
     enabled: !!year && !!season,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -119,7 +138,8 @@ export const useSearchAnime = (
       return transformMalSearchToJikan(data) as JikanPaginatedResponse<Anime>;
     },
     enabled: !!q || page > 1,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -133,7 +153,8 @@ export const useAnimeFull = (id: string | number) => {
       return transformMalToJikan(data) as JikanResponse<AnimeFull>;
     },
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -146,25 +167,42 @@ export const useAnimeCharacters = (id: string | number) => {
     queryKey: ["anime-characters", id],
     queryFn: () => fetchJikan(`/anime/${id}/characters`),
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 
 export const useAnimeEpisodes = (id: string | number) => {
-  return useQuery<AniZipMetadata>({
+  return useQuery<
+    (AniZipMetadata | AugmentedAnimeMedia) & { isAnilist: boolean }
+  >({
     queryKey: ["anime-episodes", id],
-    queryFn: async() => {
-      const { data } = await axios.get<AniZipMetadata>(`https://api.ani.zip/mappings?mal_id=${id}`)
-      const filteredEps: AniZipMetadata["episodes"] = {}
+    queryFn: async () => {
+      const anilinkRes = await anilinkService.getAnimeByMalId(id);
 
-      for (const key in data.episodes) {
-        if (Number.isFinite(Number(key))) filteredEps[key] = data.episodes[key]
+      if (
+        ((anilinkRes?.airingSchedule.nodes &&
+          anilinkRes?.airingSchedule.nodes.length > 0) ||
+          anilinkRes?.nextAiringEpisode.episode) &&
+        anilinkRes.seasonNumber
+      ) {
+        return { ...anilinkRes, isAnilist: true };
       }
 
-      return {...data, episodes: filteredEps}
+      const { data } = await axios.get<AniZipMetadata>(
+        `https://api.ani.zip/mappings?mal_id=${id}`,
+      );
+      const filteredEps: AniZipMetadata["episodes"] = {};
+
+      for (const key in data.episodes) {
+        if (Number.isFinite(Number(key))) filteredEps[key] = data.episodes[key];
+      }
+
+      return { ...data, episodes: filteredEps, isAnilist: false };
     },
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 
@@ -172,7 +210,8 @@ export const useSchedules = (filter?: ScheduleFilter, page = 1) => {
   return useQuery<JikanPaginatedResponse<Anime>>({
     queryKey: ["schedules", filter, page],
     queryFn: () => fetchJikan("/schedules", { filter, page }),
-    staleTime: 5 * 60 * 1000,
+    staleTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: false,
   });
 };
 

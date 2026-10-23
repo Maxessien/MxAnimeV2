@@ -22,6 +22,7 @@ import { isPermissionGranted, requestPermission, sendNotification } from '@tauri
 import { isMobile } from './lib/utils';
 import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import { ongoingDownloadQueue } from './lib/queue';
+import LatestEpisodes from './pages/LatestEpisodes';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +41,7 @@ function Router() {
         <Route path="/stream" component={AnimeStream} />
         <Route path="/top" component={TopAnime} />
         <Route path="/seasons" component={Seasons} />
+        <Route path="/latest" component={LatestEpisodes} />
         <Route path="/schedule" component={Schedule} />
         <Route path="/search" component={Search} />
         <Route path="/anime/:id" component={AnimeDetail} />

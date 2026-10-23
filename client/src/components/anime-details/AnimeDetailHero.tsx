@@ -21,7 +21,7 @@ export function AnimeDetailHero({
       <div className="h-75 md:h-112.5 w-full overflow-hidden bg-black">
         {trailerUrl ? (
           <iframe
-            src={`${trailerUrl}&autoplay=1&mute=1&controls=0&loop=1`}
+            src={`${trailerUrl}?autoplay=1&mute=1&controls=0&loop=1`}
             className="w-full h-[150%] mt-[-10%] opacity-40 pointer-events-none scale-110 object-cover"
             title={`${anime.title} banner trailer`}
             allow="autoplay; encrypted-media"
