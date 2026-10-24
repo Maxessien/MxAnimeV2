@@ -147,7 +147,7 @@ export default function AnimeDetail() {
   if (!anime) return null;
 
   const trailerUrl = episodesData?.isAnilist
-    ? anilinkEp.trailer.site === "youtube"
+    ? anilinkEp?.trailer?.site === "youtube"
       ? `https://www.youtube.com/embed/${anilinkEp.trailer.id}`
       : null
     : null;

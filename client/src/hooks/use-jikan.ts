@@ -181,9 +181,9 @@ export const useAnimeEpisodes = (id: string | number) => {
       const anilinkRes = await anilinkService.getAnimeByMalId(id);
 
       if (
-        ((anilinkRes?.airingSchedule.nodes &&
+        ((anilinkRes?.airingSchedule?.nodes &&
           anilinkRes?.airingSchedule.nodes.length > 0) ||
-          anilinkRes?.nextAiringEpisode.episode) &&
+          anilinkRes?.nextAiringEpisode?.episode) &&
         anilinkRes.seasonNumber
       ) {
         return { ...anilinkRes, isAnilist: true };

@@ -1,22 +1,24 @@
 import {
+  AnilinkServiceOptions,
   AniListGraphQLResponse,
   ANIME_FORMATS,
   AnimeRelationEdge,
   AugmentedAnimeMedia,
+  FuzzyDateInput,
   PageInfo,
   PaginatedRecentEpisodes,
   RawMediaWithRelations,
   RecentEpisode,
+  SyntheticAiringScheduleNode,
 } from "@/types/anilink";
-import { MEDIA_BY_MAL_ID_QUERY, PREQUEL_MINIMAL_QUERY, RECENTLY_AIRED } from "./utils";
+import {
+  MEDIA_BY_MAL_ID_QUERY,
+  PREQUEL_MINIMAL_QUERY,
+  RECENTLY_AIRED,
+} from "./utils";
 import axios from "axios";
 
 const ANILIST_GRAPHQL_ENDPOINT = "https://graphql.anilist.co";
-
-export interface AnilinkServiceOptions {
-  endpoint?: string;
-  fetchFn?: typeof fetch;
-}
 
 export class AnilinkService {
   private readonly endpoint: string;
@@ -33,7 +35,7 @@ export class AnilinkService {
    */
   private async executeQuery<T>(
     query: string,
-    variables: Record<string, unknown>
+    variables: Record<string, unknown>,
   ): Promise<T | null> {
     const response = await this.fetchFn(this.endpoint, {
       method: "POST",
@@ -57,7 +59,7 @@ export class AnilinkService {
 
     if (payload.errors && payload.errors.length > 0) {
       const isNotFound = payload.errors.some(
-        (err) => err.status === 404 || /not found/i.test(err.message)
+        (err) => err.status === 404 || /not found/i.test(err.message),
       );
       if (isNotFound) return null;
       throw new Error(payload.errors.map((e) => e.message).join(", "));
@@ -72,22 +74,26 @@ export class AnilinkService {
    * - Relation node IDs presented as MyAnimeList IDs (`idMal`)
    * - Calculated TV season number
    */
-  async getAnimeByMalId(malId: number | string): Promise<AugmentedAnimeMedia | null> {
-    const numericMalId = typeof malId === "string" ? parseInt(malId, 10) : malId;
+  async getAnimeByMalId(
+    malId: number | string,
+  ): Promise<AugmentedAnimeMedia | null> {
+    const numericMalId =
+      typeof malId === "string" ? parseInt(malId, 10) : malId;
     if (isNaN(numericMalId)) {
       throw new Error(`Invalid malId: ${malId}`);
     }
 
     const rawMedia = await this.executeQuery<RawMediaWithRelations>(
       MEDIA_BY_MAL_ID_QUERY,
-      { idMal: numericMalId }
+      { idMal: numericMalId },
     );
     if (!rawMedia) return null;
 
     // Filter non-anime relations and map node fields
     const animeEdges: AnimeRelationEdge[] = (rawMedia.relations?.edges ?? [])
       .filter(
-        (edge) => edge.node?.type === "ANIME" && ANIME_FORMATS.has(edge.node?.format)
+        (edge) =>
+          edge.node?.type === "ANIME" && ANIME_FORMATS.has(edge.node?.format),
       )
       .map((edge) => ({
         id: edge.id,
@@ -103,8 +109,15 @@ export class AnilinkService {
     // Traverse prequel relations to determine TV season number
     const seasonNumber = await this.calculateSeasonNumber(rawMedia);
 
+    const schedule =
+      rawMedia.airingSchedule.nodes.length === 0 &&
+      rawMedia.status === "FINISHED"
+      ? this.constructAiringSchedule(rawMedia.episodes, rawMedia.startDate, rawMedia.endDate)
+        : rawMedia.airingSchedule.nodes;
+
     return {
       ...rawMedia,
+      airingSchedule: {nodes: schedule},
       seasonNumber,
       relations: {
         edges: animeEdges,
@@ -113,7 +126,7 @@ export class AnilinkService {
   }
 
   private async calculateSeasonNumber(
-    initialMedia: RawMediaWithRelations
+    initialMedia: RawMediaWithRelations,
   ): Promise<number> {
     if (initialMedia.format !== "TV") {
       return 1;
@@ -125,7 +138,8 @@ export class AnilinkService {
 
     while (true) {
       const prequelEdge = currentRelations.find(
-        (edge) => edge.relationType === "PREQUEL" && edge.node?.type === "ANIME"
+        (edge) =>
+          edge.relationType === "PREQUEL" && edge.node?.type === "ANIME",
       );
 
       if (!prequelEdge || !prequelEdge.node) {
@@ -161,7 +175,7 @@ export class AnilinkService {
     // Title heuristic fallback if graph link is missing or flat
     if (tvSeasonCount === 1) {
       const parsedSeason = this.extractSeasonFromTitle(
-        initialMedia.title.english || initialMedia.title.romaji || ""
+        initialMedia.title.english || initialMedia.title.romaji || "",
       );
       if (parsedSeason && parsedSeason > 1) {
         return parsedSeason;
@@ -169,6 +183,58 @@ export class AnilinkService {
     }
 
     return tvSeasonCount;
+  }
+
+  private constructAiringSchedule(
+    episodes: number | null | undefined,
+    startDate: FuzzyDateInput | Date | string | null | undefined,
+    endDate?: FuzzyDateInput | Date | string | null | undefined,
+  ): SyntheticAiringScheduleNode[] {
+    if (!episodes || episodes <= 0) return [];
+
+    const parseToMs = (
+      val: FuzzyDateInput | Date | string | null | undefined,
+    ): number | null => {
+      if (!val) return null;
+      if (val instanceof Date)
+        return isNaN(val.getTime()) ? null : val.getTime();
+      if (typeof val === "string") {
+        const ms = new Date(val).getTime();
+        return isNaN(ms) ? null : ms;
+      }
+      if (typeof val === "object" && val.year) {
+        const date = new Date(
+          Date.UTC(val.year, (val.month ?? 1) - 1, val.day ?? 1),
+        );
+        return isNaN(date.getTime()) ? null : date.getTime();
+      }
+      return null;
+    };
+
+    const startMs = parseToMs(startDate);
+    if (startMs === null) return [];
+
+    const endMs = parseToMs(endDate);
+    const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+    const nowInSeconds = Math.floor(Date.now() / 1000);
+
+    const stepMs =
+      episodes > 1 && endMs !== null && endMs > startMs
+        ? (endMs - startMs) / (episodes - 1)
+        : ONE_WEEK_MS;
+
+    return Array.from({ length: episodes }, (_, index) => {
+      const episodeNumber = index + 1;
+      const airDateMs = Math.round(startMs + index * stepMs);
+      const airingAt = Math.floor(airDateMs / 1000);
+
+      return {
+        id: episodeNumber,
+        episode: episodeNumber,
+        airingAt,
+        timeUntilAiring: airingAt - nowInSeconds,
+      };
+    });
   }
 
   private extractSeasonFromTitle(title: string): number | null {
@@ -197,7 +263,7 @@ export const anilinkService = new AnilinkService();
 
 export async function getRecentlyReleasedEpisodes(
   page: number = 1,
-  perPage: number = 20
+  perPage: number = 20,
 ): Promise<PaginatedRecentEpisodes> {
   const currentTimestampInSeconds = Math.floor(Date.now() / 1000);
 
@@ -218,7 +284,7 @@ export async function getRecentlyReleasedEpisodes(
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-    }
+    },
   );
 
   if (data.errors && data.errors.length > 0) {
@@ -236,7 +302,7 @@ export async function getRecentlyReleasedEpisodes(
   const rawEpisodes = data.data?.Page?.airingSchedules ?? [];
 
   const episodes = rawEpisodes.filter(
-    (item): item is RecentEpisode => typeof item.media?.idMal === "number"
+    (item): item is RecentEpisode => typeof item.media?.idMal === "number",
   );
 
   return {

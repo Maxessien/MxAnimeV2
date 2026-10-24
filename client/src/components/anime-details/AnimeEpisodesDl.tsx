@@ -8,7 +8,6 @@ import { filterParsed } from "@/lib/utils";
 import { DbEpisode } from "@/types/apiResponses";
 import { UseMutateAsyncFunction, useQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { AxiosResponse } from "node_modules/axios/index.d.cts";
 import { FaSpinner } from "react-icons/fa";
 import { HiX } from "react-icons/hi";
 
@@ -33,36 +32,29 @@ export function AnimeEpisodesDl({
   const { data, isFetching } = useQuery({
     queryKey: ["episode_info", eId, mal_id, sId],
     queryFn: async () => {
-      let res:
-        | AxiosResponse<
-            Pick<DbEpisode, "eId" | "sId" | "malId" | "quality">[],
-            any,
-            {},
-            any
-          >
-        | undefined;
+      let res: Pick<DbEpisode, "eId" | "sId" | "malId" | "quality">[] | undefined;
 
       try {
-        res = await axios.post(`${BACKEND_URL}/show/ep`, {
+        res = (await axios.post(`${BACKEND_URL}/show/ep`, {
           mal_id,
           eId,
           sId,
-        });
+        })).data;
       } catch {
         const torrentioEntries = await getTorrentioTorrents(mal_id, eId, sId);
         const parsed = filterParsed(
           parseTorrentioAnimeResponse(torrentioEntries),
         );
-        res = await axios.post(`${BACKEND_URL}/show/ep`, {
+        res = (await axios.post(`${BACKEND_URL}/show/ep`, {
           mal_id,
           eId,
           sId,
           qualities: parsed,
-        });
+        })).data;
       }
 
       if (!res) throw new Error("Fetch failed");
-      return res.data;
+      return res;
     },
     staleTime: Infinity,
     refetchOnWindowFocus: false,

@@ -16,6 +16,8 @@ export const MEDIA_BY_MAL_ID_QUERY = `
       id
       idMal
       format
+      episodes
+      status
       title {
         romaji
         english
@@ -160,7 +162,7 @@ export const UNIT_MULTIPLIERS: Record<string, number> = {
 export const ANIZIP_BASE_URL = "https://api.ani.zip/mappings"
 
 const FRIBBS_LIST_URL = "https://raw.githubusercontent.com/Fribb/anime-lists/refs/heads/master/anime-offline-database-reduced.json"
-const TMDB_API = "https://api.themoviedb.org/3/tv/{tmdbId}/external_ids?api_key=" + process.env.VITE_TMDB_KEY
+const TMDB_API = "https://api.themoviedb.org/3/tv/{tmdbId}/external_ids?api_key=" + import.meta.env.VITE_TMDB_KEY
 
 
 interface TorrentIds {kitsu: string | null, imdb: string | null}
@@ -210,8 +212,10 @@ export function filterParsed(entries: ParsedAnimeStream[]) {
   }
 
   for (const [quality, entries] of Object.entries(allQualities)) {
-    if (quality === "Unknown") continue
+    if (quality === "Unknown" || entries.length === 0) continue
     const chosen = entries.reduce((prev, curr) => (prev.seeders || 0) > (curr.seeders || 0) ? prev : curr)
+
+    console.log({quality: chosen.quality.resolution, magnetUri: chosen.magnetUri})
 
     if (chosen.magnetUri) parsed.push({quality: chosen.quality.resolution, magnetUri: chosen.magnetUri})
   }

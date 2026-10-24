@@ -1,7 +1,20 @@
-import { AnimeResolution, MediaSource, ParsedAnimeMetadata, ParsedAnimeStream, ParsedFileSize, ParsedQuality, ParseOptions, TorrentioApiResponse, TorrentioRawStream } from "@/types/torrentio";
-import { DEFAULT_ANIME_TRACKERS, getIdSForTorrentio, UNIT_MULTIPLIERS } from "./utils";
+import {
+  AnimeResolution,
+  MediaSource,
+  ParsedAnimeMetadata,
+  ParsedAnimeStream,
+  ParsedFileSize,
+  ParsedQuality,
+  ParseOptions,
+  TorrentioApiResponse,
+  TorrentioRawStream,
+} from "@/types/torrentio";
+import {
+  DEFAULT_ANIME_TRACKERS,
+  getIdSForTorrentio,
+  UNIT_MULTIPLIERS,
+} from "./utils";
 import axios from "axios";
-
 
 /**
  * Fetches anime torrents from torrentio
@@ -10,16 +23,24 @@ import axios from "axios";
  * @param episode Episode number for torrentio to retreive
  * @param season Optional season number of anime entry
  */
-export async function getTorrentioTorrents(malId: string | number, episode: number, season?: number) {
-  let torrentioUrl = "https://torrentio.strem.fun/sort=qualitysize|qualityfilter=unknown|sizefilter=1.7GB/stream/series/"
+export async function getTorrentioTorrents(
+  malId: string | number,
+  episode: number,
+  season?: number,
+) {
+  let torrentioUrl =
+    "https://torrentio.strem.fun/sort=qualitysize|qualityfilter=unknown|sizefilter=1.7GB/stream";
 
-  const {kitsu, imdb} = await getIdSForTorrentio(malId)
+  const { kitsu, imdb } = await getIdSForTorrentio(malId);
 
-  if (kitsu) torrentioUrl += `/anime/kitsu:${episode}.json`
-  else if (imdb && season) torrentioUrl += `/series/${imdb}:${season}:${episode}`
-  else return null
+  if (kitsu) torrentioUrl += `/anime/kitsu:${kitsu}:${episode}.json`;
+  else if (imdb && season)
+    torrentioUrl += `/series/${imdb}:${season}:${episode}`;
+  else return null;
 
-  return (await axios.get(torrentioUrl)).data
+  const res = await axios.get(torrentioUrl);
+
+  return res.data;
 }
 
 /**
@@ -32,14 +53,14 @@ export async function getTorrentioTorrents(malId: string | number, episode: numb
  */
 export function parseTorrentioAnimeResponse(
   response: unknown,
-  options: ParseOptions = {}
+  options: ParseOptions = {},
 ): ParsedAnimeStream[] {
   if (!response) {
     return [];
   }
 
   let payload: unknown = response;
-  if (typeof response === 'string') {
+  if (typeof response === "string") {
     try {
       payload = JSON.parse(response);
     } catch {
@@ -47,7 +68,7 @@ export function parseTorrentioAnimeResponse(
     }
   }
 
-  if (typeof payload !== 'object' || payload === null) {
+  if (typeof payload !== "object" || payload === null) {
     return [];
   }
 
@@ -58,8 +79,11 @@ export function parseTorrentioAnimeResponse(
 
   const parsedList: ParsedAnimeStream[] = [];
   for (const rawStream of rawStreams) {
-    if (typeof rawStream === 'object' && rawStream !== null) {
-      const parsed = parseTorrentioStream(rawStream as TorrentioRawStream, options);
+    if (typeof rawStream === "object" && rawStream !== null) {
+      const parsed = parseTorrentioStream(
+        rawStream as TorrentioRawStream,
+        options,
+      );
       if (parsed) {
         parsedList.push(parsed);
       }
@@ -78,18 +102,24 @@ export function parseTorrentioAnimeResponse(
  */
 export function parseTorrentioStream(
   stream: TorrentioRawStream,
-  options: ParseOptions = {}
+  options: ParseOptions = {},
 ): ParsedAnimeStream | null {
-  if (!stream || typeof stream !== 'object') {
+  if (!stream || typeof stream !== "object") {
     return null;
   }
 
-  const titleStr = typeof stream.title === 'string' ? stream.title : '';
-  const nameStr = typeof stream.name === 'string' ? stream.name : '';
+  const titleStr = typeof stream.title === "string" ? stream.title : "";
+  const nameStr = typeof stream.name === "string" ? stream.name : "";
 
   // 1. Title Lines & Release Title
-  const titleLines = titleStr.split('\n').map((l) => l.trim()).filter((l) => l.length > 0);
-  const releaseTitle = extractReleaseTitle(titleLines, stream.behaviorHints?.filename);
+  const titleLines = titleStr
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l.length > 0);
+  const releaseTitle = extractReleaseTitle(
+    titleLines,
+    stream.behaviorHints?.filename,
+  );
 
   // 2. InfoHash & Debrid Status
   const { isDebrid, debridService } = detectDebrid(nameStr);
@@ -116,11 +146,15 @@ export function parseTorrentioStream(
 
   return {
     releaseTitle,
-    filename: stream.behaviorHints?.filename || (releaseTitle.endsWith('.mkv') || releaseTitle.endsWith('.mp4') ? releaseTitle : null),
+    filename:
+      stream.behaviorHints?.filename ||
+      (releaseTitle.endsWith(".mkv") || releaseTitle.endsWith(".mp4")
+        ? releaseTitle
+        : null),
     filesize,
     magnetUri,
     infoHash,
-    fileIndex: typeof stream.fileIdx === 'number' ? stream.fileIdx : null,
+    fileIndex: typeof stream.fileIdx === "number" ? stream.fileIdx : null,
     quality,
     anime,
     seeders,
@@ -128,7 +162,7 @@ export function parseTorrentioStream(
     languages,
     isDebrid,
     debridService,
-    debridUrl: typeof stream.url === 'string' ? stream.url : null,
+    debridUrl: typeof stream.url === "string" ? stream.url : null,
     raw: stream,
   };
 }
@@ -165,8 +199,11 @@ export function extractFileSize(text: string): ParsedFileSize | null {
   return null;
 }
 
-function parseSizeValue(numStr: string, unitStr: string): ParsedFileSize | null {
-  const cleanNum = parseFloat(numStr.replace(/,/g, ''));
+function parseSizeValue(
+  numStr: string,
+  unitStr: string,
+): ParsedFileSize | null {
+  const cleanNum = parseFloat(numStr.replace(/,/g, ""));
   if (isNaN(cleanNum) || cleanNum < 0) {
     return null;
   }
@@ -181,11 +218,11 @@ function parseSizeValue(numStr: string, unitStr: string): ParsedFileSize | null 
   const bytes = Math.round(cleanNum * multiplier);
 
   // Normalize unit display to standard representation
-  let displayUnit: 'B' | 'KB' | 'MB' | 'GB' | 'TB' = 'B';
-  if (normalizedUnitKey.startsWith('T')) displayUnit = 'TB';
-  else if (normalizedUnitKey.startsWith('G')) displayUnit = 'GB';
-  else if (normalizedUnitKey.startsWith('M')) displayUnit = 'MB';
-  else if (normalizedUnitKey.startsWith('K')) displayUnit = 'KB';
+  let displayUnit: "B" | "KB" | "MB" | "GB" | "TB" = "B";
+  if (normalizedUnitKey.startsWith("T")) displayUnit = "TB";
+  else if (normalizedUnitKey.startsWith("G")) displayUnit = "GB";
+  else if (normalizedUnitKey.startsWith("M")) displayUnit = "MB";
+  else if (normalizedUnitKey.startsWith("K")) displayUnit = "KB";
 
   return {
     bytes,
@@ -205,9 +242,11 @@ export function buildMagnetUri(
   stream: TorrentioRawStream,
   releaseTitle: string,
   resolvedInfoHash: string | null = null,
-  options: ParseOptions = {}
+  options: ParseOptions = {},
 ): string | null {
-  const hash = resolvedInfoHash || (typeof stream.infoHash === 'string' ? stream.infoHash.trim() : null);
+  const hash =
+    resolvedInfoHash ||
+    (typeof stream.infoHash === "string" ? stream.infoHash.trim() : null);
   if (!hash) {
     return null;
   }
@@ -233,8 +272,8 @@ export function buildMagnetUri(
   // 1. From stream.sources
   if (Array.isArray(stream.sources)) {
     for (const source of stream.sources) {
-      if (typeof source === 'string' && source.startsWith('tracker:')) {
-        const trackerUrl = source.replace(/^tracker:/, '').trim();
+      if (typeof source === "string" && source.startsWith("tracker:")) {
+        const trackerUrl = source.replace(/^tracker:/, "").trim();
         if (trackerUrl.length > 0) {
           trackerSet.add(trackerUrl);
         }
@@ -245,7 +284,7 @@ export function buildMagnetUri(
   // 2. Custom trackers provided via options
   if (Array.isArray(options.customTrackers)) {
     for (const tracker of options.customTrackers) {
-      if (tracker && typeof tracker === 'string') {
+      if (tracker && typeof tracker === "string") {
         trackerSet.add(tracker.trim());
       }
     }
@@ -263,7 +302,7 @@ export function buildMagnetUri(
     params.push(`tr=${encodeURIComponent(tracker)}`);
   }
 
-  return `magnet:?${params.join('&')}`;
+  return `magnet:?${params.join("&")}`;
 }
 
 /**
@@ -271,71 +310,71 @@ export function buildMagnetUri(
  */
 export function extractQuality(name: string, title: string): ParsedQuality {
   const combined = `${name} ${title}`;
-  const rawQuality = name.split('\n')[1] || name;
+  const rawQuality = name.split("\n")[1] || name;
 
   // 1. Resolution
-  let resolution: AnimeResolution = 'Unknown';
+  let resolution: AnimeResolution = "Unknown";
   if (/4320p|8k/i.test(combined)) {
-    resolution = '4320p';
+    resolution = "4320p";
   } else if (/2160p|4k|uhd/i.test(combined)) {
-    resolution = '2160p';
+    resolution = "2160p";
   } else if (/1080p/i.test(combined)) {
-    resolution = '1080p';
+    resolution = "1080p";
   } else if (/720p/i.test(combined)) {
-    resolution = '720p';
+    resolution = "720p";
   } else if (/480p/i.test(combined)) {
-    resolution = '480p';
+    resolution = "480p";
   } else if (/360p/i.test(combined)) {
-    resolution = '360p';
+    resolution = "360p";
   }
 
   // 2. Source
   let source: MediaSource | null = null;
   if (/\b(?:bluray|bdrip|brrip)\b/i.test(combined)) {
-    source = 'BluRay';
+    source = "BluRay";
   } else if (/\bweb-?dl\b/i.test(combined)) {
-    source = 'WEB-DL';
+    source = "WEB-DL";
   } else if (/\bwebrip\b/i.test(combined)) {
-    source = 'WEBRip';
+    source = "WEBRip";
   } else if (/\bhdtv\b/i.test(combined)) {
-    source = 'HDTV';
+    source = "HDTV";
   } else if (/\bdvdrip\b/i.test(combined)) {
-    source = 'DVDRip';
+    source = "DVDRip";
   } else if (/\bcam\b/i.test(combined)) {
-    source = 'CAM';
+    source = "CAM";
   } else if (/\b(?:telesync|ts)\b/i.test(combined)) {
-    source = 'TeleSync';
+    source = "TeleSync";
   } else if (/\bscr\b/i.test(combined)) {
-    source = 'SCR';
+    source = "SCR";
   }
 
   // 3. Codec
   let codec: string | null = null;
   if (/\b(?:hevc|x265|h\.?265)\b/i.test(combined)) {
-    codec = 'HEVC/x265';
+    codec = "HEVC/x265";
   } else if (/\b(?:avc|x264|h\.?264)\b/i.test(combined)) {
-    codec = 'AVC/x264';
+    codec = "AVC/x264";
   } else if (/\bav1\b/i.test(combined)) {
-    codec = 'AV1';
+    codec = "AV1";
   }
 
   // 4. Bit Depth
   let bitDepth: string | null = null;
   if (/\b(?:10-?bit|hi10p?)\b/i.test(combined)) {
-    bitDepth = '10-bit';
+    bitDepth = "10-bit";
   } else if (/\b8-?bit\b/i.test(combined)) {
-    bitDepth = '8-bit';
+    bitDepth = "8-bit";
   }
 
   // 5. HDR Profiles
   const hdr: string[] = [];
   if (/\bhdr10\+\b/i.test(combined)) {
-    hdr.push('HDR10+');
+    hdr.push("HDR10+");
   } else if (/\bhdr\b/i.test(combined)) {
-    hdr.push('HDR');
+    hdr.push("HDR");
   }
   if (/\b(?:dv|dolby\s*vision)\b/i.test(combined)) {
-    hdr.push('DV');
+    hdr.push("DV");
   }
 
   // 6. Remux Check
@@ -374,7 +413,9 @@ export function extractProvider(text: string): string | null {
 /**
  * Parses anime-specific identifiers: release group, episode number, CRC32, and clean title.
  */
-export function extractAnimeMetadata(releaseTitle: string): ParsedAnimeMetadata {
+export function extractAnimeMetadata(
+  releaseTitle: string,
+): ParsedAnimeMetadata {
   let clean = releaseTitle;
 
   // 1. Release Group (typically in first bracket: [SubsPlease], [Erai-raws], [Judas])
@@ -390,18 +431,20 @@ export function extractAnimeMetadata(releaseTitle: string): ParsedAnimeMetadata 
   const crcMatch = clean.match(/\[([0-9a-fA-F]{8})\](?:\.[a-zA-Z0-9]+)?$/);
   if (crcMatch) {
     crc32 = crcMatch[1].toUpperCase();
-    clean = clean.replace(crcMatch[0], '').trim();
+    clean = clean.replace(crcMatch[0], "").trim();
   }
 
   // 3. Episode Number (e.g. " - 28", " S01E28", " Episode 12", " 01v2")
   let episode: number | null = null;
-  const epMatch = clean.match(/(?:[-_]|\bS\d+E|\bEpisode|\bEP|\bE)\s*(\d+)(?:v\d+)?\b/i);
+  const epMatch = clean.match(
+    /(?:[-_]|\bS\d+E|\bEpisode|\bEP|\bE)\s*(\d+)(?:v\d+)?\b/i,
+  );
   if (epMatch) {
     episode = parseInt(epMatch[1], 10);
   }
 
   // Strip file extension if present in clean title
-  clean = clean.replace(/\.(mkv|mp4|avi|webm)$/i, '').trim();
+  clean = clean.replace(/\.(mkv|mp4|avi|webm)$/i, "").trim();
 
   return {
     group,
@@ -416,20 +459,20 @@ export function extractAnimeMetadata(releaseTitle: string): ParsedAnimeMetadata 
  */
 export function extractLanguages(text: string): string[] {
   const languages: string[] = [];
-  if (/dual[\s-]audio/i.test(text)) languages.push('Dual Audio');
-  if (/multi[\s-]audio/i.test(text)) languages.push('Multi Audio');
-  if (/multi[\s-]subs?/i.test(text)) languages.push('Multi Subs');
-  if (/dubbed|\beng[\s-]dub\b/i.test(text)) languages.push('Dubbed');
+  if (/dual[\s-]audio/i.test(text)) languages.push("Dual Audio");
+  if (/multi[\s-]audio/i.test(text)) languages.push("Multi Audio");
+  if (/multi[\s-]subs?/i.test(text)) languages.push("Multi Subs");
+  if (/dubbed|\beng[\s-]dub\b/i.test(text)) languages.push("Dubbed");
 
   // Flag emoji checks (e.g. 🇬🇧 English, 🇯🇵 Japanese)
-  if (/🇬🇧|english/i.test(text)) languages.push('English');
-  if (/🇯🇵|japanese/i.test(text)) languages.push('Japanese');
-  if (/🇪🇸|spanish/i.test(text)) languages.push('Spanish');
-  if (/🇫🇷|french/i.test(text)) languages.push('French');
-  if (/🇩🇪|german/i.test(text)) languages.push('German');
-  if (/🇮🇹|italian/i.test(text)) languages.push('Italian');
-  if (/🇵🇹|portuguese/i.test(text)) languages.push('Portuguese');
-  if (/🇷🇺|russian/i.test(text)) languages.push('Russian');
+  if (/🇬🇧|english/i.test(text)) languages.push("English");
+  if (/🇯🇵|japanese/i.test(text)) languages.push("Japanese");
+  if (/🇪🇸|spanish/i.test(text)) languages.push("Spanish");
+  if (/🇫🇷|french/i.test(text)) languages.push("French");
+  if (/🇩🇪|german/i.test(text)) languages.push("German");
+  if (/🇮🇹|italian/i.test(text)) languages.push("Italian");
+  if (/🇵🇹|portuguese/i.test(text)) languages.push("Portuguese");
+  if (/🇷🇺|russian/i.test(text)) languages.push("Russian");
 
   return Array.from(new Set(languages));
 }
@@ -445,10 +488,13 @@ function extractReleaseTitle(lines: string[], filenameHint?: string): string {
   if (lines.length > 0) {
     return lines[0];
   }
-  return 'Unknown Release';
+  return "Unknown Release";
 }
 
-function detectDebrid(name: string): { isDebrid: boolean; debridService: string | null } {
+function detectDebrid(name: string): {
+  isDebrid: boolean;
+  debridService: string | null;
+} {
   // Matches tags like [RD+], [AD+], [PM+], [TB+], [DL+], [RD download], etc.
   const match = name.match(/\[([a-zA-Z]+)(?:\+|\s+download)?\]/i);
   if (match) {
@@ -463,16 +509,22 @@ function detectDebrid(name: string): { isDebrid: boolean; debridService: string 
   };
 }
 
-function resolveInfoHash(stream: TorrentioRawStream, options: ParseOptions): string | null {
+function resolveInfoHash(
+  stream: TorrentioRawStream,
+  options: ParseOptions,
+): string | null {
   // 1. Direct stream infoHash
-  if (typeof stream.infoHash === 'string' && stream.infoHash.trim().length > 0) {
+  if (
+    typeof stream.infoHash === "string" &&
+    stream.infoHash.trim().length > 0
+  ) {
     return stream.infoHash.trim().toLowerCase();
   }
 
   // 2. Check bingeGroup in behaviorHints (often contains infoHash for non-grouped streams)
   const binge = stream.behaviorHints?.bingeGroup;
-  if (typeof binge === 'string') {
-    const bingeParts = binge.split('|');
+  if (typeof binge === "string") {
+    const bingeParts = binge.split("|");
     const lastPart = bingeParts[bingeParts.length - 1];
     if (/^[0-9a-fA-F]{40}$/.test(lastPart)) {
       return lastPart.toLowerCase();
@@ -480,7 +532,10 @@ function resolveInfoHash(stream: TorrentioRawStream, options: ParseOptions): str
   }
 
   // 3. Optional extraction from debrid resolver URL
-  if (options.extractInfoHashFromDebridUrl !== false && typeof stream.url === 'string') {
+  if (
+    options.extractInfoHashFromDebridUrl !== false &&
+    typeof stream.url === "string"
+  ) {
     const hashMatch = stream.url.match(/infoHash=([0-9a-fA-F]{40})/i);
     if (hashMatch) {
       return hashMatch[1].toLowerCase();

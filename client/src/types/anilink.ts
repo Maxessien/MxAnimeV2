@@ -16,7 +16,9 @@ export interface MediaResponse {
     | "MUSIC"
     | "MANGA"
     | "NOVEL"
-    | "ONE_SHOT";
+  | "ONE_SHOT";
+
+  status: MediaStatus
 
   /** The official titles of the media in various languages */
   title: {
@@ -58,6 +60,7 @@ export interface MediaResponse {
     episode: number;
     mediaId: number;
   };
+  episodes: number;
   airingSchedule: {
     nodes: Array<{
       /** The AniList ID of the airing schedule entry */
@@ -74,12 +77,19 @@ export interface MediaResponse {
        * Negative value if the scheduled air time has already passed.
        */
       timeUntilAiring: number;
-      }>;
+    }>;
   };
 }
 
 export type AnimeFormat =
   "TV" | "TV_SHORT" | "MOVIE" | "SPECIAL" | "OVA" | "ONA" | "MUSIC";
+
+export type MediaStatus =
+  | "FINISHED" // Has completed and finished airing or being published
+  | "RELEASING" // Currently releasing episodes or chapters
+  | "NOT_YET_RELEASED" // To be released at a future date
+  | "CANCELLED" // Ended before the planned completion
+  | "HIATUS"; // Paused releasing with plans to resume at a later date
 
 export const ANIME_FORMATS: ReadonlySet<string> = new Set<AnimeFormat>([
   "TV",
@@ -146,7 +156,7 @@ export interface RecentEpisode {
     id: number;
     idMal: number; // Always present
     format: string;
-    description: string | null
+    description: string | null;
     title: {
       romaji: string | null;
       english: string | null;
@@ -175,7 +185,7 @@ export interface AniListGraphQLResponse {
   data?: {
     Page?: {
       airingSchedules?: RawRecentEpisode[];
-      pageInfo?: PageInfo
+      pageInfo?: PageInfo;
     };
   };
   errors?: Array<{ message: string }>;
@@ -184,4 +194,22 @@ export interface AniListGraphQLResponse {
 export interface PaginatedRecentEpisodes {
   pageInfo: PageInfo;
   data: RecentEpisode[];
+}
+
+export interface AnilinkServiceOptions {
+  endpoint?: string;
+  fetchFn?: typeof fetch;
+}
+
+export interface FuzzyDateInput {
+  year?: number | null;
+  month?: number | null;
+  day?: number | null;
+}
+
+export interface SyntheticAiringScheduleNode {
+  id: number;
+  episode: number;
+  airingAt: number;
+  timeUntilAiring: number;
 }
