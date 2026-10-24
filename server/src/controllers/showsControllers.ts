@@ -8,7 +8,7 @@ import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
 import { dlAndCompress, getSubplTorrent } from "../utils/media.js";
 import { handler } from "../utils/shows.js";
 import { ParsedTorrentioStream } from "../types/torrentio.js";
-import { AddQueryQualities } from "../types/show.js";
+import { AddQueryQualities, Tasks } from "../types/show.js";
 
 const downloadEpisode = async (req: Request, res: Response) =>
   handler(res, async () => {
@@ -18,12 +18,6 @@ const downloadEpisode = async (req: Request, res: Response) =>
       return res
         .status(CLIENT_ERROR.BAD_REQUEST)
         .json({ message: "Invalid mal_id or dl_quality" });
-
-    let taskId: number;
-
-    do {
-      taskId = randomInt(1_000_000);
-    } while (downloadTasks.has(taskId));
 
     const ep = await Episode.findOne({
       malId: mal_id.toString(),
@@ -40,14 +34,48 @@ const downloadEpisode = async (req: Request, res: Response) =>
     if (ep.isCompressed)
       return res
         .status(SUCCESS.OK)
-        .json({ taskId, episode: ep, isCompressed: true });
+        .json({
+          taskId: randomInt(1_000_000),
+          episode: ep,
+          isCompressed: true,
+        });
 
-    const epInfo = {
+    const epInfo: Tasks["epInfo"] = {
       episodeId: Number(eId),
       malId: Number(mal_id),
       quality: dl_quality.toString(),
       season: Number(sId),
     };
+
+    let taskExists: (Tasks & { taskId: number }) | undefined;
+
+    for (const [id, tsk] of downloadTasks.entries()) {
+      const info = tsk.epInfo;
+      if (
+        info.episodeId === epInfo.episodeId &&
+        info.malId === epInfo.malId &&
+        info.quality === epInfo.quality &&
+        info.season === epInfo.season
+      ) {
+        taskExists = { ...tsk, taskId: id };
+        break;
+      }
+    }
+
+    if (taskExists)
+      return res
+        .status(SUCCESS.CREATED)
+        .json({
+          taskId: taskExists.taskId,
+          episode: null,
+          isCompressed: false,
+        });
+
+    let taskId: number;
+
+    do {
+      taskId = randomInt(1_000_000);
+    } while (downloadTasks.has(taskId));
 
     void dlAndCompress(taskId, epInfo, ep.magnetUri).catch((error) => {
       console.error("Episode download task failed:", error);
@@ -61,7 +89,7 @@ const downloadEpisode = async (req: Request, res: Response) =>
     });
 
     return res
-      .status(SUCCESS.ACCEPTED)
+      .status(SUCCESS.CREATED)
       .json({ taskId, episode: null, isCompressed: false });
   });
 
