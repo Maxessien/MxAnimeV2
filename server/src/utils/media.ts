@@ -450,67 +450,6 @@ const dlAndCompress = async (
   }
 };
 
-// const clnUpTorrent = async (id: string | number, maxRetries: number = 3) => {
-//   for (let i = 0; i < maxRetries; i++) {
-//     const contents = await seedr.deleteFile(id);
-
-//     if (contents.result && contents.success) return contents;
-//   }
-// };
-
-const QUALITY: Record<string, boolean> = {
-  1080: false,
-  720: false,
-  480: false,
-  360: false,
-};
-
-const ALLOWED = Object.entries(QUALITY).map((v) => v[0]);
-
-const getAnimeTorrent = async (
-  mappings: ThirdPartyMappings,
-  sid: string,
-  eId: string,
-): Promise<{ filteredQuality: ParsedTorrentioStream[] }> => {
-  const torrentioUrl = getTorrentioApi(
-    `${mappings.imdb_id || mappings.themoviedb_id}:${sid}:${eId}`,
-    "series",
-  );
-
-  const res = await fetch(torrentioUrl, { method: "GET", headers: {"Content-Type": "application/json"} });
-
-  if (!res.ok) throw new Error("Fetch fail")
-
-  const torrRes: TorrentioResponse = await res.json()
-
-  const parsed: ParsedTorrentioStream[] = torrRes.streams.map((v) => {
-    const parsed = v.name ? parse(v.name) : null
-    return {
-    magUri:
-      v.infoHash && v.sources ? createMagnetUri(v.infoHash, v.sources) : null,
-    resolution: parsed?.video.resolution ?? null,
-    // size: parsed?.file.
-  }
-  });
-
-  const filteredQuality: ParsedTorrentioStream[] = [];
-
-  for (let info of parsed) {
-    if (QUALITY[1080] && QUALITY[720] && QUALITY[360] && QUALITY[480]) break;
-
-    let resolution = info.resolution
-      ?.toLowerCase()
-      ?.replace("p", "");
-
-    if (resolution && ALLOWED.includes(resolution) && !QUALITY[resolution]) {
-      filteredQuality.push(info);
-      QUALITY[resolution] = true;
-    }
-  }
-
-  return { filteredQuality };
-};
-
 const getSubplTorrent = async (
   malId: string | number,
   eid: string | number,
@@ -539,35 +478,9 @@ const getSubplTorrent = async (
   }
 };
 
-const getNyaaTorrents = async (malId: number, episode: number, season: number) => {
-  try {
-    const torrents = await findTorrents({ malId, episode, season })
-
-    let parsed: { [res: string]: {magUri: string, resolution: string, seeders: number} } = {}
-
-    for (const entry of torrents) {
-      const { resolution, seeders, magnet } = entry
-      if (!resolution) continue
-      if (!parsed[resolution] || parsed[resolution].seeders < seeders)
-        parsed[resolution] = { magUri: magnet, resolution, seeders }
-    }
-
-    const filtered = Object.values(parsed)
-
-    return filtered.length > 0 ? filtered : null
-  } catch (err) {
-    console.log(err)
-    return null
-  }
-}
-
 export {
-  ALLOWED,
   compressTorrent,
   dlAndCompress,
   downloadTorrent,
-  getAnimeTorrent,
   getSubplTorrent,
-  getNyaaTorrents,
-  QUALITY,
 };

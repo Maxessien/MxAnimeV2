@@ -6,3 +6,7 @@ export interface Tasks {
   epInfo: { malId: number; episodeId: number, season: number, quality: string },
   filename?: string
 }
+
+export interface AddQueryQualities {
+  quality: string, magnetUri: string
+}

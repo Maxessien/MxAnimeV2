@@ -1,4 +1,7 @@
+import { AniZipMetadata, ThirdPartyMappings } from "@/types/anizip";
+import { ParsedAnimeStream, ParsedQuality } from "@/types/torrentio";
 import { platform } from "@tauri-apps/plugin-os";
+import axios from "axios";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -130,3 +133,88 @@ export function constructStreamUrl(
 }
 
 export const isMobile = platform() === "android"
+
+export const DEFAULT_ANIME_TRACKERS: readonly string[] = [
+  'http://nyaa.tracker.wf:7777/announce',
+  'http://anidex.moe:6969/announce',
+  'http://tracker.anirena.com:80/announce',
+  'udp://tracker.uw0.xyz:6969/announce',
+  'udp://open.stealth.si:80/announce',
+  'udp://tracker.opentrackr.org:1337/announce',
+  'udp://exodus.desync.com:6969/announce',
+];
+
+export const UNIT_MULTIPLIERS: Record<string, number> = {
+  B: 1,
+  BYTES: 1,
+  KB: 1024,
+  KIB: 1024,
+  MB: 1024 * 1024,
+  MIB: 1024 * 1024,
+  GB: 1024 * 1024 * 1024,
+  GIB: 1024 * 1024 * 1024,
+  TB: 1024 * 1024 * 1024 * 1024,
+  TIB: 1024 * 1024 * 1024 * 1024,
+};
+
+export const ANIZIP_BASE_URL = "https://api.ani.zip/mappings"
+
+const FRIBBS_LIST_URL = "https://raw.githubusercontent.com/Fribb/anime-lists/refs/heads/master/anime-offline-database-reduced.json"
+const TMDB_API = "https://api.themoviedb.org/3/tv/{tmdbId}/external_ids?api_key=" + process.env.VITE_TMDB_KEY
+
+
+interface TorrentIds {kitsu: string | null, imdb: string | null}
+
+export async function getIdSForTorrentio(malId: string | number): Promise<TorrentIds> {
+  const ids: TorrentIds = { kitsu: null, imdb: null }
+  const { data: anizipMappings } = await axios.get<AniZipMetadata>(`${ANIZIP_BASE_URL}?mal_id=${malId}`)
+
+  let tmdbId: string | null = null
+
+  const {kitsu_id, imdb_id, themoviedb_id } = anizipMappings.mappings
+  ids.kitsu = kitsu_id ? kitsu_id.toString() : null
+  ids.imdb = imdb_id ? imdb_id.toString() : null
+  tmdbId = themoviedb_id
+
+  if (!kitsu_id) {
+    const fribbsEntry = (await axios.get<ThirdPartyMappings[]>(FRIBBS_LIST_URL))
+      .data.find(v => v?.mal_id && v.mal_id.toString() === malId.toString())
+
+    if (fribbsEntry?.kitsu_id) ids.kitsu = fribbsEntry.kitsu_id.toString()
+  }
+
+  if (kitsu_id || imdb_id) return ids
+
+  const { data } = tmdbId ? await axios.get(TMDB_API.replace("{tmdbId}", tmdbId)) : { data: null }
+
+  if (data?.imdb_id) ids.imdb = data.imdb_id
+
+  return ids
+}
+
+export function filterParsed(entries: ParsedAnimeStream[]) {
+  const allQualities: Record<ParsedQuality["resolution"], ParsedAnimeStream[]> = {
+    "1080p": [],
+    "2160p": [],
+    "360p": [],
+    "4320p": [],
+    "480p": [],
+    "720p": [],
+    "Unknown": []
+  }
+
+  const parsed: {quality: string, magnetUri: string}[] = []
+
+  for (const entry of entries) {
+    allQualities[entry.quality.resolution].push(entry)
+  }
+
+  for (const [quality, entries] of Object.entries(allQualities)) {
+    if (quality === "Unknown") continue
+    const chosen = entries.reduce((prev, curr) => (prev.seeders || 0) > (curr.seeders || 0) ? prev : curr)
+
+    if (chosen.magnetUri) parsed.push({quality: chosen.quality.resolution, magnetUri: chosen.magnetUri})
+  }
+
+  return parsed
+}

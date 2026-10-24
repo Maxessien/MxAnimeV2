@@ -5,15 +5,10 @@ import { downloadTasks } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
 import { AniZipMetadata } from "../types/anizip.js";
 import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
-import {
-  ALLOWED,
-  dlAndCompress,
-  getAnimeTorrent,
-  getNyaaTorrents,
-  getSubplTorrent,
-} from "../utils/media.js";
+import { dlAndCompress, getSubplTorrent } from "../utils/media.js";
 import { handler } from "../utils/shows.js";
 import { ParsedTorrentioStream } from "../types/torrentio.js";
+import { AddQueryQualities } from "../types/show.js";
 
 const downloadEpisode = async (req: Request, res: Response) =>
   handler(res, async () => {
@@ -24,14 +19,8 @@ const downloadEpisode = async (req: Request, res: Response) =>
         .status(CLIENT_ERROR.BAD_REQUEST)
         .json({ message: "Invalid mal_id or dl_quality" });
 
-    let ql = dl_quality.toString();
-
-    if (!ALLOWED.includes(ql))
-      return res
-        .status(CLIENT_ERROR.BAD_REQUEST)
-        .json({ message: "Invalid dl_quality" });
-
     let taskId: number;
+
     do {
       taskId = randomInt(1_000_000);
     } while (downloadTasks.has(taskId));
@@ -112,7 +101,9 @@ const getDownloadStatus = async (req: Request, res: Response) =>
 
 const addEpisode = (req: Request, res: Response) =>
   handler(res, async () => {
-    const { mal_id, eId, sId, quality, mag_uri } = req.body;
+    const { mal_id, eId, sId, qualities } = req.body;
+
+    const qualitiesTyped = qualities as AddQueryQualities[];
 
     if (!mal_id || !eId || !sId)
       return res
@@ -123,7 +114,6 @@ const addEpisode = (req: Request, res: Response) =>
       malId: mal_id.toString(),
       eId: eId.toString(),
       sId: sId.toString(),
-      ...(mag_uri ? { magnetUri: mag_uri } : {}),
     })
       .select(["malId", "quality", "eId", "sId"])
       .lean();
@@ -134,36 +124,20 @@ const addEpisode = (req: Request, res: Response) =>
 
     let anime: ParsedTorrentioStream[] = [];
 
-    if (!quality || !mag_uri) {
+    if (!qualitiesTyped || qualitiesTyped.length === 0) {
       let filteredQuality = await getSubplTorrent(mal_id, eId.toString());
 
-      // if (!filteredQuality) filteredQuality = await getNyaaTorrents(Number(mal_id), Number(eId), Number(sId))
-
-      if (!filteredQuality) {
-        const {
-          data: { mappings },
-        } = await axios.get<AniZipMetadata>(
-          `https://api.ani.zip/mappings?mal_id=${mal_id}`,
-          );
-
-        if (!mappings.imdb_id && !mappings.themoviedb_id)
-          return res
-            .status(CLIENT_ERROR.BAD_REQUEST)
-            .json({ message: "ID not found" });
-
-        filteredQuality = (
-          await getAnimeTorrent(mappings, sId.toString(), eId.toString())
-        ).filteredQuality;
-      }
-
-      if (!filteredQuality || filteredQuality.length === 0)
-        return res
-          .status(CLIENT_ERROR.NOT_FOUND)
-          .json({ message: "Torrents not found" });
-
-      anime = filteredQuality;
+      if (filteredQuality) anime = filteredQuality;
     } else
-      anime = [{ magUri: mag_uri, resolution: quality }];
+      anime = qualitiesTyped.map(({ magnetUri, quality }) => ({
+        magUri: magnetUri,
+        resolution: quality,
+      }));
+
+    if (anime.length === 0)
+      return res
+        .status(CLIENT_ERROR.NOT_FOUND)
+        .json({ message: "Torrents not found" });
 
     const eps = await Episode.insertMany(
       anime.map((v) => ({
@@ -172,9 +146,7 @@ const addEpisode = (req: Request, res: Response) =>
         isCompressed: false,
         magnetUri: v.magUri,
         malId: mal_id.toString(),
-        quality: Number(
-          v.resolution?.toLowerCase().replace("p", ""),
-        ),
+        quality: Number(v.resolution?.toLowerCase().replace("p", "")),
       })),
     );
 
@@ -188,7 +160,7 @@ const getAllTasks = async (req: Request, res: Response) =>
     if (!adminKey || adminKey !== req.query.key?.toString())
       return res.status(CLIENT_ERROR.UNAUTHORIZED).json("Unauthorised access");
 
-    const map = Object.fromEntries(downloadTasks.entries())
+    const map = Object.fromEntries(downloadTasks.entries());
 
     return res.status(SUCCESS.OK).json(map);
   });
