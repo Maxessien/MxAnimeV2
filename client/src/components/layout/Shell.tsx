@@ -36,9 +36,14 @@ export function Shell({ children }: { children: React.ReactNode }) {
     location === href || (href !== "/" && location.startsWith(href));
 
   useEffect(() => {
-    ongoingDownloadQueue.addEventListener("modify", () => {
+    const listenerFn = () => {
       setOngoingCount(ongoingDownloadQueue.getElements.length);
-    });
+    }
+    ongoingDownloadQueue.addEventListener("modify", listenerFn);
+
+    return () => {
+      ongoingDownloadQueue.removeEventListener("modify", listenerFn)
+    }
   }, []);
 
   return (
