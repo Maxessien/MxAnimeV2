@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import NotFound from "@/components/layout/NotFound";
 import { constructStreamUrl } from "@/lib/utils";
 import { useSearchParams } from "wouter";
@@ -90,6 +90,7 @@ const AnimeStream = () => {
         <div className="lg:col-span-3 flex flex-col gap-4">
           <div className="relative aspect-video w-full bg-card border border-card-border rounded-xl shadow-xl overflow-hidden group">
             <iframe
+              // ref
               src={iframeUrl}
               className="absolute inset-0 w-full h-full border-0"
               allowFullScreen
