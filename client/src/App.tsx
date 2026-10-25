@@ -18,7 +18,7 @@ import { ToastContainer } from 'react-toastify';
 import DownloadDetails from './pages/DownloadDetails';
 import AnimeStream from './pages/AnimeStream';
 import { useEffect } from 'react';
-import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
+import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
 import { isMobile } from './lib/utils';
 import { UnlistenFn } from '@tauri-apps/api/event';
 import LatestEpisodes from './pages/LatestEpisodes';
