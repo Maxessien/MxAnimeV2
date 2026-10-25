@@ -11,7 +11,7 @@ import {
 } from "@tauri-apps/plugin-notification";
 import { fetchWithProgress, isMobile } from "./utils";
 import { BaseDirectory, exists, writeFile } from "@tauri-apps/plugin-fs";
-import { appDataDir } from "@tauri-apps/api/path";
+import { appDataDir, join } from "@tauri-apps/api/path";
 
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -160,13 +160,15 @@ async function downloadAnime(
     if (status.status.status === "completed" && status.episode) {
       const url = status.episode.fileUrl;
       if (!url) throw new Error("Url not found");
-      let saveAs = `downloads/${safeTitle} - Episode ${episode.ep}.mkv`;
+      const filename = `downloads/${safeTitle} - Episode ${episode.ep}`
+      let saveAs = `${filename}.mkv`;
+
       let idx = 1;
       while (await exists(saveAs, { baseDir: BaseDirectory.AppData })) {
-        saveAs = `${saveAs.replace(".mkv", "")}(${idx}).mkv`;
+        saveAs = `${filename}(${idx}).mkv`;
         idx++;
       }
-      const path = `${await appDataDir()}/${saveAs}`;
+      const path = await join(await appDataDir(), saveAs);
 
       const res = await fetchWithProgress(url, controller, (total, loaded) => {
         ongoingDownloadQueue.updateProg(taskId, {

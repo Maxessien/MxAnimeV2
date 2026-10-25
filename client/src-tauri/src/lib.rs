@@ -25,7 +25,6 @@ pub fn run() {
                         const link = e.target.closest('a[target="_blank"]');
                         if (link && link.href) {
                             e.preventDefault();
-                            if (!link.href.startsWith("http")) window.__TAURI_INTERNALS__.invoke('handle_external_url', { url: link.href });
                         }
                     }, true);
                 "#)

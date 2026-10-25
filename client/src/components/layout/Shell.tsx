@@ -39,7 +39,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
     ongoingDownloadQueue.addEventListener("modify", () => {
       setOngoingCount(ongoingDownloadQueue.getElements.length);
     });
-  });
+  }, []);
 
   return (
     <div className="min-h-dvh flex bg-background text-foreground">
