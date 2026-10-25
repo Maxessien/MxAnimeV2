@@ -40,5 +40,6 @@ export interface OngoingDl {
   status: Tasks | null;
   curr: number;
   total: number;
-  isCancelled: boolean
+  isCancelled: boolean,
+  abortController: AbortController
 }

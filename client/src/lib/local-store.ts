@@ -9,7 +9,9 @@ import {
   isPermissionGranted,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
-import { isMobile } from "./utils";
+import { fetchWithProgress, isMobile } from "./utils";
+import { BaseDirectory, exists, writeFile } from "@tauri-apps/plugin-fs";
+import { appDataDir } from "@tauri-apps/api/path";
 
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -97,6 +99,8 @@ async function downloadAnime(
           }
         : undefined;
 
+    const controller = new AbortController();
+
     ongoingDownloadQueue.push({
       anime: {
         image: info.image,
@@ -107,6 +111,7 @@ async function downloadAnime(
       status: status?.status ?? null,
       id: taskId,
       isCancelled: false,
+      abortController: controller,
     });
 
     ongoingAdded = {
@@ -153,13 +158,32 @@ async function downloadAnime(
     if (!status) throw new Error("Status not found");
 
     if (status.status.status === "completed" && status.episode) {
-      const path = await invoke<string>("dl_file", {
-        url: status.episode.fileUrl,
-        saveAs: `${safeTitle} - Episode ${episode.ep}.mkv`,
-        taskId: taskId.toString(),
+      const url = status.episode.fileUrl;
+      if (!url) throw new Error("Url not found");
+      let saveAs = `downloads/${safeTitle} - Episode ${episode.ep}.mkv`;
+      let idx = 1;
+      while (await exists(saveAs, { baseDir: BaseDirectory.AppData })) {
+        saveAs = `${saveAs.replace(".mkv", "")}(${idx}).mkv`;
+        idx++;
+      }
+      const path = `${await appDataDir()}/${saveAs}`;
+
+      const res = await fetchWithProgress(url, controller, (total, loaded) => {
+        ongoingDownloadQueue.updateProg(taskId, {
+          curr: loaded / (1024 * 1024),
+          total: total ? total / (1024 * 1024) : Infinity,
+        });
       });
 
-      if (path)
+      if (!res.body || !res.ok) {
+        throw new Error("Response body is not readable");
+      }
+
+      await writeFile(saveAs, res.body, {
+        baseDir: BaseDirectory.AppData,
+      });
+
+      if (await exists(path))
         await mutateAsync({
           anime: {
             ...info,
@@ -194,11 +218,13 @@ async function downloadAnime(
     }
 
     ongoingDownloadQueue.removeById(taskId);
-  } catch (err) {
+  } catch (err: any) {
     console.log("Failed download", err);
+    if (ongoingDownloadQueue.getElements.find(({id})=> id == ongoingAdded.taskId)?.isCancelled)
+      toast.success(`${info.title} - Episode ${episode.ep} download cancelled`);
+    else toast.error(`${info.title} - Episode ${episode.ep} download failed`);
     if (ongoingAdded.active)
       ongoingDownloadQueue.removeById(ongoingAdded.taskId);
-    toast.error(`${info.title} - Episode ${episode.ep} download failed`);
   } finally {
     if (downloadQueue.traverse().length > 0) return downloadAnime(mutateAsync);
     else {

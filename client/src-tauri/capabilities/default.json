@@ -24,10 +24,19 @@
         },
         {
           "url": "https://api.jikan.moe/v4/*"
+        },
+        {
+          "url": "https://pub-991c552c64ed424ebd8971019038f0ad.r2.dev/**"
         }
       ]
     },
     "notification:default",
-    "os:default"
+    "os:default",
+    "fs:allow-write-file",
+    "fs:allow-exists",
+    {
+      "identifier": "fs:scope",
+      "allow": ["$APPDATA/**"]
+    }
   ]
 }

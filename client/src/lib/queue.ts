@@ -1,6 +1,5 @@
 import { OngoingDl } from "@/types/apiResponses";
 import { AnimeSummary } from "./local-store";
-import { invoke } from "@tauri-apps/api/core";
 
 class Queue<T> extends EventTarget {
   protected elements: T[];
@@ -50,6 +49,10 @@ class OngoingDlQueue extends Queue<OngoingDl> {
     super();
   }
 
+  get getElements() {
+    return this.elements
+  }
+
   removeById(tId: string | number) {
     let i = this.elements.findIndex(({ id }) => id == tId);
     this.removeAt(i);
@@ -73,8 +76,8 @@ class OngoingDlQueue extends Queue<OngoingDl> {
     const val = this.elements.find(v => v.id == taskId)
     if (val) val.isCancelled = true
 
-    if (shouldInvoke) {
-      await invoke("cancel_dl", {id: taskId.toString()})
+    if (val && shouldInvoke) {
+      val.abortController.abort()
     }
   }
 }

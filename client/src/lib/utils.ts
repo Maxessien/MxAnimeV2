@@ -1,5 +1,6 @@
 import { AniZipMetadata, ThirdPartyMappings } from "@/types/anizip";
 import { ParsedAnimeStream, ParsedQuality } from "@/types/torrentio";
+import { fetch } from "@tauri-apps/plugin-http";
 import { platform } from "@tauri-apps/plugin-os";
 import axios from "axios";
 import { clsx, type ClassValue } from "clsx";
@@ -221,4 +222,47 @@ export function filterParsed(entries: ParsedAnimeStream[]) {
   }
 
   return parsed
+}
+
+export async function fetchWithProgress(
+  url: string,
+  controller: AbortController,
+  onProgress: (total: number, loaded: number, progress: number) => void
+): Promise<Response> {
+  const response = await fetch(url, {signal: controller.signal});
+
+  if (!response.body || !response.ok) {
+    throw new Error("Response body is not readable");
+  }
+
+  // 1. Extract the total file size from headers (fallback to 0 if chunked/missing)
+  const contentLength = response.headers.get('content-length');
+  const total = contentLength ? parseInt(contentLength, 10) : Infinity;
+  let loaded = 0;
+
+  // 2. Setup a pass-through stream that monitors data chunks
+  const progressTracker = new TransformStream<Uint8Array, Uint8Array>({
+    transform(chunk, controller) {
+      loaded += chunk.byteLength;
+
+      // Calculate progress percentage decimal (0.0 to 1.0)
+      const progress = total > 0 ? loaded / total : 0;
+
+      // Execute your progress hook
+      onProgress(total, loaded, progress);
+
+      // Pass the data chunk through completely untouched
+      controller.enqueue(chunk);
+    }
+  });
+
+  // 3. Pipe the original body through our tracker to create a monitored stream
+  const monitoredBody = response.body.pipeThrough(progressTracker);
+
+  // 4. Construct and return a new Response pointing to our monitored stream
+  return new Response(monitoredBody, {
+    headers: response.headers,
+    status: response.status,
+    statusText: response.statusText,
+  });
 }
