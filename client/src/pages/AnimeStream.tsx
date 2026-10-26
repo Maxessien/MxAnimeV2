@@ -56,7 +56,7 @@ const AnimeStream = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background w-full text-foreground font-sans px-4 py-6 md:px-8 mx-auto flex flex-col gap-6">
+    <div className="min-h-screen bg-background w-full text-foreground font-sans py-2 pt-0 md:px-8 mx-auto flex flex-col gap-6">
       {/* Header Info */}
 
       <div className="flex w-full">
@@ -99,11 +99,11 @@ const AnimeStream = () => {
           </div>
 
           {/* Quick Player Navigation Controls */}
-          <div className="flex justify-between items-center bg-card border border-card-border p-4 rounded-xl shadow-sm">
+          <div className="flex justify-between gap-2 items-center bg-card border border-card-border px-2 sm:px-4 py-2 rounded-xl shadow-sm">
             <button
               onClick={() => changeEpisode(currentEpisode - 1)}
               disabled={currentEpisode <= 1}
-              className="inline-flex items-center gap-1 text-sm font-medium bg-secondary text-secondary-foreground px-4 py-2 rounded-lg border border-border transition-all hover:bg-muted disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+              className="inline-flex items-center gap-1 text-sm font-medium bg-secondary text-secondary-foreground px-2 sm:px-4 py-2 rounded-lg border border-border transition-all hover:bg-muted disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
             >
               <svg
                 xmlns="http://w3.org"
@@ -118,13 +118,13 @@ const AnimeStream = () => {
               </svg>
               Prev
             </button>
-            <span className="text-xs font-mono text-muted-foreground">
+            <span className="text-xs text-center font-mono text-muted-foreground">
               Playing Episode {ep}
             </span>
             <button
               onClick={() => changeEpisode(currentEpisode + 1)}
               disabled={currentEpisode >= totalEpisodes}
-              className="inline-flex items-center gap-1 text-sm font-medium bg-primary text-primary-foreground px-4 py-2 rounded-lg transition-all hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
+              className="inline-flex items-center gap-1 text-sm font-medium bg-primary text-primary-foreground px-2 sm:px-4 py-2 rounded-lg transition-all hover:opacity-90 disabled:opacity-40 disabled:pointer-events-none cursor-pointer"
             >
               Next
               <svg

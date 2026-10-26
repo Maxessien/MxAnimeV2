@@ -18,10 +18,11 @@ import { ToastContainer } from 'react-toastify';
 import DownloadDetails from './pages/DownloadDetails';
 import AnimeStream from './pages/AnimeStream';
 import { useEffect } from 'react';
-import { isPermissionGranted, requestPermission } from '@tauri-apps/plugin-notification';
+import { isPermissionGranted, requestPermission, sendNotification } from '@tauri-apps/plugin-notification';
 import { isMobile } from './lib/utils';
-import { UnlistenFn } from '@tauri-apps/api/event';
+import { listen, UnlistenFn } from '@tauri-apps/api/event';
 import LatestEpisodes from './pages/LatestEpisodes';
+import { ongoingDownloadQueue } from './lib/queue';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -65,26 +66,26 @@ function App() {
 
     let unlisten: UnlistenFn | undefined;
 
-    // listen<{
-    //   current: number;
-    //   total: number;
-    //   task_id: string;
-    //   title: string;
-    // }>("dl_progress", async({ payload }) => {
-    //   const granted = isMobile ? await isPermissionGranted() : null
+    listen<{
+      current: number;
+      total: number;
+      task_id: string;
+      title: string;
+    }>("dl_progress", async({ payload }) => {
+      const granted = isMobile ? await isPermissionGranted() : null
 
-    //   if (granted) sendNotification({
-    //     title: payload.title,
-    //     body: `Downloading - ${((payload.current/payload.total) * 100).toFixed(1)}%`,
-    //     ongoing: true, id: Number(payload.task_id)
-    //   })
+      if (granted) sendNotification({
+        title: payload.title,
+        body: `Downloading - ${((payload.current/payload.total) * 100).toFixed(1)}%`,
+        ongoing: true, id: Number(payload.task_id)
+      })
 
-    //   ongoingDownloadQueue.updateProg(payload.task_id, {
-    //     curr: payload.current / (1024 * 1024),
-    //     total: payload.total / (1024 * 1024),
-    //   })
-    // },
-    // ).then((fn) => (unlisten = fn));
+      ongoingDownloadQueue.updateProg(payload.task_id, {
+        curr: payload.current / (1024 * 1024),
+        total: payload.total / (1024 * 1024),
+      })
+    },
+    ).then((fn) => (unlisten = fn));
 
     return () => {
       if (unlisten) unlisten();

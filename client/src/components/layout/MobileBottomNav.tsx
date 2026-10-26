@@ -55,7 +55,7 @@ export function MobileBottomNav({
   return (
     <nav
       ref={containerRef}
-      className="md:hidden fixed bottom-0 inset-x-0 z-50 border-t bg-background/95 backdrop-blur-xl flex items-center justify-around h-16 px-1 pb-[env(safe-area-inset-bottom)]"
+      className="md:hidden inset-x-0 border-t bg-background/95 backdrop-blur-xl flex items-center justify-around px-1 pt-5 md:pb-5 pb-[calc(20px+env(safe-area-inset-bottom))]"
     >
       {shown.map((item) => {
         const active = isActive(item.href);

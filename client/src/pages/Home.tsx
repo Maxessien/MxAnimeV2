@@ -95,7 +95,7 @@ export default function Home() {
                   animationFillMode: "both",
                 }}
               >
-                <RecentEpisodeAnimeCard anime={anime} />
+                <RecentEpisodeAnimeCard extraStyles="w-50" anime={anime} />
               </div>
             ))}
           </>
@@ -121,7 +121,7 @@ export default function Home() {
                   animationFillMode: "both",
                 }}
               >
-                <AnimeCard anime={anime} />
+                <AnimeCard extraStyles="w-50" anime={anime} />
               </div>
             ))}
           </>
@@ -143,7 +143,7 @@ export default function Home() {
                   animationFillMode: "both",
                 }}
               >
-                <AnimeCard anime={anime} />
+                <AnimeCard extraStyles="w-50" anime={anime} />
               </div>
             ))}
           </>

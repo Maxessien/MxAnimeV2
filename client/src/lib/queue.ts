@@ -1,5 +1,6 @@
 import { OngoingDl } from "@/types/apiResponses";
 import { AnimeSummary } from "./local-store";
+import { invoke } from "@tauri-apps/api/core";
 
 class Queue<T> extends EventTarget {
   protected elements: T[];
@@ -77,7 +78,7 @@ class OngoingDlQueue extends Queue<OngoingDl> {
     if (val) val.isCancelled = true
 
     if (val && shouldInvoke) {
-      val.abortController.abort()
+      invoke("cancel_dl", {id: taskId.toString()})
     }
   }
 }

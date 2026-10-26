@@ -51,7 +51,7 @@ const HomeSection = ({
       <div className="flex overflow-x-auto scrollbar-hide w-full gap-x-4 gap-y-8 md:gap-x-6 md:gap-y-10">
         {isLoading
           ? Array.from({ length: 6 }).map((_, i) => (
-              <AnimeCardSkeleton key={i} />
+              <AnimeCardSkeleton extraStyles="w-50" key={i} />
             ))
           : list}
       </div>

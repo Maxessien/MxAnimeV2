@@ -2,7 +2,7 @@ import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { RecentEpisode } from "@/types/anilink";
 
-export function AnimeCard({ anime }: { anime: any }) {
+export function AnimeCard({ anime, extraStyles }: { anime: any, extraStyles?: string }) {
   const imageUrl =
     anime.images?.webp?.large_image_url || anime.images?.jpg?.large_image_url;
   const title = anime.title_english || anime.title;
@@ -10,7 +10,7 @@ export function AnimeCard({ anime }: { anime: any }) {
   return (
     <Link
       href={`/anime/${anime.mal_id}`}
-      className="group w-50 flex flex-col gap-3 cursor-pointer outline-none focus-visible:ring-2 ring-primary rounded-xl"
+      className={`group flex flex-col gap-3 cursor-pointer outline-none focus-visible:ring-2 ring-primary rounded-xl ${extraStyles ? extraStyles.trimStart() : ""}`.trimEnd()}
     >
       <div className="relative aspect-3/4 overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
         {imageUrl ? (
@@ -64,13 +64,13 @@ export function AnimeCard({ anime }: { anime: any }) {
   );
 }
 
-export function RecentEpisodeAnimeCard({ anime }: { anime: RecentEpisode }) {
+export function RecentEpisodeAnimeCard({ anime, extraStyles }: { anime: RecentEpisode, extraStyles?: string }) {
   const imageUrl = anime.media.coverImage.large;
   const title = anime.media.title.english || anime.media.title.romaji || "N/A";
   return (
     <Link
       href={`/anime/${anime.media.idMal}`}
-      className="group w-50 flex flex-col gap-3 cursor-pointer outline-none focus-visible:ring-2 ring-primary rounded-xl"
+      className={`group flex flex-col gap-3 cursor-pointer outline-none focus-visible:ring-2 ring-primary rounded-xl ${extraStyles ? extraStyles.trimStart() : ""}`.trimEnd()}
     >
       <div className="relative aspect-3/4 overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
         {imageUrl ? (
@@ -110,9 +110,9 @@ export function RecentEpisodeAnimeCard({ anime }: { anime: RecentEpisode }) {
   );
 }
 
-export function AnimeCardSkeleton() {
+export function AnimeCardSkeleton({extraStyles}: {extraStyles?: string}) {
   return (
-    <div className="flex w-50 flex-col gap-3">
+    <div className={`flex flex-col gap-3 ${extraStyles ? extraStyles.trimStart() : ""}`.trimEnd()}>
       <Skeleton className="aspect-3/4 w-full rounded-xl" />
       <Skeleton className="h-5 w-full" />
       <div className="flex gap-1">

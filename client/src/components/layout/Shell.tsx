@@ -38,18 +38,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const listenerFn = () => {
       setOngoingCount(ongoingDownloadQueue.getElements.length);
-    }
+    };
     ongoingDownloadQueue.addEventListener("modify", listenerFn);
-
     return () => {
-      ongoingDownloadQueue.removeEventListener("modify", listenerFn)
-    }
+      ongoingDownloadQueue.removeEventListener("modify", listenerFn);
+    };
   }, []);
 
   return (
-    <div className="min-h-dvh flex bg-background text-foreground">
+    <div className="h-dvh flex flex-col pt-[env(safe-area-inset-top)] md:flex-row bg-background text-foreground overflow-hidden">
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:flex-col w-64 shrink-0 border-r bg-background sticky top-0 h-dvh">
+      <aside className="hidden overflow-y-auto pb-[env(safe-area-inset-bottom)] scrollbar-hide md:flex md:flex-col w-64 shrink-0 border-r bg-background h-dvh">
         <Link
           href="/"
           className="flex items-center gap-2 px-6 h-16 shrink-0 outline-none focus-visible:ring-2 ring-primary rounded-lg"
@@ -61,7 +60,6 @@ export function Shell({ children }: { children: React.ReactNode }) {
             MxAnime
           </span>
         </Link>
-
         <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const active = isActive(item.href);
@@ -77,17 +75,16 @@ export function Shell({ children }: { children: React.ReactNode }) {
                 )}
               >
                 <item.icon size={18} />
-                {item.label}{" "}
-                {item.label === "Downloads" && ongoingCount > 0 ? (
-                  <span className="bg-red-800 text-white leading-1 p-2 rounded-full text-center">{ongoingCount}</span>
-                ) : (
-                  <></>
+                <span className="flex-1">{item.label}</span>
+                {item.label === "Downloads" && ongoingCount > 0 && (
+                  <span className="bg-destructive text-destructive-foreground text-xs font-semibold px-2 py-0.5 rounded-full">
+                    {ongoingCount}
+                  </span>
                 )}
               </Link>
             );
           })}
         </nav>
-
         <div className="p-4 border-t flex items-center justify-between shrink-0">
           <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
             Theme
@@ -96,10 +93,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col min-w-0">
+      {/* Main Content Column */}
+      <div className="flex-1 flex flex-col min-w-0 min-h-0">
         {/* Mobile Top Header */}
-        <header className="md:hidden sticky top-0 z-50 w-full border-b bg-background/80 backdrop-blur-xl">
-          <div className="px-4 h-16 flex items-center justify-between">
+        <header className="md:hidden shrink-0 border-b bg-background/80 backdrop-blur-xl">
+          <div className="px-2 sm:px-4 h-16 flex items-center justify-between">
             <Link
               href="/"
               className="flex items-center gap-2 outline-none rounded-lg focus-visible:ring-2 ring-primary"
@@ -115,7 +113,8 @@ export function Shell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="flex-1 flex flex-col w-full container mx-auto px-4 py-8 pb-8">
+        {/* Scrollable Main Area */}
+        <main className="flex-1 min-h-0 overflow-y-auto w-full container mx-auto px-2 sm:px-4 py-4 md:py-8 pb-2 md:pb-4">
           {children}
         </main>
       </div>

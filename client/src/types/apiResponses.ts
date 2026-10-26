@@ -41,5 +41,4 @@ export interface OngoingDl {
   curr: number;
   total: number;
   isCancelled: boolean,
-  abortController: AbortController
 }

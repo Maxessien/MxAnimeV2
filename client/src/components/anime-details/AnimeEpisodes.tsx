@@ -97,7 +97,7 @@ export function AnimeEpisodes({
                         `/stream?mal_id=${anime.mal_id}&title=${anime.title}&total=${airedTotal}&ep=${episode.episodeNumber || episode.episode || index + 1}`,
                       )
                     }}
-                    className="rounded-full hover:bg-primary/90 transition-all p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
+                    className="rounded-full hover:bg-primary/90 text-sm sm:text-base transition-all p-3 sm:p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
                   >
                     <FaPlay />
                   </button>
@@ -114,7 +114,7 @@ export function AnimeEpisodes({
                           sId: episode.seasonNumber,
                         });
                     }}
-                    className="rounded-full hover:bg-primary/90 transition-all p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
+                    className="rounded-full hover:bg-primary/90 text-sm sm:text-base transition-all p-3 sm:p-4 border-2 border-(--border) bg-primary hover:cursor-pointer"
                   >
                     {!downloadQueue
                       .traverse()

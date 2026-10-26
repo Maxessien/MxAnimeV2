@@ -21,8 +21,8 @@ jobs:
 
     runs-on: ${{ matrix.platform }}
     defaults:
-          run:
-            working-directory: ./client
+        run:
+          working-directory: ./client
     steps:
       - uses: actions/checkout@v4
 
@@ -42,7 +42,6 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
-      # If you are using pnpm or yarn, change this to matching install command
       - name: install frontend dependencies
         run: npm install
 
@@ -61,11 +60,10 @@ jobs:
           args: ${{ matrix.args }}
 
   build-android:
-    needs: build-and-release
     runs-on: ubuntu-latest
     defaults:
-          run:
-            working-directory: ./client
+        run:
+          working-directory: ./client
     permissions:
       contents: write
     steps:
@@ -96,7 +94,6 @@ jobs:
           VITE_MAL_CLIENT_ID: ${{ secrets.VITE_MAL_CLIENT_ID }}
         run: npm run tauri android build -- --apk
 
-        # 1. Securely sign the APK using the correct universal folder path
       - name: Sign Android APK
         id: sign_app
         uses: r0adkll/sign-android-release@v1
@@ -109,7 +106,6 @@ jobs:
         env:
           BUILD_TOOLS_VERSION: "34.0.0"
 
-      # 2. Upload only the signed file to your GitHub release draft
       - name: Upload Signed Android APK to Release
         uses: softprops/action-gh-release@v2
         with:

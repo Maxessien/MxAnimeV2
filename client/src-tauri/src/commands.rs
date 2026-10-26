@@ -1,9 +1,30 @@
-use std::path::PathBuf;
-use tauri::{AppHandle, Manager};
-use tokio::{
-    fs::{create_dir_all, write, File},
-    io::AsyncReadExt,
+use reqwest::Client;
+use serde::Serialize;
+use std::{
+    path::PathBuf,
+    time::{Duration, Instant},
 };
+use tauri::{AppHandle, Emitter, Manager};
+use tokio::{
+    fs::{self, create_dir_all, write, File},
+    io::{AsyncReadExt, AsyncWriteExt},
+    sync::RwLock,
+};
+
+use futures_util::{StreamExt, TryFutureExt};
+
+#[derive(Serialize, Clone)]
+pub struct ByteProgress {
+    pub current: usize,
+    pub total: usize,
+    pub task_id: String,
+    pub title: String,
+}
+
+pub struct CancelFlag {
+    pub active: bool,
+    pub id: String,
+}
 
 async fn check_path(path: PathBuf) -> Result<(bool, PathBuf), String> {
     if !path.exists() {
@@ -81,4 +102,118 @@ pub async fn get_json_file(app: AppHandle, sub_path: String) -> Result<String, S
 
         Ok(f)
     }
+}
+
+#[tauri::command]
+pub async fn cancel_dl(app: tauri::AppHandle, id: String) -> Result<(), String> {
+    let state = app.state::<RwLock<CancelFlag>>();
+    let mut cancel = state.write().await;
+
+    *cancel = CancelFlag { active: true, id };
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn dl_file(
+    app: tauri::AppHandle,
+    url: String,
+    save_as: String,
+    task_id: String,
+) -> Result<Option<PathBuf>, String> {
+    let cl = Client::new();
+
+    let res = cl
+        .get(url)
+        .send()
+        .await
+        .map_err(|_| "Failed to fetch file".to_string())?;
+
+    dbg!(res.headers());
+
+    let total = res.content_length().unwrap_or(0) as usize;
+
+    let _ = app.emit(
+        "dl_progress",
+        ByteProgress {
+            current: 0,
+            total,
+            task_id: task_id.clone(),
+            title: save_as.clone(),
+        },
+    );
+
+    println!("Init stream");
+    let mut str = res.bytes_stream();
+
+    let app_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| "Failed to get app data dir".to_string())?;
+
+    let dl_path = app_dir.join("downloads");
+
+    let (_, dl_path_l) = check_path(dl_path).await?;
+
+    let path = dl_path_l.join(save_as.clone());
+
+    let mut f = File::create(path.clone())
+        .map_err(|_| "Failed to create file")
+        .await?;
+
+    let mut curr = 0;
+
+    let mut last_emit = Instant::now();
+
+    let app_clone = app.clone();
+
+    let state = app.state::<RwLock<CancelFlag>>();
+    let mut broke_early = false;
+
+    println!("Init loop");
+    while let Some(byte) = str.next().await {
+        println!("Inside loop");
+        let cancel = state.read().await;
+
+        if cancel.active && cancel.id == task_id {
+            broke_early = true;
+            break;
+        }
+
+        drop(cancel);
+
+        let b = byte.map_err(|_| "Failed to read stream")?;
+
+        curr += b.len();
+        let _ = f.write_all(&b).await;
+
+        if last_emit.elapsed() >= Duration::from_millis(100) {
+            let _ = app_clone.emit(
+                "dl_progress",
+                ByteProgress {
+                    current: curr,
+                    total,
+                    task_id: task_id.clone(),
+                    title: save_as.clone(),
+                },
+            );
+            last_emit = Instant::now();
+        };
+    }
+
+    let mut cancel = state.write().await;
+    *cancel = CancelFlag {
+        active: false,
+        id: String::new(),
+    };
+
+    if broke_early {
+        drop(f);
+        let _ = fs::remove_file(path);
+        return Ok(None);
+    }
+
+    let _ = f.flush().await;
+
+    Ok(Some(path))
 }
