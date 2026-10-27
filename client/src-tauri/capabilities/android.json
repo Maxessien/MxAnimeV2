@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "android-capability",
+  "description": "Permissions specific to Android",
+  "windows": ["main"],
+  "platforms": ["android"],
+  "permissions": [
+    "video:default"
+  ]
+}

@@ -1,6 +1,7 @@
 use reqwest::Client;
 use serde::Serialize;
 use std::{
+    io::ErrorKind,
     path::PathBuf,
     time::{Duration, Instant},
 };
@@ -129,8 +130,6 @@ pub async fn dl_file(
         .await
         .map_err(|_| "Failed to fetch file".to_string())?;
 
-    dbg!(res.headers());
-
     let total = res.content_length().unwrap_or(0) as usize;
 
     let _ = app.emit(
@@ -143,7 +142,6 @@ pub async fn dl_file(
         },
     );
 
-    println!("Init stream");
     let mut str = res.bytes_stream();
 
     let app_dir = app
@@ -170,35 +168,43 @@ pub async fn dl_file(
     let state = app.state::<RwLock<CancelFlag>>();
     let mut broke_early = false;
 
-    println!("Init loop");
-    while let Some(byte) = str.next().await {
-        println!("Inside loop");
-        let cancel = state.read().await;
+    tokio::select! {
+        _ = async {
+            loop {
+                let cancel = state.read().await;
 
-        if cancel.active && cancel.id == task_id {
-            broke_early = true;
-            break;
-        }
+                if cancel.active && cancel.id == task_id {
+                    broke_early = true;
+                    break;
+                }
 
-        drop(cancel);
+                drop(cancel);
+            }
+        } => {},
 
-        let b = byte.map_err(|_| "Failed to read stream")?;
+        _= async {
+            while let Some(byte) = str.next().await {
 
-        curr += b.len();
-        let _ = f.write_all(&b).await;
+                let b = byte.map_err(|_| "Failed to read stream")?;
 
-        if last_emit.elapsed() >= Duration::from_millis(100) {
-            let _ = app_clone.emit(
-                "dl_progress",
-                ByteProgress {
-                    current: curr,
-                    total,
-                    task_id: task_id.clone(),
-                    title: save_as.clone(),
-                },
-            );
-            last_emit = Instant::now();
-        };
+                curr += b.len();
+                let _ = f.write_all(&b).await;
+
+                if last_emit.elapsed() >= Duration::from_millis(100) {
+                    let _ = app_clone.emit(
+                        "dl_progress",
+                        ByteProgress {
+                            current: curr,
+                            total,
+                            task_id: task_id.clone(),
+                            title: save_as.clone(),
+                        },
+                    );
+                    last_emit = Instant::now();
+                }
+            }
+            Ok::<(), &str>(())
+        } => {}
     }
 
     let mut cancel = state.write().await;
@@ -216,4 +222,59 @@ pub async fn dl_file(
     let _ = f.flush().await;
 
     Ok(Some(path))
+}
+
+#[tauri::command]
+pub async fn save_to_downloads(
+    app: tauri::AppHandle,
+    file_path: String,
+    save_as: String,
+) -> Result<(), String> {
+    let from = PathBuf::from(file_path);
+
+    if !from.exists() {
+        return Err("File not found".to_string());
+    };
+
+    #[cfg(not(target_os = "android"))]
+    let to = app.path().download_dir().map_err(|err| {
+        dbg!(&err);
+        "Failed to save to downloads".to_string()
+    })?;
+
+    #[cfg(target_os = "android")]
+    let to = PathBuf::from("/storage/emulated/0/Download");
+
+    if !to.exists() {
+        return Err("Downloads dir not found".to_string());
+    }
+
+    let _ = fs::copy(from, to.join(save_as)).await.map_err(|err| {
+        dbg!(&err);
+        match err.kind() {
+            ErrorKind::FileTooLarge => "File too large".to_string(),
+            ErrorKind::StorageFull => "Storage full".to_string(),
+            _ => "Failed to save to downloads".to_string(),
+        }
+    })?;
+
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn delete_file(path: String) -> Result<(), String> {
+    let p = PathBuf::from(path);
+    if p.is_dir() {
+        return Err("Cannot delete directory".to_string());
+    }
+
+    let _ = fs::remove_file(p).await.map_err(|e| {
+        dbg!(&e);
+        match e.kind() {
+            ErrorKind::NotFound => "File not found".to_string(),
+            _ => "Failed to delete file".to_string(),
+        }
+    })?;
+
+    Ok(())
 }

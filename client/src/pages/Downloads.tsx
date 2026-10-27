@@ -7,6 +7,7 @@ import { downloadQueue, ongoingDownloadQueue } from "@/lib/queue";
 import { Download as DownloadIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "react-toastify";
+import { useSearchParams } from "wouter";
 
 export default function Downloads() {
   const { json, remove } = useJson<AnimeSummary>({
@@ -17,12 +18,16 @@ export default function Downloads() {
     },
   });
 
-  const [tab, setTab] = useState<"downloads" | "ongoing">("ongoing");
+  const [searchParam, setSearchParam] = useSearchParams()
+
+  const tab: "downloads" | "ongoing" = searchParam.get("tab") === "downloads" ? "downloads" : "ongoing";
 
   const [_, triggerRender] = useState(0);
 
   useEffect(() => {
     const increment = () => triggerRender((prev) => prev + 1);
+
+    if (!tab) setSearchParam({tab: "ongoing"})
 
     downloadQueue.addEventListener("modify", increment)
     ongoingDownloadQueue.addEventListener("modify", increment);
@@ -53,7 +58,7 @@ export default function Downloads() {
       <div className="border-b border-border">
         <div className="flex gap-1 sm:gap-2">
           <button
-            onClick={() => setTab("downloads")}
+            onClick={() => setSearchParam({tab: "downloads"})}
             className={`px-4 py-3 text-sm font-medium transition-colors relative ${
               tab === "downloads"
                 ? "text-primary"
@@ -66,7 +71,7 @@ export default function Downloads() {
             )}
           </button>
           <button
-            onClick={() => setTab("ongoing")}
+            onClick={() => setSearchParam({tab: "ongoing"})}
             className={`px-4 py-3 text-sm font-medium transition-colors relative ${
               tab === "ongoing"
                 ? "text-primary"

@@ -116,14 +116,6 @@ async function downloadAnime(
 
     const granted = await isPermissionGranted();
 
-    if (granted && isMobile)
-      sendNotification({
-        title: `${safeTitle} - Episode ${episode.ep}.mkv`,
-        body: "Processing - 0%",
-        ongoing: true,
-        id: Number(taskId),
-      });
-
     while (!status || status.status.status === "pending") {
       const ongoing = ongoingDownloadQueue
         .traverse()
@@ -134,14 +126,6 @@ async function downloadAnime(
       const { data } = await axios.get<DownloadStatus>(
         `${BACKEND_URL}/show/status/${taskId}`,
       );
-
-      if (granted && isMobile)
-        sendNotification({
-          title: `${safeTitle} - Episode ${episode.ep}.mkv`,
-          body: `Processing - ${data.status.progress}%`,
-          ongoing: true,
-          id: Number(taskId),
-        });
 
       ongoingDownloadQueue.updateStatus(taskId, data.status);
 

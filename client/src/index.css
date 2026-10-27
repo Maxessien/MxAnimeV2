@@ -122,8 +122,6 @@
     }
     body {
         @apply font-sans antialiased bg-background text-foreground;
-        padding-right: env(safe-area-inset-right);
-        padding-left: env(safe-area-inset-left);
         overflow-x: hidden;
     }
 }
@@ -135,4 +133,16 @@
 
 .scrollbar-hide::-webkit-scrollbar {
     display: none;
+}
+
+.mask-off,
+.mask-off * {
+  -webkit-mask-image: none !important;
+  mask-image: none !important;
+}
+
+:fullscreen,
+::backdrop {
+  background-color: transparent !important;
+  background: transparent !important;
 }

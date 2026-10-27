@@ -46,7 +46,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   }, []);
 
   return (
-    <div className="h-dvh flex flex-col pt-[env(safe-area-inset-top)] md:flex-row bg-background text-foreground overflow-hidden">
+    <div className="h-dvh flex flex-col pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] md:flex-row bg-background text-foreground overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden overflow-y-auto pb-[env(safe-area-inset-bottom)] scrollbar-hide md:flex md:flex-col w-64 shrink-0 border-r bg-background h-dvh">
         <Link
