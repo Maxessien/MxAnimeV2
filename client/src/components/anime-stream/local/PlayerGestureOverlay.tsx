@@ -1,21 +1,18 @@
 import React, { useRef } from 'react'
-import { RotateCcw, RotateCw, Play, Pause } from 'lucide-react'
-import type { GestureFeedbackState } from './types'
 
 interface PlayerGestureOverlayProps {
-  feedback: GestureFeedbackState | null
   onSingleTap: () => void
   onDoubleTapSeekBackward: () => void
   onDoubleTapSeekForward: () => void
   onDoubleTapPlayPause: () => void
+  tapCount: number
 }
 
 export const PlayerGestureOverlay: React.FC<PlayerGestureOverlayProps> = ({
-  feedback,
   onSingleTap,
   onDoubleTapSeekBackward,
   onDoubleTapSeekForward,
-  onDoubleTapPlayPause,
+  onDoubleTapPlayPause, tapCount
 }) => {
   const lastTapRef = useRef<{ time: number; x: number; y: number } | null>(null)
   const singleTapTimerRef = useRef<number | null>(null)
@@ -29,18 +26,19 @@ export const PlayerGestureOverlay: React.FC<PlayerGestureOverlayProps> = ({
 
     const lastTap = lastTapRef.current
 
-    // Double-tap threshold: < 300ms and within 50px
+    // Double-tap threshold: < 500ms and within 50px
     if (
       lastTap &&
       currentTime - lastTap.time < 500 &&
       Math.abs(touch.clientX - lastTap.x) < 50 &&
       Math.abs(touch.clientY - lastTap.y) < 50
     ) {
+      tapCount++
       if (singleTapTimerRef.current) {
         clearTimeout(singleTapTimerRef.current)
         singleTapTimerRef.current = null
       }
-      lastTapRef.current = null
+      lastTapRef.current = { time: currentTime, x: touch.clientX, y: touch.clientY }
 
       const relativeXRatio = tapX / width
       if (relativeXRatio < 0.35) {
@@ -49,6 +47,7 @@ export const PlayerGestureOverlay: React.FC<PlayerGestureOverlayProps> = ({
         onDoubleTapSeekForward()
       } else {
         onDoubleTapPlayPause()
+        lastTapRef.current = null
       }
       return
     }
@@ -59,10 +58,12 @@ export const PlayerGestureOverlay: React.FC<PlayerGestureOverlayProps> = ({
       clearTimeout(singleTapTimerRef.current)
     }
 
+    tapCount = 1
+
     singleTapTimerRef.current = window.setTimeout(() => {
       onSingleTap()
       singleTapTimerRef.current = null
-    }, 280)
+    }, 505)
   }
 
   return (

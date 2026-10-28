@@ -21,7 +21,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   title,
   client,
   engine,
-  autoPlay = false,
+  autoPlay = true,
   className = '',
   onControllerReady,
   onError,
@@ -30,6 +30,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const videoRef = useRef<HTMLVideoElement>(null)
   const controllerRef = useRef<VideoController | null>(null)
   const hideTimerRef = useRef<number | null>(null)
+  const triggerTimerRef = useRef<number | null>(null)
 
   // 1. Playback grouped state
   const [playbackState, setPlaybackState] = useState<PlaybackState>({
@@ -68,16 +69,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   }, [])
 
   const triggerFeedback = useCallback((type: GestureFeedbackState['type'], label: string) => {
-    console.log("trggered")
+    const id = Date.now()
     setGestureFeedback({
-      id: Date.now(),
+      id,
       type,
       label,
       x: 0,
       y: 0,
     })
-    setTimeout(() => {
-      setGestureFeedback((curr) => (curr?.label === label ? null : curr))
+    triggerTimerRef.current = window.setTimeout(() => {
+      setGestureFeedback((curr) => (curr?.id === id ? null : curr))
     }, 750)
   }, [])
 
@@ -89,6 +90,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     let isDisposed = false
     const videoClient = client ?? createTauriVideoClient()
 
+    let unsubTime: ()=> void | undefined
+    let unsubBuffer: ()=> void | undefined
+    let unsubTrack: ()=> void | undefined
+
     async function setupPlayer() {
       if (!videoElement) return
       try {
@@ -98,7 +103,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           backendOptions: {
             tauri: { engine: engine ?? 'media3' },
           },
-          autoplay: true
+          autoplay: autoPlay || true
         })
 
         if (isDisposed) {
@@ -125,7 +130,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         }))
 
         // Subscribe to controller events
-        const unsubTime = controller.on('timeupdate', (e) => {
+        unsubTime = controller.on('timeupdate', (e) => {
           setPlaybackState((prev) => ({
             ...prev,
             currentTime: e.detail.currentTime,
@@ -133,14 +138,14 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           }))
         })
 
-        const unsubBuffer = controller.on('bufferprogress', (e) => {
+        unsubBuffer = controller.on('bufferprogress', (e) => {
           setPlaybackState((prev) => ({
             ...prev,
             bufferedAhead: e.detail.bufferedAhead,
           }))
         })
 
-        const unsubTrack = controller.on('trackchange', () => {
+        unsubTrack = controller.on('trackchange', () => {
           const currentTracks = [...controller.tracks]
           setTracksState({
             tracks: currentTracks,
@@ -167,12 +172,15 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     return () => {
       isDisposed = true
+      unsubTime()
+      unsubBuffer()
+      unsubTrack()
       if (controllerRef.current) {
         controllerRef.current.destroy().catch(() => undefined)
         controllerRef.current = null
       }
     }
-  }, [source, client, engine, autoPlay, onControllerReady, onError])
+  }, [source, client, engine, autoPlay])
 
   // Play / Pause toggle
   const handlePlayPause = useCallback(async () => {
@@ -199,21 +207,22 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     const clampedTime = Math.max(0, Math.min(targetSeconds, playbackState.duration))
     await controller.seek(clampedTime)
-    setPlaybackState((prev) => ({ ...prev, currentTime: clampedTime }))
   }, [playbackState.duration])
+
+  let tapCount = 1
 
   // Double tap backward (-10s)
   const handleDoubleTapSeekBackward = useCallback(() => {
     const newTime = Math.max(0, playbackState.currentTime - 10)
     handleSeek(newTime)
-    triggerFeedback('backward', '-10s')
+    triggerFeedback('backward', `-${(tapCount - 1) * -10}s`)
   }, [playbackState.currentTime, handleSeek, triggerFeedback])
 
   // Double tap forward (+10s)
   const handleDoubleTapSeekForward = useCallback(() => {
     const newTime = Math.min(playbackState.duration, playbackState.currentTime + 10)
     handleSeek(newTime)
-    triggerFeedback('forward', '+10s')
+    triggerFeedback('forward', `+${(tapCount - 1) * 10}s`)
   }, [playbackState.currentTime, playbackState.duration, handleSeek, triggerFeedback])
 
   // Single tap toggles controls visibility
@@ -225,16 +234,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     })
   }, [scheduleControlsHide])
 
-  // useEffect(() => {
-  //   const onFsChange = () => {
-  //     setScreenState({ isLandscape: screen.orientation.type === "landscape-primary" })
-  //   }
-  //   // handlePlayPause()
-  //   screen.orientation.onchange = () => {
-  //     setScreenState({ isLandscape: screen.orientation.type === "landscape-primary" })
-  //   }
-  //   return () => document.removeEventListener('fullscreenchange', onFsChange)
-  // }, [])
+  useEffect(() => {
+    return () => {
+      clearTimeout(hideTimerRef.current || undefined)
+      clearTimeout(triggerTimerRef.current || undefined)
+    }
+  }, [])
 
   // Track selection
   const handleSelectTrack = useCallback(async (kind: TrackKind, trackId?: string) => {
@@ -263,8 +268,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
         ref={videoRef}
         playsInline
         className="w-full h-full max-h-[calc(100vh-(env(safe-area-inset-top)+env(safe-area-inset-bottom)))] max-w-[calc(100vw-(env(safe-area-inset-right)+env(safe-area-inset-left)))] object-contain pointer-events-none"
-        onPlay={() => setPlaybackState(st => ({ ...st, isPlaying: true }))}
-        onPause={()=> setPlaybackState(st => ({...st, isPlaying: false}))}
+        onPlay={() => setPlaybackState(st => ({ ...st, isPlaying: true, isBuffering: false }))}
+        onPause={() => setPlaybackState(st => ({ ...st, isPlaying: false }))}
+        onWaiting={()=> setPlaybackState(st => ({...st, isBuffering: true})) }
+        onStalled={() => setPlaybackState(st => ({ ...st, isBuffering: true }))}
+        onCanPlay={()=> setPlaybackState(st => ({...st, isBuffering: false}))}
       />
 
       {Boolean(gestureFeedback) && (
@@ -304,11 +312,11 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
       >
         {/* Touch Gesture Layer */}
         <PlayerGestureOverlay
-          feedback={gestureFeedback}
           onSingleTap={handleSingleTap}
           onDoubleTapSeekBackward={handleDoubleTapSeekBackward}
           onDoubleTapSeekForward={handleDoubleTapSeekForward}
           onDoubleTapPlayPause={handlePlayPause}
+          tapCount={tapCount}
         />
       </PlayerControlsOverlay>
 
