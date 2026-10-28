@@ -47,6 +47,7 @@ export const PlayerGestureOverlay: React.FC<PlayerGestureOverlayProps> = ({
         onDoubleTapSeekForward()
       } else {
         onDoubleTapPlayPause()
+        tapCount.current = 1
         lastTapRef.current = null
       }
       return

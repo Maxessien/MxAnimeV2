@@ -155,13 +155,6 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           })
         })
 
-        if (isDisposed) {
-          unsubTime()
-          unsubBuffer()
-          unsubTrack()
-          return
-        }
-
         onControllerReady?.(controller)
 
         if (autoPlay) {
@@ -222,7 +215,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   const handleDoubleTapSeekBackward = useCallback(() => {
     const newTime = Math.max(0, playbackState.currentTime - 10)
     handleSeek(newTime)
-    triggerFeedback('backward', `-${(tapCount.current - 1) * -10}s`)
+    triggerFeedback('backward', `-${(tapCount.current - 1) * 10}s`)
   }, [playbackState.currentTime, handleSeek, triggerFeedback])
 
   // Double tap forward (+10s)
