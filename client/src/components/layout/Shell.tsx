@@ -13,7 +13,9 @@ import {
   Tv,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import PullToRefresh from "react-simple-pull-to-refresh";
 import { Link, useLocation, useSearchParams } from "wouter";
+import { DynamicPullSpinner } from "./PullSpinner";
 
 const navItems = [
   { href: "/", label: "Home", icon: Flame },
@@ -30,6 +32,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const [searchParams] = useSearchParams();
   const [ongoingCount, setOngoingCount] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const isActive = (href: string) =>
     location === href || (href !== "/" && location.startsWith(href));
@@ -47,7 +50,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const mainRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    mainRef.current?.scrollTo({top: 0})
+    mainRef.current?.scrollTo({ top: 0 });
   }, [searchParams, location]);
 
   return (
@@ -59,7 +62,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
           className="flex items-center px-6 h-16 shrink-0 outline-none focus-visible:ring-2 ring-primary rounded-lg"
         >
           <div>
-            <img className="w-12 aspect-square rounded-md" src="/icon-tran.png" alt="logo" />
+            <img
+              className="w-12 aspect-square rounded-md"
+              src="/icon-tran.png"
+              alt="logo"
+            />
           </div>
           <span className="font-display font-bold text-xl tracking-tight">
             Anime
@@ -108,7 +115,11 @@ export function Shell({ children }: { children: React.ReactNode }) {
               className="flex items-center px-6 h-16 shrink-0 outline-none focus-visible:ring-2 ring-primary rounded-lg"
             >
               <div>
-                <img className="w-12 aspect-square rounded-md" src="/icon-tran.png" alt="logo" />
+                <img
+                  className="w-12 aspect-square rounded-md"
+                  src="/icon-tran.png"
+                  alt="logo"
+                />
               </div>
               <span className="font-display font-bold text-xl tracking-tight">
                 Anime
@@ -119,8 +130,17 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Scrollable Main Area */}
-        <main ref={mainRef} className="flex-1 min-h-0 overflow-y-auto w-full container mx-auto px-2 sm:px-4 py-4 md:py-8 pb-2 md:pb-4">
-          {children}
+        <main
+          key={refreshKey}
+          ref={mainRef}
+          className="flex-1 min-h-0 overflow-y-auto w-full container mx-auto px-2 sm:px-4 py-4 md:py-8 pb-2 md:pb-4"
+        >
+          <PullToRefresh
+            pullingContent={<DynamicPullSpinner />}
+            onRefresh={async () => setRefreshKey((prev) => prev + 1)}
+          >
+            {children}
+          </PullToRefresh>
         </main>
       </div>
 

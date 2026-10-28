@@ -34,6 +34,7 @@ export const useRecentlyReleased = (page: number, perPage?: number, startTime?: 
     },
     staleTime: 10 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 };
 
@@ -68,6 +69,7 @@ export const useTopAnime = (
     },
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 };
 
@@ -93,6 +95,7 @@ export const useSeasonsNow = (page = 1) => {
     },
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 };
 
@@ -114,6 +117,7 @@ export const useSeason = (
     enabled: !!year && !!season,
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 };
 
@@ -140,6 +144,7 @@ export const useSearchAnime = (
     enabled: !!q || page > 1,
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 };
 
@@ -155,6 +160,7 @@ export const useAnimeFull = (id: string | number) => {
     enabled: !!id,
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 };
 
@@ -169,6 +175,7 @@ export const useAnimeCharacters = (id: string | number) => {
     enabled: !!id,
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 };
 
@@ -203,6 +210,7 @@ export const useAnimeEpisodes = (id: string | number) => {
     enabled: !!id,
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 };
 
@@ -212,6 +220,7 @@ export const useSchedules = (filter?: ScheduleFilter, page = 1) => {
     queryFn: () => fetchJikan("/schedules", { filter, page }),
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
+    refetchOnReconnect: true
   });
 };
 
