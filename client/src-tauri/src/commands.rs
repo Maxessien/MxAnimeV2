@@ -262,10 +262,19 @@ pub async fn save_to_downloads(
 }
 
 #[tauri::command]
-pub async fn delete_file(path: String) -> Result<(), String> {
+pub async fn delete_file(app: tauri::AppHandle, path: String) -> Result<(), String> {
     let p = PathBuf::from(path);
+    let allowed = app.path().app_data_dir().map_err(|e| {
+        dbg!(&e);
+        "Failed to get downloads directory".to_string()
+    })?.join("downloads");
+
     if p.is_dir() {
         return Err("Cannot delete directory".to_string());
+    }
+
+    if p.parent().ok_or("Invalid parent dir".to_string())?.to_owned() != allowed {
+        return Err("Cannot delete file outside downloads directory".to_string());
     }
 
     let _ = fs::remove_file(p).await.map_err(|e| {

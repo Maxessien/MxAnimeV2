@@ -65,19 +65,20 @@ const DownloadDetails = () => {
       setOptionsModal({ active: false, entry: null });
       toast.success("Saved to Downloads");
     } catch (err: any) {
-      toast.error(err);
+      toast.error(typeof err === "string" ? err : "Unknown error");
     }
   };
 
   const deleteFile = async (path: string) => {
     try {
+      const length = eps.length;
       await invoke("delete_file", { path });
       setOptionsModal({ active: false, entry: null });
       remove.mutateAsync((e) => e.filter((v) => v.episode.path !== path));
-      if (eps.length === 0) navigate("/downloads?tab=downloads");
+      if (length === 1) navigate("/downloads?tab=downloads");
       toast.success("Deleted");
     } catch (err: any) {
-      toast.error(err);
+      toast.error(typeof err === "string" ? err : "Unknown error");
     }
   };
 
