@@ -1,11 +1,11 @@
-import React, { useRef } from 'react'
+import React, { RefObject, useRef } from 'react'
 
 interface PlayerGestureOverlayProps {
   onSingleTap: () => void
   onDoubleTapSeekBackward: () => void
   onDoubleTapSeekForward: () => void
   onDoubleTapPlayPause: () => void
-  tapCount: number
+  tapCount: RefObject<number>
 }
 
 export const PlayerGestureOverlay: React.FC<PlayerGestureOverlayProps> = ({
@@ -33,7 +33,7 @@ export const PlayerGestureOverlay: React.FC<PlayerGestureOverlayProps> = ({
       Math.abs(touch.clientX - lastTap.x) < 50 &&
       Math.abs(touch.clientY - lastTap.y) < 50
     ) {
-      tapCount++
+      tapCount.current++
       if (singleTapTimerRef.current) {
         clearTimeout(singleTapTimerRef.current)
         singleTapTimerRef.current = null
@@ -58,7 +58,7 @@ export const PlayerGestureOverlay: React.FC<PlayerGestureOverlayProps> = ({
       clearTimeout(singleTapTimerRef.current)
     }
 
-    tapCount = 1
+    tapCount.current = 1
 
     if (
       (lastTap &&

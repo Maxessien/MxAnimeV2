@@ -90,9 +90,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     let isDisposed = false
     const videoClient = client ?? createTauriVideoClient()
 
-    let unsubTime: ()=> void | undefined = () => {}
-    let unsubBuffer: ()=> void | undefined = () => {}
-    let unsubTrack: ()=> void | undefined = () => {}
+    let unsubTime: ()=> void | undefined
+    let unsubBuffer: ()=> void | undefined
+    let unsubTrack: ()=> void | undefined
 
     async function setupPlayer() {
       if (!videoElement) return
@@ -155,6 +155,13 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           })
         })
 
+        if (isDisposed) {
+          unsubTime()
+          unsubBuffer()
+          unsubTrack()
+          return
+        }
+
         onControllerReady?.(controller)
 
         if (autoPlay) {
@@ -172,9 +179,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
 
     return () => {
       isDisposed = true
-      unsubTime()
-      unsubBuffer()
-      unsubTrack()
+      unsubTime?.()
+      unsubBuffer?.()
+      unsubTrack?.()
       if (controllerRef.current) {
         controllerRef.current.destroy().catch(() => undefined)
         controllerRef.current = null
@@ -209,20 +216,20 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     await controller.seek(clampedTime)
   }, [playbackState.duration])
 
-  let tapCount = useRef(1).current
+  let tapCount = useRef(1)
 
   // Double tap backward (-10s)
   const handleDoubleTapSeekBackward = useCallback(() => {
     const newTime = Math.max(0, playbackState.currentTime - 10)
     handleSeek(newTime)
-    triggerFeedback('backward', `-${(tapCount - 1) * -10}s`)
+    triggerFeedback('backward', `-${(tapCount.current - 1) * -10}s`)
   }, [playbackState.currentTime, handleSeek, triggerFeedback])
 
   // Double tap forward (+10s)
   const handleDoubleTapSeekForward = useCallback(() => {
     const newTime = Math.min(playbackState.duration, playbackState.currentTime + 10)
     handleSeek(newTime)
-    triggerFeedback('forward', `+${(tapCount - 1) * 10}s`)
+    triggerFeedback('forward', `+${(tapCount.current - 1) * 10}s`)
   }, [playbackState.currentTime, playbackState.duration, handleSeek, triggerFeedback])
 
   // Single tap toggles controls visibility
