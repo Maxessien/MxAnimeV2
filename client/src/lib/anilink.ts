@@ -264,8 +264,11 @@ export const anilinkService = new AnilinkService();
 export async function getRecentlyReleasedEpisodes(
   page: number = 1,
   perPage: number = 20,
+  startTime?: number,
+  endTime?: number,
 ): Promise<PaginatedRecentEpisodes> {
-  const currentTimestampInSeconds = Math.floor(Date.now() / 1000);
+  const currentTimestampInSeconds = startTime ?? Math.floor(Date.now() / 1000);
+  const endTimestampInSeconds = endTime ?? 0;
 
   const query = RECENTLY_AIRED;
 
@@ -275,6 +278,7 @@ export async function getRecentlyReleasedEpisodes(
       query,
       variables: {
         airingAt_lesser: currentTimestampInSeconds,
+        airingAt_greater: endTimestampInSeconds,
         page,
         perPage,
       },

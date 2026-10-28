@@ -1,3 +1,6 @@
+import { Schedule } from "@tauri-apps/plugin-notification";
+import { ScheduleFilter } from "./jikan";
+
 export interface MediaResponse {
   /** The id of the media */
   id: number;
@@ -213,3 +216,10 @@ export interface SyntheticAiringScheduleNode {
   airingAt: number;
   timeUntilAiring: number;
 }
+
+export type WeekTimestamps = {
+  [key in ScheduleFilter]: {
+    startTime: number;
+    endTime: number;
+  };
+};

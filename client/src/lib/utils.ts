@@ -5,11 +5,13 @@ import { platform } from "@tauri-apps/plugin-os";
 import axios from "axios";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { AnimeSummary } from "./local-store";
+import { WeekTimestamps } from "@/types/anilink";
+import { ScheduleFilter } from "@/types/jikan";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
-
 
 export const MEDIA_BY_MAL_ID_QUERY = `
   query ($idMal: Int) {
@@ -100,7 +102,7 @@ export const PREQUEL_MINIMAL_QUERY = `
 `;
 
 export const RECENTLY_AIRED = `
-  query ($airingAt_lesser: Int, $page: Int, $perPage: Int) {
+  query ($airingAt_lesser: Int, $page: Int, $perPage: Int, $airingAt_greater: Int = 0) {
     Page(page: $page, perPage: $perPage) {
       pageInfo {
         total
@@ -109,7 +111,7 @@ export const RECENTLY_AIRED = `
         lastPage
         hasNextPage
       }
-      airingSchedules(airingAt_lesser: $airingAt_lesser, sort: TIME_DESC) {
+      airingSchedules(airingAt_lesser: $airingAt_lesser, airingAt_greater: $airingAt_greater, sort: TIME_DESC) {
         id
         episode
         airingAt
@@ -125,7 +127,7 @@ export const RECENTLY_AIRED = `
       }
     }
   }
-`
+`;
 
 export function constructStreamUrl(
   malId: string,
@@ -135,16 +137,16 @@ export function constructStreamUrl(
   return `https://gogoanime.me.uk/newplayer.php?mal_id=${malId}&ep=${ep}&category=${category ?? "sub"}`;
 }
 
-export const isMobile = platform() === "android"
+export const isMobile = platform() === "android";
 
 export const DEFAULT_ANIME_TRACKERS: readonly string[] = [
-  'http://nyaa.tracker.wf:7777/announce',
-  'http://anidex.moe:6969/announce',
-  'http://tracker.anirena.com:80/announce',
-  'udp://tracker.uw0.xyz:6969/announce',
-  'udp://open.stealth.si:80/announce',
-  'udp://tracker.opentrackr.org:1337/announce',
-  'udp://exodus.desync.com:6969/announce',
+  "http://nyaa.tracker.wf:7777/announce",
+  "http://anidex.moe:6969/announce",
+  "http://tracker.anirena.com:80/announce",
+  "udp://tracker.uw0.xyz:6969/announce",
+  "udp://open.stealth.si:80/announce",
+  "udp://tracker.opentrackr.org:1337/announce",
+  "udp://exodus.desync.com:6969/announce",
 ];
 
 export const UNIT_MULTIPLIERS: Record<string, number> = {
@@ -160,83 +162,100 @@ export const UNIT_MULTIPLIERS: Record<string, number> = {
   TIB: 1024 * 1024 * 1024 * 1024,
 };
 
-export const ANIZIP_BASE_URL = "https://api.ani.zip/mappings"
+export const ANIZIP_BASE_URL = "https://api.ani.zip/mappings";
 
-const FRIBBS_LIST_URL = "https://raw.githubusercontent.com/Fribb/anime-lists/refs/heads/master/anime-offline-database-reduced.json"
-const TMDB_API = "https://api.themoviedb.org/3/tv/{tmdbId}/external_ids?api_key=" + import.meta.env.VITE_TMDB_KEY
+const FRIBBS_LIST_URL =
+  "https://raw.githubusercontent.com/Fribb/anime-lists/refs/heads/master/anime-offline-database-reduced.json";
+const TMDB_API =
+  "https://api.themoviedb.org/3/tv/{tmdbId}/external_ids?api_key=" +
+  import.meta.env.VITE_TMDB_KEY;
 
+interface TorrentIds {
+  kitsu: string | null;
+  imdb: string | null;
+}
 
-interface TorrentIds {kitsu: string | null, imdb: string | null}
+export async function getIdSForTorrentio(
+  malId: string | number,
+): Promise<TorrentIds> {
+  const ids: TorrentIds = { kitsu: null, imdb: null };
+  const { data: anizipMappings } = await axios.get<AniZipMetadata>(
+    `${ANIZIP_BASE_URL}?mal_id=${malId}`,
+  );
 
-export async function getIdSForTorrentio(malId: string | number): Promise<TorrentIds> {
-  const ids: TorrentIds = { kitsu: null, imdb: null }
-  const { data: anizipMappings } = await axios.get<AniZipMetadata>(`${ANIZIP_BASE_URL}?mal_id=${malId}`)
+  let tmdbId: string | null = null;
 
-  let tmdbId: string | null = null
-
-  const {kitsu_id, imdb_id, themoviedb_id } = anizipMappings.mappings
-  ids.kitsu = kitsu_id ? kitsu_id.toString() : null
-  ids.imdb = imdb_id ? imdb_id.toString() : null
-  tmdbId = themoviedb_id
+  const { kitsu_id, imdb_id, themoviedb_id } = anizipMappings.mappings;
+  ids.kitsu = kitsu_id ? kitsu_id.toString() : null;
+  ids.imdb = imdb_id ? imdb_id.toString() : null;
+  tmdbId = themoviedb_id;
 
   if (!kitsu_id) {
-    const fribbsEntry = (await axios.get<ThirdPartyMappings[]>(FRIBBS_LIST_URL))
-      .data.find(v => v?.mal_id && v.mal_id.toString() === malId.toString())
+    const fribbsEntry = (
+      await axios.get<ThirdPartyMappings[]>(FRIBBS_LIST_URL)
+    ).data.find((v) => v?.mal_id && v.mal_id.toString() === malId.toString());
 
-    if (fribbsEntry?.kitsu_id) ids.kitsu = fribbsEntry.kitsu_id.toString()
+    if (fribbsEntry?.kitsu_id) ids.kitsu = fribbsEntry.kitsu_id.toString();
   }
 
-  if (kitsu_id || imdb_id) return ids
+  if (kitsu_id || imdb_id) return ids;
 
-  const { data } = tmdbId ? await axios.get(TMDB_API.replace("{tmdbId}", tmdbId)) : { data: null }
+  const { data } = tmdbId
+    ? await axios.get(TMDB_API.replace("{tmdbId}", tmdbId))
+    : { data: null };
 
-  if (data?.imdb_id) ids.imdb = data.imdb_id
+  if (data?.imdb_id) ids.imdb = data.imdb_id;
 
-  return ids
+  return ids;
 }
 
 export function filterParsed(entries: ParsedAnimeStream[]) {
-  const allQualities: Record<ParsedQuality["resolution"], ParsedAnimeStream[]> = {
-    "1080p": [],
-    "2160p": [],
-    "360p": [],
-    "4320p": [],
-    "480p": [],
-    "720p": [],
-    "Unknown": []
-  }
+  const allQualities: Record<ParsedQuality["resolution"], ParsedAnimeStream[]> =
+    {
+      "1080p": [],
+      "2160p": [],
+      "360p": [],
+      "4320p": [],
+      "480p": [],
+      "720p": [],
+      Unknown: [],
+    };
 
-  const parsed: {quality: string, magnetUri: string}[] = []
+  const parsed: { quality: string; magnetUri: string }[] = [];
 
   for (const entry of entries) {
-    allQualities[entry.quality.resolution].push(entry)
+    allQualities[entry.quality.resolution].push(entry);
   }
 
   for (const [quality, entries] of Object.entries(allQualities)) {
-    if (quality === "Unknown" || entries.length === 0) continue
-    const chosen = entries.reduce((prev, curr) => (prev.seeders || 0) > (curr.seeders || 0) ? prev : curr)
+    if (quality === "Unknown" || entries.length === 0) continue;
+    const chosen = entries.reduce((prev, curr) =>
+      (prev.seeders || 0) > (curr.seeders || 0) ? prev : curr,
+    );
 
-    console.log({quality: chosen.quality.resolution, magnetUri: chosen.magnetUri})
-
-    if (chosen.magnetUri) parsed.push({quality: chosen.quality.resolution, magnetUri: chosen.magnetUri})
+    if (chosen.magnetUri)
+      parsed.push({
+        quality: chosen.quality.resolution,
+        magnetUri: chosen.magnetUri,
+      });
   }
 
-  return parsed
+  return parsed;
 }
 
 export async function fetchWithProgress(
   url: string,
   controller: AbortController,
-  onProgress: (total: number, loaded: number, progress: number) => void
+  onProgress: (total: number, loaded: number, progress: number) => void,
 ): Promise<Response> {
-  const response = await fetch(url, {signal: controller.signal});
+  const response = await fetch(url, { signal: controller.signal });
 
   if (!response.body || !response.ok) {
     throw new Error("Response body is not readable");
   }
 
   // 1. Extract the total file size from headers (fallback to 0 if chunked/missing)
-  const contentLength = response.headers.get('content-length');
+  const contentLength = response.headers.get("content-length");
   const total = contentLength ? parseInt(contentLength, 10) : Infinity;
   let loaded = 0;
 
@@ -253,7 +272,7 @@ export async function fetchWithProgress(
 
       // Pass the data chunk through completely untouched
       controller.enqueue(chunk);
-    }
+    },
   });
 
   // 3. Pipe the original body through our tracker to create a monitored stream
@@ -265,4 +284,60 @@ export async function fetchWithProgress(
     status: response.status,
     statusText: response.statusText,
   });
+}
+
+export const groupByMalId = (animes: AnimeSummary[]) => {
+  const mapping: { [key: string]: AnimeSummary[] } = {};
+
+  for (const anime of animes) {
+    const entry = mapping[anime.mal_id.toString()];
+    if (entry) entry.push(anime);
+    else mapping[anime.mal_id.toString()] = [anime];
+  }
+
+  return Object.entries(mapping)
+};
+
+export function getCurrentWeekTimestamps(): WeekTimestamps {
+  const days: ScheduleFilter[] = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+  const result = {} as WeekTimestamps;
+
+  // 1. Get the current date and time
+  const now = new Date();
+
+  // 2. Find the distance to the current week's Sunday (0)
+  const currentDayIndex = now.getUTCDay();
+
+  // 3. Loop through all 7 days of the week (0 = Sunday, 1 = Monday, ... 6 = Saturday)
+  for (let i = 0; i < 7; i++) {
+    const dayDate = new Date(now);
+
+    // Shift the date back or forward to line up exactly with day 'i' of this week
+    dayDate.setUTCDate(now.getUTCDate() - currentDayIndex + i);
+
+    // 4. Create the start of that day (00:00:00.000 UTC)
+    const startOfDay = new Date(Date.UTC(
+      dayDate.getUTCFullYear(),
+      dayDate.getUTCMonth(),
+      dayDate.getUTCDate(),
+      0, 0, 0, 0
+    ));
+
+    // 5. Create the end of that day (23:59:59.999 UTC)
+    const endOfDay = new Date(Date.UTC(
+      dayDate.getUTCFullYear(),
+      dayDate.getUTCMonth(),
+      dayDate.getUTCDate(),
+      23, 59, 59, 999
+    ));
+
+    // 6. Map the day index to your custom string key and convert to seconds
+    const dayKey = days[i];
+    result[dayKey] = {
+      startTime: Math.floor(startOfDay.getTime() / 1000),
+      endTime: Math.floor(endOfDay.getTime() / 1000)
+    };
+  }
+
+  return result;
 }

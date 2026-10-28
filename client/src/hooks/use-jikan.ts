@@ -25,11 +25,11 @@ import { AugmentedAnimeMedia, PaginatedRecentEpisodes } from "@/types/anilink";
 
 // --- ANILIST SUPPORTED ENDPOINTS ---
 
-export const useRecentlyReleased = (page: number, perPage?: number) => {
+export const useRecentlyReleased = (page: number, perPage?: number, startTime?: number, endTime?: number) => {
   return useQuery<PaginatedRecentEpisodes>({
-    queryKey: ["recently-released", page, perPage],
+    queryKey: ["recently-released", page, perPage, startTime, endTime],
     queryFn: async () => {
-      const res = await getRecentlyReleasedEpisodes(page, perPage);
+      const res = await getRecentlyReleasedEpisodes(page, perPage, startTime, endTime);
       return res;
     },
     staleTime: 10 * 60 * 1000,

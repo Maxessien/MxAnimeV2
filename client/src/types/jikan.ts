@@ -143,5 +143,5 @@ export interface Genre {
 // ==========================================
 
 export type TopAnimeFilter = 'airing' | 'upcoming' | 'bypopularity' | 'favorite';
-export type ScheduleFilter = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday' | 'other' | 'unknown';
+export type ScheduleFilter = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 export type AnimeOrderBy = 'mal_id' | 'title' | 'type' | 'rating' | 'start_date' | 'end_date' | 'episodes' | 'score' | 'scored_by' | 'rank' | 'popularity' | 'members' | 'favorites';

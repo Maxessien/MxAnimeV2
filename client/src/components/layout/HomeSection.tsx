@@ -44,7 +44,7 @@ const HomeSection = ({
 
       {isError && (
         <div className="bg-destructive/10 text-destructive p-4 rounded-lg">
-          Failed to load popular anime.
+          Failed to load.
         </div>
       )}
 

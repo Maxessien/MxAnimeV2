@@ -1,9 +1,11 @@
-import { useState, useEffect } from "react";
-import { useLocation } from "wouter";
-import { useSchedules } from "@/hooks/use-jikan";
-import { AnimeCard, AnimeCardSkeleton } from "@/components/AnimeCard";
+import { useEffect } from "react";
+import { useSearchParams } from "wouter";
+import { useRecentlyReleased } from "@/hooks/use-jikan";
+import { AnimeCardSkeleton, RecentEpisodeAnimeCard } from "@/components/AnimeCard";
 import { CalendarClock } from "lucide-react";
 import { ScheduleFilter } from "@/types/jikan";
+import { getCurrentWeekTimestamps } from "@/lib/utils";
+
 
 const DAYS = [
   { value: "monday", label: "Mon" },
@@ -13,35 +15,16 @@ const DAYS = [
   { value: "friday", label: "Fri" },
   { value: "saturday", label: "Sat" },
   { value: "sunday", label: "Sun" },
-  { value: "unknown", label: "TBA" },
 ];
-
-export function parseSchDay(filter: string): ScheduleFilter {
-  const allow: ScheduleFilter[] = [
-    "monday",
-    "tuesday",
-    "wednesday",
-    "thursday",
-    "friday",
-    "saturday",
-    "sunday",
-    "unknown",
-    "other",
-  ];
-
-  return allow.includes(filter as ScheduleFilter)
-    ? (filter as ScheduleFilter)
-    : allow[0];
-}
 
 const todayKey = () => DAYS[(new Date().getDay() + 6) % 7]?.value ?? "monday";
 
 export default function Schedule() {
-  const [, setLocation] = useLocation();
-  const searchParams = new URLSearchParams(window.location.search);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const day = searchParams.get("day") || todayKey();
+  const page = Number(searchParams.get("page")) || 1;
 
-  const [day, setDay] = useState<ScheduleFilter>(parseSchDay(searchParams.get("day") || todayKey()));
-  const [page, setPage] = useState(Number(searchParams.get("page")) || 1);
+  const mappings = getCurrentWeekTimestamps();
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -51,17 +34,20 @@ export default function Schedule() {
     const newSearch = params.toString();
     const newUrl = newSearch ? `/schedule?${newSearch}` : "/schedule";
     if (window.location.pathname + window.location.search !== newUrl) {
-      setLocation(newUrl, { replace: true });
+      setSearchParams(params);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [day, page]);
 
-  const { data, isLoading, error } = useSchedules(day, page);
+  const { data, isLoading, error } = useRecentlyReleased(
+    page,
+    30,
+    mappings[day as ScheduleFilter]?.endTime,
+    mappings[day as ScheduleFilter]?.startTime,
+  );
 
-  // Jikan occasionally returns the same anime twice for a given day; dedupe by mal_id.
-  const entries: any[] = data?.data
-    ? Array.from(new Map(data.data.map((a: any) => [a.mal_id, a])).values())
-    : [];
+  const entries = data?.data ?? [];
+  const pageInfo = data?.pageInfo;
 
   return (
     <div className="flex flex-col gap-8 animate-in fade-in duration-500">
@@ -82,8 +68,7 @@ export default function Schedule() {
           <button
             key={d.value}
             onClick={() => {
-              setDay(parseSchDay(d.value));
-              setPage(1);
+              setSearchParams({ day: d.value, page: "1" });
             }}
             className={`px-5 py-2.5 rounded-lg font-medium text-sm transition-all whitespace-nowrap shrink-0 ${
               day === d.value
@@ -130,7 +115,7 @@ export default function Schedule() {
                     animationFillMode: "both",
                   }}
                 >
-                  <AnimeCard anime={anime} />
+                  <RecentEpisodeAnimeCard anime={anime} />
                   {anime.broadcast?.string && (
                     <span className="text-xs text-muted-foreground font-mono bg-muted px-2 py-1 rounded-md w-fit">
                       {anime.broadcast.string}
@@ -140,11 +125,11 @@ export default function Schedule() {
               ))}
             </div>
 
-            {data?.pagination && data.pagination.last_visible_page > 1 && (
+            {pageInfo && pageInfo.lastPage > 1 && (
               <div className="flex items-center justify-center gap-4 pt-8 border-t">
                 <button
                   onClick={() => {
-                    setPage((p) => Math.max(1, p - 1));
+                    setSearchParams({ page: String(page - 1) });
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
                   disabled={page === 1}
@@ -154,17 +139,15 @@ export default function Schedule() {
                 </button>
                 <div className="flex flex-col items-center">
                   <span className="text-sm font-bold bg-muted px-4 py-2 rounded-lg">
-                    Page {page} of {data.pagination.last_visible_page}
+                    Page {page} of {pageInfo.lastPage}
                   </span>
                 </div>
                 <button
                   onClick={() => {
-                    setPage((p) =>
-                      Math.min(data.pagination.last_visible_page, p + 1),
-                    );
+                    setSearchParams({ page: String(page + 1) });
                     window.scrollTo({ top: 0, behavior: "smooth" });
                   }}
-                  disabled={!data.pagination.has_next_page}
+                  disabled={page === pageInfo.lastPage}
                   className="px-6 py-3 bg-primary text-primary-foreground font-medium rounded-xl disabled:opacity-50 hover:bg-primary/90 transition-all active:scale-95 shadow-md shadow-primary/20"
                 >
                   Next

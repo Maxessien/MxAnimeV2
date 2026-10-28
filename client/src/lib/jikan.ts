@@ -70,7 +70,7 @@ export const fetchMal = async <T>(
             `MAL API Error: ${response.status} ${response.statusText}`,
           );
         }
-        
+
         const data = await response.json();
         resolve(data);
       } catch (error) {
@@ -91,8 +91,6 @@ export const fetchJikan = async <T>(
     const task = async () => {
       try {
         const baseUrl = await getBaseUrl();
-
-        console.log(baseUrl);
 
         const url = new URL(`${baseUrl}${endpoint}`);
 

@@ -12,8 +12,8 @@ import {
   Trophy,
   Tv,
 } from "lucide-react";
-import { useEffect, useState } from "react";
-import { Link, useLocation } from "wouter";
+import { useEffect, useRef, useState } from "react";
+import { Link, useLocation, useSearchParams } from "wouter";
 
 const navItems = [
   { href: "/", label: "Home", icon: Flame },
@@ -28,6 +28,7 @@ const navItems = [
 
 export function Shell({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
+  const [searchParams] = useSearchParams();
   const [ongoingCount, setOngoingCount] = useState(0);
 
   const isActive = (href: string) =>
@@ -43,19 +44,25 @@ export function Shell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  const mainRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    mainRef.current?.scrollTo({top: 0})
+  }, [searchParams, location]);
+
   return (
     <div className="h-dvh flex flex-col pt-[env(safe-area-inset-top)] pr-[env(safe-area-inset-right)] pl-[env(safe-area-inset-left)] md:flex-row bg-background text-foreground overflow-hidden">
       {/* Desktop Sidebar */}
       <aside className="hidden overflow-y-auto pb-[env(safe-area-inset-bottom)] scrollbar-hide md:flex md:flex-col w-64 shrink-0 border-r bg-background h-dvh">
         <Link
           href="/"
-          className="flex items-center gap-2 px-6 h-16 shrink-0 outline-none focus-visible:ring-2 ring-primary rounded-lg"
+          className="flex items-center px-6 h-16 shrink-0 outline-none focus-visible:ring-2 ring-primary rounded-lg"
         >
-          <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shadow-sm">
-            <Flame size={20} strokeWidth={2.5} />
+          <div>
+            <img className="w-12 aspect-square rounded-md" src="/icon-tran.png" alt="logo" />
           </div>
           <span className="font-display font-bold text-xl tracking-tight">
-            MxAnime
+            Anime
           </span>
         </Link>
         <nav className="flex-1 px-3 py-2 space-y-1 overflow-y-auto">
@@ -98,13 +105,13 @@ export function Shell({ children }: { children: React.ReactNode }) {
           <div className="px-2 sm:px-4 h-16 flex items-center justify-between">
             <Link
               href="/"
-              className="flex items-center gap-2 outline-none rounded-lg focus-visible:ring-2 ring-primary"
+              className="flex items-center px-6 h-16 shrink-0 outline-none focus-visible:ring-2 ring-primary rounded-lg"
             >
-              <div className="bg-primary text-primary-foreground p-1.5 rounded-lg shadow-sm">
-                <Flame size={20} strokeWidth={2.5} />
+              <div>
+                <img className="w-12 aspect-square rounded-md" src="/icon-tran.png" alt="logo" />
               </div>
               <span className="font-display font-bold text-xl tracking-tight">
-                MxAnime
+                Anime
               </span>
             </Link>
             <ThemeToggle />
@@ -112,7 +119,7 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </header>
 
         {/* Scrollable Main Area */}
-        <main className="flex-1 min-h-0 overflow-y-auto w-full container mx-auto px-2 sm:px-4 py-4 md:py-8 pb-2 md:pb-4">
+        <main ref={mainRef} className="flex-1 min-h-0 overflow-y-auto w-full container mx-auto px-2 sm:px-4 py-4 md:py-8 pb-2 md:pb-4">
           {children}
         </main>
       </div>

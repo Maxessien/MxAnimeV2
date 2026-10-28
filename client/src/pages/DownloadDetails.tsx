@@ -181,8 +181,16 @@ const DownloadDetails = () => {
               <div>
                 <div className="font-semibold">Episode {entry.episode.ep}</div>
                 <div className="font-semibold flex flex-wrap items-center gap-2 justify-start text-muted-foreground">
-                  <span>Season {entry.episode.season}</span> -{" "}
-                  <span>{entry.watchPercentage.toFixed(0)}% Complete</span>
+                  <span>Season {entry.episode.season}</span>
+                  {platform() === "android" && (
+                    <>
+                      {" "}
+                      -{" "}
+                      <span>
+                        {entry.watchPercentage.toFixed(0)}% Complete
+                      </span>{" "}
+                    </>
+                  )}
                 </div>
               </div>
 

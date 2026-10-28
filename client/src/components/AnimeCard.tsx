@@ -70,7 +70,7 @@ export function RecentEpisodeAnimeCard({ anime, extraStyles }: { anime: RecentEp
   return (
     <Link
       href={`/anime/${anime.media.idMal}`}
-      className={`group flex flex-col gap-3 cursor-pointer outline-none focus-visible:ring-2 ring-primary rounded-xl ${extraStyles ? extraStyles.trimStart() : ""}`.trimEnd()}
+      className={`group relative flex flex-col gap-3 cursor-pointer outline-none focus-visible:ring-2 ring-primary rounded-xl ${extraStyles ? extraStyles.trimStart() : ""}`.trimEnd()}
     >
       <div className="relative aspect-3/4 overflow-hidden rounded-xl bg-muted shadow-sm transition-all duration-300 group-hover:shadow-lg group-hover:-translate-y-1">
         {imageUrl ? (
@@ -98,10 +98,10 @@ export function RecentEpisodeAnimeCard({ anime, extraStyles }: { anime: RecentEp
         <h3 className="font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-primary transition-colors">
           {title}
         </h3>
-        <div className="flex flex-wrap gap-1 mt-1.5 opacity-80">
+        <div className="flex absolute z-10 top-3 left-3 flex-wrap gap-1 shadow-2xl">
           {anime.episode ? (
-            <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
-              {anime.episode} eps
+            <span className="text-sm font-semibold text-shadow-black text-shadow-sm font-mono bg-primary px-1.5 py-0.5 rounded">
+              Ep {anime.episode}
             </span>
           ) : <></>}
         </div>
