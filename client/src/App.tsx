@@ -10,10 +10,8 @@ import Seasons from "@/pages/Seasons";
 import Schedule from "@/pages/Schedule";
 import Search from "@/pages/Search";
 import AnimeDetail from "@/pages/AnimeDetail";
-import History from "@/pages/History";
 import Downloads from "@/pages/Downloads";
 import Settings from "@/pages/Settings";
-import NotFound from "@/pages/not-found";
 import { ToastContainer } from "react-toastify";
 import DownloadDetails from "./pages/DownloadDetails";
 import { AnimeStream, AnimeStreamLocal } from "./pages/AnimeStream";
@@ -50,7 +48,6 @@ function Router() {
           <Route path="/schedule" component={Schedule} />
           <Route path="/search" component={Search} />
           <Route path="/anime/:id" component={AnimeDetail} />
-          <Route path="/history" component={History} />
           <Route path="/downloads" component={Downloads} />
           <Route path="/downloads/:id" component={DownloadDetails} />
           <Route path="/settings" component={Settings} />

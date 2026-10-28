@@ -7,7 +7,6 @@ import {
   CalendarClock,
   Download,
   Flame,
-  History,
   Search,
   Settings,
   Trophy,
@@ -23,7 +22,6 @@ const navItems = [
   { href: "/seasons", label: "Seasons", icon: Calendar },
   { href: "/schedule", label: "Schedule", icon: CalendarClock },
   { href: "/search", label: "Search", icon: Search },
-  { href: "/history", label: "History", icon: History },
   { href: "/downloads", label: "Downloads", icon: Download },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { useJson } from "@/hooks/use-json";
 import { AnimeSummary } from "@/lib/local-store";
+import { WatchHistory } from "@/types/storage";
 import { invoke } from "@tauri-apps/api/core";
 import { openPath } from "@tauri-apps/plugin-opener";
 import { platform } from "@tauri-apps/plugin-os";
@@ -27,11 +28,29 @@ const DownloadDetails = () => {
     entry: AnimeSummary | null;
   }>({ active: false, entry: null });
 
-  const { json, remove } = useJson<AnimeSummary>({
+  const { json: downloads, remove: removeDl } = useJson<AnimeSummary>({
     type: "downloads",
   });
 
-  const eps = json.downloads.filter(({ mal_id }) => mal_id.toString() === id);
+  const { json: history, remove: removeHistory } = useJson<WatchHistory>({
+    type: "history",
+  });
+
+  const eps = downloads
+    .filter(({ mal_id }) => mal_id.toString() === id)
+    .map((v) => {
+      const modHistory = history.find(
+        (h) => h.malId === v.mal_id.toString() && h.episode == v.episode.ep,
+      );
+      let watchPercentage = 0;
+      if (modHistory) {
+        const duration = modHistory.duration;
+        const curr = modHistory.watchTimeSec;
+        watchPercentage = duration > 0 ? (curr / duration) * 100 : 0;
+      }
+      const mod = { ...v, history: modHistory, watchPercentage };
+      return mod;
+    });
   const first = eps[0] ?? null;
 
   if (eps.length === 0)
@@ -69,18 +88,30 @@ const DownloadDetails = () => {
     }
   };
 
-  const deleteFile = async (path: string) => {
+  const deleteFile = async (
+    path: string,
+    malId?: string,
+    ep?: string | number,
+  ) => {
     try {
       const length = eps.length;
       await invoke("delete_file", { path });
       setOptionsModal({ active: false, entry: null });
-      remove.mutateAsync((e) => e.filter((v) => v.episode.path !== path));
+
+      removeDl.mutateAsync((e) => e.filter((v) => v.episode.path !== path));
+      if (malId && ep)
+        removeHistory.mutateAsync((e) =>
+          e.filter((v) => v.malId == malId && v.episode == ep),
+        );
+
       if (length === 1) navigate("/downloads?tab=downloads");
       toast.success("Deleted");
     } catch (err: any) {
       toast.error(typeof err === "string" ? err : "Unknown error");
     }
   };
+
+  console.log(history);
 
   return (
     <div className="space-y-6">
@@ -123,13 +154,13 @@ const DownloadDetails = () => {
         {eps.map((entry) => (
           <Card
             key={`${entry.mal_id}-${entry.episode.ep}-${entry.episode.season}`}
-            className="p-4"
           >
-            <div className="flex relative items-center justify-between">
+            <div className="flex p-4 relative items-center justify-between">
               <div>
                 <div className="font-semibold">Episode {entry.episode.ep}</div>
-                <div className="text-sm text-muted-foreground">
-                  Season {entry.episode.season}
+                <div className="font-semibold flex flex-wrap items-center gap-2 justify-start text-muted-foreground">
+                  <span>Season {entry.episode.season}</span> -{" "}
+                  <span>{entry.watchPercentage.toFixed(0)}% Complete</span>
                 </div>
               </div>
 
@@ -143,7 +174,13 @@ const DownloadDetails = () => {
                       <Download /> Save to Downloads
                     </button>
                     <button
-                      onClick={() => deleteFile(entry.episode.path)}
+                      onClick={() =>
+                        deleteFile(
+                          entry.episode.path,
+                          entry.history?.malId,
+                          entry.history?.episode,
+                        )
+                      }
                       className="w-full p-2 rounded-md transition-colors cursor-pointer hover:bg-primary active:bg-primary text-xs md:text-md flex justify-start items-center gap-2 font-medium"
                     >
                       <Trash /> Delete

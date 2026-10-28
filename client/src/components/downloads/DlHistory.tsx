@@ -7,7 +7,7 @@ import { Link } from "wouter";
 const DlHistory = ({
   json
 }: {
-  json: Record<JsonFiles, AnimeSummary[]>;
+  json: AnimeSummary[];
   remove: UseMutationResult<
     void,
     Error,
@@ -17,7 +17,7 @@ const DlHistory = ({
 }) => {
   return (
     <>
-      {!json?.downloads?.length || json.downloads?.length === 0 ? (
+      {!json?.length || json?.length === 0 ? (
         <div className="flex flex-col items-center justify-center text-center py-24 gap-3 border-2 border-dashed rounded-3xl">
           <DownloadIcon
             size={40}
@@ -37,7 +37,7 @@ const DlHistory = ({
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4 md:gap-6">
-          {json.downloads.map((entry, i) => (
+          {json.map((entry, i) => (
             <div
               key={entry.mal_id}
               className="group relative flex flex-col gap-3 animate-in fade-in zoom-in-95"

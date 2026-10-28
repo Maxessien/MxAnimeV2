@@ -26,10 +26,7 @@ export function useJson<T>({
   addOptions?: UseMutationOptions<
     void,
     Error,
-    {
-      anime: T[] | T;
-      type: JsonFiles;
-    },
+    T[] | T,
     void
   >;
   removeOptions?: UseMutationOptions<void, Error, (v: T[]) => T[], void>;
@@ -51,14 +48,11 @@ export function useJson<T>({
   const add = useMutation<
     void,
     Error,
-    {
-      anime: T[] | T;
-      type: JsonFiles;
-    },
+    T[] | T,
     void
   >({
     ...addOptions,
-    mutationFn: async ({ anime, type }) => {
+    mutationFn: async (anime) => {
       let n = { ...json };
       let parsedAnime = Array.isArray(anime) ? anime : [anime];
       n[type] = [...n[type], ...parsedAnime];
@@ -144,6 +138,6 @@ export function useJson<T>({
     add,
     remove,
     clear,
-    json,
+    json: json[type],
   };
 }

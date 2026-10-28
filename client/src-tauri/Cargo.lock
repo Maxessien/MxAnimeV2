@@ -2345,6 +2345,7 @@ name = "mxanime"
 version = "0.1.0"
 dependencies = [
  "futures-util",
+ "infer",
  "reqwest 0.12.28",
  "serde",
  "serde_json",

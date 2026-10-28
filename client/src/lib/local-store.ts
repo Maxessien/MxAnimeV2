@@ -9,7 +9,6 @@ import {
   isPermissionGranted,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
-import { isMobile } from "./utils";
 
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -29,10 +28,6 @@ export type AnimeSummary = {
 
 export type AnimeDownload = { url: string; fileName: string };
 
-export interface WatchHistory extends AnimeSummary {
-  viewedAt: string;
-}
-
 async function getDownloads<T>(subPath: string) {
   let file = await invoke<string>("get_json_file", {
     subPath,
@@ -46,10 +41,7 @@ async function downloadAnime(
   mutateAsync: UseMutateAsyncFunction<
     void,
     Error,
-    {
-      anime: AnimeSummary | AnimeSummary[];
-      type: JsonFiles;
-    },
+    AnimeSummary | AnimeSummary[],
     void
   >,
 ) {
@@ -145,16 +137,13 @@ async function downloadAnime(
 
       if (path)
         await mutateAsync({
-          anime: {
-            ...info,
-            episode: {
-              ep: episode.ep,
-              path,
-              season: episode.season,
-              quality: episode.quality,
-            },
+          ...info,
+          episode: {
+            ep: episode.ep,
+            path,
+            season: episode.season,
+            quality: episode.quality,
           },
-          type: "downloads",
         });
 
       if (granted)
