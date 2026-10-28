@@ -107,7 +107,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           source,
           backend: "tauri",
           backendOptions: {
-            tauri: { engine: engine ?? "media3" },
+    tauri: {
+      engine: 'media3', // Uses ExoPlayer + hardware MediaCodec
+      android: {
+        decoderFallback: true,
+      },
+    },
           },
         });
 

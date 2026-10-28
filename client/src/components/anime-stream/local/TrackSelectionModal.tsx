@@ -39,6 +39,7 @@ export const TrackSelectionModal: React.FC<TrackSelectionModalProps> = ({
 
   return (
     <div
+      data-air-video-controls
       className="absolute inset-0 z-50 bg-background/80 backdrop-blur-sm flex flex-col justify-end"
       onClick={onClose}
     >

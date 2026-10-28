@@ -287,10 +287,14 @@ pub async fn dl_file(
         id: String::new(),
     };
 
-    if broke_early {
+    if broke_early || curr < total {
         drop(f);
         let _ = fs::remove_file(path);
-        return Ok((None, img_path));
+        return if broke_early {
+            Ok((None, img_path))
+        } else {
+            Err("Incomplete download".to_string())
+        };
     }
 
     let _ = f.flush().await;

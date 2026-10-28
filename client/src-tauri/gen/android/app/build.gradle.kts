@@ -51,6 +51,15 @@ android {
     buildFeatures {
         buildConfig = true
     }
+    packaging {
+        jniLibs {
+            pickFirsts += setOf("**/libc++_shared.so")
+            excludes += setOf(
+                "**/libvlc.so",
+                "**/libvlcjni.so"
+            )
+        }
+    }
 }
 
 rust {

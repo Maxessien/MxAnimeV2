@@ -15,7 +15,7 @@ import Settings from "@/pages/Settings";
 import { ToastContainer } from "react-toastify";
 import DownloadDetails from "./pages/DownloadDetails";
 import { AnimeStream, AnimeStreamLocal } from "./pages/AnimeStream";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   isPermissionGranted,
   requestPermission,
@@ -25,6 +25,14 @@ import { isMobile } from "./lib/utils";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import LatestEpisodes from "./pages/LatestEpisodes";
 import { ongoingDownloadQueue } from "./lib/queue";
+import axios from "axios";
+import UpdatePopup from "./components/layout/UpdatePopup";
+
+
+// Update on every github release to match github release tag name
+const APP_RELEASE_TAG = "v0.1.0"
+
+const LATEST_RELEASE_API = "https://api.github.com/repos/Maxessien/MxAnimeV2/releases/latest"
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -58,10 +66,15 @@ function Router() {
 }
 
 function App() {
+  const [showUpdatePopup, setShowUpdatePopup] = useState(false)
   useEffect(() => {
     (async () => {
       let granted = await isPermissionGranted();
       if (!granted && isMobile) await requestPermission();
+      try {
+        const { data } = await axios.get(LATEST_RELEASE_API)
+        if (data.tag_name && data.tag_name !== APP_RELEASE_TAG) setShowUpdatePopup(true)
+      } catch (err) {}
     })();
 
     let unlisten: UnlistenFn | undefined;
@@ -72,15 +85,6 @@ function App() {
       task_id: string;
       title: string;
     }>("dl_progress", async ({ payload }) => {
-      const granted = isMobile ? await isPermissionGranted() : null;
-
-      if (granted)
-        sendNotification({
-          title: payload.title,
-          body: `Downloading - ${((payload.current / payload.total) * 100).toFixed(1)}%`,
-          ongoing: true,
-          id: Number(payload.task_id),
-        });
 
       ongoingDownloadQueue.updateProg(payload.task_id, {
         curr: payload.current / (1024 * 1024),
@@ -100,6 +104,7 @@ function App() {
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <Router />
           </WouterRouter>
+          {showUpdatePopup && <UpdatePopup hidePopup={()=> setShowUpdatePopup(false)} />}
           {/* <Toaster /> */}
           <ToastContainer
             closeButton
