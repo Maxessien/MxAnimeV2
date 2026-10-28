@@ -1,4 +1,3 @@
-import { Schedule } from "@tauri-apps/plugin-notification";
 import { ScheduleFilter } from "./jikan";
 
 export interface MediaResponse {

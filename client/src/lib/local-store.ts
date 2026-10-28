@@ -1,4 +1,3 @@
-import { JsonFiles } from "@/hooks/use-json";
 import { DownloadStatus } from "@/types/apiResponses";
 import { UseMutateAsyncFunction } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";

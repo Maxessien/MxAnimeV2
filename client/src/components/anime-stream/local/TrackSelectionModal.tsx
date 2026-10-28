@@ -1,6 +1,6 @@
 import React from 'react'
 import { X, Check, Subtitles, Volume2, Film } from 'lucide-react'
-import type { MediaTrack, TrackKind } from '@get-air/video'
+import type { TrackKind } from '@get-air/video'
 import type { ControlsState, TracksState } from './types'
 
 interface TrackSelectionModalProps {

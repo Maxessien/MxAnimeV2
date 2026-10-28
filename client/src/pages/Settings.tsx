@@ -1,9 +1,7 @@
 import { useJson } from "@/hooks/use-json";
 import { cn } from "@/lib/utils";
 import {
-  Download,
   History,
-  Info,
   Monitor,
   Moon,
   Settings as SettingsIcon,
