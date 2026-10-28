@@ -1,4 +1,4 @@
-use reqwest::Client;
+use reqwest::{Client, Response};
 use serde::Serialize;
 use std::{
     io::ErrorKind,
@@ -121,7 +121,13 @@ pub async fn dl_file(
     url: String,
     save_as: String,
     task_id: String,
-) -> Result<Option<PathBuf>, String> {
+    image_url: Option<String>,
+) -> Result<(Option<PathBuf>, Option<PathBuf>), String> {
+    let app_dir = app
+        .path()
+        .app_data_dir()
+        .map_err(|_| "Failed to get app data dir".to_string())?;
+
     let cl = Client::new();
 
     let res = cl
@@ -130,24 +136,94 @@ pub async fn dl_file(
         .await
         .map_err(|_| "Failed to fetch file".to_string())?;
 
-    let total = res.content_length().unwrap_or(0) as usize;
+    let mut img_size = 0;
+    let mut img_path: Option<PathBuf> = None;
+    let mut base_path = None;
+    let mut image_res: Option<Response> = None;
+
+    if let Some(image_url) = &image_url {
+        image_res = cl.get(image_url).send().await.ok();
+        img_size = match &image_res {
+            Some(val) => val.content_length().unwrap_or(0),
+            None => 0,
+        };
+        base_path = check_path(app_dir.join("images"))
+            .await
+            .map(|(_, p)| Some(p))
+            .unwrap_or(None);
+    }
+
+    let mut curr = 0;
+    let total = (res.content_length().unwrap_or(0) + img_size) as usize;
 
     let _ = app.emit(
         "dl_progress",
         ByteProgress {
-            current: 0,
+            current: curr,
             total,
             task_id: task_id.clone(),
             title: save_as.clone(),
         },
     );
 
-    let mut str = res.bytes_stream();
+    (async || {
+        if let Some(response) = image_res {
+            if let Some(path) = &base_path {
+                if img_size < (20 * 1024 * 1024) {
+                    let img_bytes = match response.bytes().await {
+                        Ok(b) => {
+                            let itm: Vec<u8> = b.iter().as_slice().to_vec();
+                            itm
+                        }
+                        Err(_) => {
+                            return;
+                        }
+                    };
+                    let ext = match infer::get(&img_bytes) {
+                        Some(e) => e.extension(),
+                        None => {
+                            return;
+                        }
+                    };
+                    let mut tmp = path.join(save_as.clone());
+                    tmp.set_extension(ext);
+                    let mut file = match File::create(&tmp).await {
+                        Ok(f) => f,
+                        Err(_) => {
+                            return;
+                        }
+                    };
+                    let inn_curr = &mut curr;
+                    *inn_curr += img_bytes.len();
+                    let _ = match file.write_all(&img_bytes).await {
+                        Ok(_) => (),
+                        Err(_) => {
+                            return;
+                        }
+                    };
+                    let _ = match file.flush().await {
+                        Ok(_) => (),
+                        Err(_) => {
+                            return;
+                        }
+                    };
+                    img_path = Some(tmp);
+                    let _ = app.emit(
+                        "dl_progress",
+                        ByteProgress {
+                            current: inn_curr.clone(),
+                            total,
+                            task_id: task_id.clone(),
+                            title: save_as.clone(),
+                        },
+                    );
+                }
+            }
+        }
+    })()
+    .await;
 
-    let app_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|_| "Failed to get app data dir".to_string())?;
+    let mut str = res.bytes_stream();
 
     let dl_path = app_dir.join("downloads");
 
@@ -158,8 +234,6 @@ pub async fn dl_file(
     let mut f = File::create(path.clone())
         .map_err(|_| "Failed to create file")
         .await?;
-
-    let mut curr = 0;
 
     let mut last_emit = Instant::now();
 
@@ -216,12 +290,12 @@ pub async fn dl_file(
     if broke_early {
         drop(f);
         let _ = fs::remove_file(path);
-        return Ok(None);
+        return Ok((None, img_path));
     }
 
     let _ = f.flush().await;
 
-    Ok(Some(path))
+    Ok((Some(path), img_path))
 }
 
 #[tauri::command]
@@ -264,16 +338,24 @@ pub async fn save_to_downloads(
 #[tauri::command]
 pub async fn delete_file(app: tauri::AppHandle, path: String) -> Result<(), String> {
     let p = PathBuf::from(path);
-    let allowed = app.path().app_data_dir().map_err(|e| {
-        dbg!(&e);
-        "Failed to get downloads directory".to_string()
-    })?.join("downloads");
+    let allowed = app
+        .path()
+        .app_data_dir()
+        .map_err(|e| {
+            dbg!(&e);
+            "Failed to get downloads directory".to_string()
+        })?
+        .join("downloads");
 
     if p.is_dir() {
         return Err("Cannot delete directory".to_string());
     }
 
-    if p.parent().ok_or("Invalid parent dir".to_string())?.to_owned() != allowed {
+    if p.parent()
+        .ok_or("Invalid parent dir".to_string())?
+        .to_owned()
+        != allowed
+    {
         return Err("Cannot delete file outside downloads directory".to_string());
     }
 

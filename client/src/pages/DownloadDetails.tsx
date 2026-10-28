@@ -10,7 +10,7 @@ import {
 import { useJson } from "@/hooks/use-json";
 import { AnimeSummary } from "@/lib/local-store";
 import { WatchHistory } from "@/types/storage";
-import { invoke } from "@tauri-apps/api/core";
+import { convertFileSrc, invoke } from "@tauri-apps/api/core";
 import { openPath } from "@tauri-apps/plugin-opener";
 import { platform } from "@tauri-apps/plugin-os";
 import { Download, Trash } from "lucide-react";
@@ -35,6 +35,8 @@ const DownloadDetails = () => {
   const { json: history, remove: removeHistory } = useJson<WatchHistory>({
     type: "history",
   });
+
+  const [errored, setErrored] = useState({ imgPath: false });
 
   const eps = downloads
     .filter(({ mal_id }) => mal_id.toString() === id)
@@ -111,8 +113,6 @@ const DownloadDetails = () => {
     }
   };
 
-  console.log(history);
-
   return (
     <div className="space-y-6">
       <BackBtn />
@@ -120,21 +120,43 @@ const DownloadDetails = () => {
       {first && (
         <div className="relative w-full mb-8">
           <div className="h-56 md:h-96 w-full overflow-hidden bg-black">
-            <img
-              src={first.image ?? ""}
-              alt={first.title}
-              className="w-full h-full object-cover opacity-30 blur-sm scale-110"
-            />
+            {first.imagePath && !errored.imgPath && (
+              <img
+                className="w-full h-full object-cover opacity-30 blur-sm scale-110"
+                src={convertFileSrc(first.imagePath)}
+                alt={first.title}
+                onError={() => setErrored({ imgPath: true })}
+                onLoad={() => setErrored({ imgPath: true })}
+              ></img>
+            )}
+            {first.image && (!first.imagePath || errored.imgPath) && (
+              <img
+                className="w-full h-full object-cover opacity-30 blur-sm scale-110"
+                src={first.image}
+                alt={first.title}
+              ></img>
+            )}
             <div className="absolute inset-0 bg-linear-to-t from-background via-background/80 to-transparent" />
           </div>
 
           <div className="container mx-auto px-4 relative z-10 -mt-24 md:-mt-32 flex items-end gap-6">
             <div className="w-32 md:w-48 shrink-0 shadow-2xl rounded-2xl overflow-hidden border-4 border-background bg-background">
-              <img
-                src={first.image ?? ""}
-                alt={first.title}
-                className="w-full h-full object-center object-cover"
-              />
+              {first.imagePath && !errored.imgPath && (
+                <img
+                  className="h-full w-full object-center object-cover"
+                  src={convertFileSrc(first.imagePath)}
+                  alt={first.title}
+                  onError={() => setErrored({ imgPath: true })}
+                  onLoad={() => setErrored({ imgPath: true })}
+                ></img>
+              )}
+              {first.image && (!first.imagePath || errored.imgPath) && (
+                <img
+                  className="h-full w-full object-center object-cover"
+                  src={first.image}
+                  alt={first.title}
+                ></img>
+              )}
             </div>
 
             <div className="flex-1 text-left">

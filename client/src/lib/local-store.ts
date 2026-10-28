@@ -24,9 +24,11 @@ export type AnimeSummary = {
     quality: number;
   };
   score?: number | null;
+  imagePath?: string
 };
 
 export type AnimeDownload = { url: string; fileName: string };
+
 
 async function getDownloads<T>(subPath: string) {
   let file = await invoke<string>("get_json_file", {
@@ -129,15 +131,17 @@ async function downloadAnime(
     if (!status) throw new Error("Status not found");
 
     if (status.status.status === "completed" && status.episode) {
-      const path = await invoke<string>("dl_file", {
+      const [path, imgPath] = await invoke<string>("dl_file", {
         url: status.episode.fileUrl,
         saveAs: `${safeTitle} - Episode ${episode.ep}.mkv`,
         taskId: taskId.toString(),
+        imageUrl: info.image,
       });
 
       if (path)
         await mutateAsync({
           ...info,
+          imagePath: imgPath,
           episode: {
             ep: episode.ep,
             path,
