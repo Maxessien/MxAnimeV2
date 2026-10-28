@@ -5,7 +5,7 @@ import { downloadTasks } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
 import { AniZipMetadata } from "../types/anizip.js";
 import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
-import { dlAndCompress, getSubplTorrent } from "../utils/media.js";
+import { convertRes, dlAndCompress, generateSmallerResEntries, getSubplTorrent } from "../utils/media.js";
 import { handler } from "../utils/shows.js";
 import { ParsedTorrentioStream } from "../types/torrentio.js";
 import { AddQueryQualities, Tasks } from "../types/show.js";
@@ -155,30 +155,30 @@ const addEpisode = (req: Request, res: Response) =>
     if (!qualitiesTyped || qualitiesTyped.length === 0) {
       let filteredQuality = await getSubplTorrent(mal_id, eId.toString());
 
-      if (filteredQuality) anime = filteredQuality;
+      if (filteredQuality) anime = generateSmallerResEntries(filteredQuality);
     } else
-      anime = qualitiesTyped.map(({ magnetUri, quality }) => ({
+      anime = generateSmallerResEntries(qualitiesTyped.map(({ magnetUri, quality }) => ({
         magUri: magnetUri,
         resolution: quality,
-      }));
+      })));
 
     if (anime.length === 0)
       return res
         .status(CLIENT_ERROR.NOT_FOUND)
         .json({ message: "Torrents not found" });
 
-    const eps = await Episode.insertMany(
-      anime.map((v) => ({
-        eId: eId.toString(),
-        sId: sId.toString(),
-        isCompressed: false,
-        magnetUri: v.magUri,
-        malId: mal_id.toString(),
-        quality: Number(v.resolution?.toLowerCase().replace("p", "")),
-      })),
-    );
+    const parsed = anime.map((v) => ({
+      eId: eId.toString(),
+      sId: sId.toString(),
+      isCompressed: false,
+      magnetUri: v.magUri,
+      malId: mal_id.toString(),
+      quality: convertRes(v.resolution),
+    }))
 
-    return res.status(SUCCESS.CREATED).json(eps);
+    await Episode.insertMany(parsed);
+
+    return res.status(SUCCESS.CREATED).json(parsed);
   });
 
 const getAllTasks = async (req: Request, res: Response) =>

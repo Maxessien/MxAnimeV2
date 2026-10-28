@@ -36,6 +36,26 @@ import findTorrents, { Torrent } from "mal-nyaa"
 
 const PYTHON_SERVER_URL = process.env.PYTHON_SERVER_URL;
 
+
+const convertRes = (qualityString: string | null) => {
+  if (!qualityString) return 0;
+
+  // Convert to lowercase to handle P, K, etc.
+  const cleanStr: string = qualityString.toLowerCase().trim();
+
+  // 1. Handle explicit "K" shorthand resolutions first
+  if (cleanStr.includes('4k')) return 3840;
+  if (cleanStr.includes('8k')) return 7680;
+  if (cleanStr.includes('2k')) return 2560;
+
+  // 2. Extract the digits from formats like "1080p", "p720", "1440", etc.
+  const match: RegExpMatchArray | null = cleanStr.match(/\d+/);
+  if (!match) return 0;
+
+  const width: number = parseInt(match[0], 10);
+  return width;
+}
+
 const pollForProg = async (
   fileId: string,
   taskId: string,
@@ -46,7 +66,6 @@ const pollForProg = async (
   let prog = 0;
   let progInc = 21;
 
-  console.log(fileId, taskId);
 
   while (!transfer || transfer.status !== "done") {
     const { data } = await axios.get<PikPakResponse>(
@@ -80,7 +99,6 @@ const downloadTorrent = async (
     { magUri: magnetUri },
   );
 
-  console.log(data);
 
   let tr = await pollForProg(data.file_id, data.id, (prog) => {
     downloadTasks.set(taskId, {
@@ -156,7 +174,7 @@ const compressWithCl = async (
   input: string,
   prog: (val: number) => void,
   inputType: "local" | "url",
-  scale?: { width: number; height: number },
+  scalewidth: number,
 ) => {
   prog(20);
   const job = await cloudConvert.jobs.create({
@@ -179,8 +197,8 @@ const compressWithCl = async (
         audio_codec: "opus",
         audio_bitrate: 96,
         subtitles_mode: "copy",
-        ...(scale?.height ? { height: scale.height } : {}),
-        ...(scale?.width ? { width: scale.width } : {}),
+        fit: "pad",
+        width: scalewidth,
       },
       export: {
         operation: "export/s3",
@@ -223,7 +241,7 @@ const compressWithFfmpeg = async (
   key: string,
   onError: () => void,
   prog: (val: number) => void,
-  scale?: { width: number; height: number },
+  scalewidth: number,
 ) => {
   // 1. Run Ffmpeg and output to local temp file
   await new Promise<void>((resolve, reject) => {
@@ -238,6 +256,7 @@ const compressWithFfmpeg = async (
       .outputOptions("-tag:v hvc1") // Tells Apple/Chrome devices exactly how to decode the stream
       .outputOptions("-movflags +faststart")
       .format("matroska")
+      .size(`${scalewidth}x`)
       .on("start", (command) => console.log("ffmpeg start", command))
       .on("error", (err) => {
         console.error("ffmpeg error", err);
@@ -252,7 +271,6 @@ const compressWithFfmpeg = async (
         prog(90);
         resolve();
       });
-    if (scale) command.size(`${scale.width}:${scale.height}`);
     command.save(output); // Saves directly to local storage safely
   });
 
@@ -283,13 +301,11 @@ const compressTorrent = async (
   epInfo: Tasks["epInfo"],
   shouldSave: boolean = true,
   fileName?: string,
-  scale?: { width: number; height: number },
   baseProg: number = 25,
   maxProg: number = 100,
 ): Promise<void> => {
-  console.log("compressTorrent", vid);
-
   const key = `videos/${fileName ?? randomUUID()}.mkv`;
+  const scalewidth = convertRes(epInfo.quality);
 
   // Create a temporary local path to store the processed video
   const tempInpPath = path.join(os.tmpdir(), `${randomUUID()}.mkv`);
@@ -340,7 +356,7 @@ const compressTorrent = async (
   try {
     let isCompressed = false;
     try {
-      await compressWithCl(key, vid.url, compProg, "url", scale);
+      await compressWithCl(key, vid.url, compProg, "url", scalewidth);
       isCompressed = true;
     } catch (err) {
       console.log(err);
@@ -353,7 +369,7 @@ const compressTorrent = async (
         key,
         compErr,
         compProg,
-        scale,
+        scalewidth,
       );
     }
     console.log("Upload completed successfully");
@@ -478,9 +494,24 @@ const getSubplTorrent = async (
   }
 };
 
+const generateSmallerResEntries = (entries: ParsedTorrentioStream[]) => {
+  const res = [1080, 720, 480, 360]
+  const filtered = entries
+    .filter(v => Number.isFinite(convertRes(v.resolution)))
+
+  if (filtered.length === 0) return entries;
+  const smallest = filtered.reduce((prev, curr) => (convertRes(prev.resolution)) > convertRes(curr.resolution) ? curr : prev)
+
+  const mod: ParsedTorrentioStream[] = res.filter(v => v < convertRes(smallest.resolution)).map(v => ({magUri: smallest.magUri, resolution: `${v}p`}))
+
+  return [...entries, ...mod]
+}
+
 export {
   compressTorrent,
   dlAndCompress,
   downloadTorrent,
   getSubplTorrent,
+  generateSmallerResEntries,
+  convertRes,
 };

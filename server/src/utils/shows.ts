@@ -1,7 +1,6 @@
 import { Response } from "express";
 import { SERVER_ERROR } from "./httpCodes.js";
 import axios from "axios";
-import { console } from "node:inspector";
 
 const JIKAN_API = "https://api.jikan.moe/v4";
 
@@ -13,7 +12,7 @@ const handler = async (res: Response, cb: () => Promise<Response>): Promise<Resp
     const resp = await cb();
     return resp;
   } catch (error) {
-    console.log(error, "rrrt");
+    console.log(error);
     return res
       .status(SERVER_ERROR.INTERNAL_SERVER_ERROR)
       .json(error);
