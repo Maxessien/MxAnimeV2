@@ -197,7 +197,6 @@ const compressWithCl = async (
         audio_codec: "opus",
         audio_bitrate: 96,
         subtitles_mode: "copy",
-        fit: "pad",
         width: scalewidth,
       },
       export: {
