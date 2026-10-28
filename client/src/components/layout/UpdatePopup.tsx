@@ -1,6 +1,5 @@
 import { Download, X } from "lucide-react"
 import { Card, CardDescription, CardTitle } from "../ui/card"
-import { MdUpdate } from "react-icons/md"
 
 const UpdatePopup = ({hidePopup}: {hidePopup: ()=> void}) => {
   return (

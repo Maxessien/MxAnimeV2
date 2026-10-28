@@ -19,7 +19,6 @@ import { useEffect, useState } from "react";
 import {
   isPermissionGranted,
   requestPermission,
-  sendNotification,
 } from "@tauri-apps/plugin-notification";
 import { isMobile } from "./lib/utils";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
