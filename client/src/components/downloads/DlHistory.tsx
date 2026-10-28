@@ -29,10 +29,9 @@ const DlHistory = ({
             size={40}
             className="text-muted-foreground opacity-40"
           />
-          <h2 className="text-xl font-semibold">Nothing saved yet</h2>
+          <h2 className="text-xl font-semibold">Nothing Downloaded yet</h2>
           <p className="text-muted-foreground max-w-sm">
-            Open an anime and tap "Save for Offline" to keep its info and
-            episode list handy here.
+            Open an anime and download an episode to watch offline.
           </p>
           <Link
             href="/"
