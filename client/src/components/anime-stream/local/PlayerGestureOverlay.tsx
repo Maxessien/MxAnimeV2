@@ -60,6 +60,17 @@ export const PlayerGestureOverlay: React.FC<PlayerGestureOverlayProps> = ({
 
     tapCount = 1
 
+    if (
+      (lastTap &&
+        currentTime - lastTap.time < 500) &&
+      (Math.abs(touch.clientX - lastTap.x) > 50 ||
+        Math.abs(touch.clientY - lastTap.y) > 50)
+    ) {
+      onSingleTap()
+      singleTapTimerRef.current = null
+      return
+    }
+
     singleTapTimerRef.current = window.setTimeout(() => {
       onSingleTap()
       singleTapTimerRef.current = null

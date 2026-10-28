@@ -10,7 +10,6 @@ import type {
   ControlsState,
   GestureFeedbackState,
   PlaybackState,
-  ScreenState,
   TracksState,
   VideoPlayerProps,
 } from './types'
@@ -69,6 +68,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
   }, [])
 
   const triggerFeedback = useCallback((type: GestureFeedbackState['type'], label: string) => {
+    clearTimeout(triggerTimerRef.current || undefined)
     const id = Date.now()
     setGestureFeedback({
       id,
@@ -90,9 +90,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     let isDisposed = false
     const videoClient = client ?? createTauriVideoClient()
 
-    let unsubTime: ()=> void | undefined
-    let unsubBuffer: ()=> void | undefined
-    let unsubTrack: ()=> void | undefined
+    let unsubTime: ()=> void | undefined = () => {}
+    let unsubBuffer: ()=> void | undefined = () => {}
+    let unsubTrack: ()=> void | undefined = () => {}
 
     async function setupPlayer() {
       if (!videoElement) return
@@ -103,7 +103,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
           backendOptions: {
             tauri: { engine: engine ?? 'media3' },
           },
-          autoplay: autoPlay || true
+          autoplay: autoPlay !== undefined && autoPlay !== null ? autoPlay : true
         })
 
         if (isDisposed) {
@@ -209,7 +209,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({
     await controller.seek(clampedTime)
   }, [playbackState.duration])
 
-  let tapCount = 1
+  let tapCount = useRef(1).current
 
   // Double tap backward (-10s)
   const handleDoubleTapSeekBackward = useCallback(() => {
