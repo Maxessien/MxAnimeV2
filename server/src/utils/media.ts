@@ -197,7 +197,7 @@ const compressWithCl = async (
         audio_codec: "opus",
         audio_bitrate: 96,
         subtitles_mode: "copy",
-        width: scalewidth,
+        height: scalewidth,
       },
       export: {
         operation: "export/s3",
@@ -255,7 +255,7 @@ const compressWithFfmpeg = async (
       .outputOptions("-tag:v hvc1") // Tells Apple/Chrome devices exactly how to decode the stream
       .outputOptions("-movflags +faststart")
       .format("matroska")
-      .size(`${scalewidth}x`)
+      .size(`x${scalewidth}`)
       .on("start", (command) => console.log("ffmpeg start", command))
       .on("error", (err) => {
         console.error("ffmpeg error", err);
