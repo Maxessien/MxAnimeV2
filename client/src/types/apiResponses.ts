@@ -41,4 +41,5 @@ export interface OngoingDl {
   curr: number;
   total: number;
   isCancelled: boolean,
+  isPaused: boolean
 }

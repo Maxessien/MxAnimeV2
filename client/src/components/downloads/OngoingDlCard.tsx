@@ -1,10 +1,18 @@
-import { ongoingDownloadQueue } from "@/lib/queue";
+import { downloadQueue, ongoingDownloadQueue } from "@/lib/queue";
 import { OngoingDl, Tasks } from "@/types/apiResponses";
 import { toast } from "react-toastify";
 import { Button } from "../ui/button";
+import { Pause, Play, X } from "lucide-react";
+import { AnimeSummary, callDlLoop, downloadAnime } from "@/lib/local-store";
+import { useJson } from "@/hooks/use-json";
 
-const OngoingDlCard = ({ anime, curr, status, total, id }: OngoingDl) => {
-    if (!status) return <></>
+const OngoingDlCard = ({ anime, curr, status, total, id, isPaused }: OngoingDl) => {
+  if (!status) return <></>
+
+
+  const { add } = useJson<AnimeSummary>({
+    type: "downloads",
+  });
 
   const progress =
     status.status === "completed"
@@ -21,10 +29,22 @@ const OngoingDlCard = ({ anime, curr, status, total, id }: OngoingDl) => {
 
   const cancelOngoing = async () => {
     try {
-      ongoingDownloadQueue.cancel(id, status.status === "completed")
+      await ongoingDownloadQueue.cancel(id, status.status === "completed")
     } catch (err) {
       console.log(err)
       toast.error("Clean up Failed")
+    }
+  }
+
+  const togglePlayPause = async () => {
+    try {
+      await ongoingDownloadQueue.togglePlayPause(id, status.status === "completed")
+
+      callDlLoop(add.mutateAsync)
+
+    } catch (err) {
+      console.log(err)
+      toast.error("Pause Failed")
     }
   }
 
@@ -83,9 +103,14 @@ const OngoingDlCard = ({ anime, curr, status, total, id }: OngoingDl) => {
           )}
         </div>
 
-        <Button onClick={cancelOngoing} className="bg-secondary text-primary rounded-full hover:scale-[1.05] cursor-pointer transition-all">
-          Cancel
-        </Button>
+        <div>
+          <Button onClick={togglePlayPause} className="bg-secondary text-primary rounded-full hover:scale-[1.05] cursor-pointer transition-all">
+            {isPaused ? <Play /> : <Pause />}
+          </Button>
+          <Button onClick={cancelOngoing} className="bg-secondary text-primary rounded-full hover:scale-[1.05] cursor-pointer transition-all">
+            <X />
+          </Button>
+        </div>
       </div>
     </div>
   );

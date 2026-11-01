@@ -1,41 +1,12 @@
-use reqwest::{Client, Response};
-use serde::Serialize;
-use std::{
-    io::ErrorKind,
-    path::PathBuf,
-    time::{Duration, Instant},
-};
-use tauri::{AppHandle, Emitter, Manager};
+use std::{collections::HashMap, io::ErrorKind, path::PathBuf, sync::Arc};
+use tauri::{AppHandle, Manager};
 use tokio::{
-    fs::{self, create_dir_all, write, File},
-    io::{AsyncReadExt, AsyncWriteExt},
+    fs::{self, write, File},
+    io::AsyncReadExt,
     sync::RwLock,
 };
 
-use futures_util::{StreamExt, TryFutureExt};
-
-#[derive(Serialize, Clone)]
-pub struct ByteProgress {
-    pub current: usize,
-    pub total: usize,
-    pub task_id: String,
-    pub title: String,
-}
-
-pub struct CancelFlag {
-    pub active: bool,
-    pub id: String,
-}
-
-async fn check_path(path: PathBuf) -> Result<(bool, PathBuf), String> {
-    if !path.exists() {
-        match create_dir_all(&path).await {
-            Ok(_) => return Ok((true, path)),
-            Err(_) => return Err("Failed to create path".to_string()),
-        }
-    };
-    Ok((false, path))
-}
+use crate::utils::{check_path, dl_file_fn, CancelFlag};
 
 async fn save_json(dir: PathBuf, file_name: &str, json_string: String) -> Result<(), String> {
     let (was_created, p) = check_path(dir).await?;
@@ -107,10 +78,10 @@ pub async fn get_json_file(app: AppHandle, sub_path: String) -> Result<String, S
 
 #[tauri::command]
 pub async fn cancel_dl(app: tauri::AppHandle, id: String) -> Result<(), String> {
-    let state = app.state::<RwLock<CancelFlag>>();
+    let state = app.state::<RwLock<HashMap<String, CancelFlag>>>();
     let mut cancel = state.write().await;
 
-    *cancel = CancelFlag { active: true, id };
+    cancel.insert(id, CancelFlag { active: true });
 
     Ok(())
 }
@@ -123,107 +94,12 @@ pub async fn dl_file(
     task_id: String,
     image_url: Option<String>,
 ) -> Result<(Option<PathBuf>, Option<PathBuf>), String> {
+    let app_clone = app.clone();
+
     let app_dir = app
         .path()
         .app_data_dir()
         .map_err(|_| "Failed to get app data dir".to_string())?;
-
-    let cl = Client::new();
-
-    let res = cl
-        .get(url)
-        .send()
-        .await
-        .map_err(|_| "Failed to fetch file".to_string())?;
-
-    let mut img_size = 0;
-    let mut img_path: Option<PathBuf> = None;
-    let mut base_path = None;
-    let mut image_res: Option<Response> = None;
-
-    if let Some(image_url) = &image_url {
-        image_res = cl.get(image_url).send().await.ok();
-        img_size = match &image_res {
-            Some(val) => val.content_length().unwrap_or(0),
-            None => 0,
-        };
-        base_path = check_path(app_dir.join("images"))
-            .await
-            .map(|(_, p)| Some(p))
-            .unwrap_or(None);
-    }
-
-    let mut curr = 0;
-    let total = (res.content_length().unwrap_or(0) + img_size) as usize;
-
-    let _ = app.emit(
-        "dl_progress",
-        ByteProgress {
-            current: curr,
-            total,
-            task_id: task_id.clone(),
-            title: save_as.clone(),
-        },
-    );
-
-    (async || {
-        if let Some(response) = image_res {
-            if let Some(path) = &base_path {
-                if img_size < (20 * 1024 * 1024) {
-                    let img_bytes = match response.bytes().await {
-                        Ok(b) => {
-                            let itm: Vec<u8> = b.iter().as_slice().to_vec();
-                            itm
-                        }
-                        Err(_) => {
-                            return;
-                        }
-                    };
-                    let ext = match infer::get(&img_bytes) {
-                        Some(e) => e.extension(),
-                        None => {
-                            return;
-                        }
-                    };
-                    let mut tmp = path.join(save_as.clone());
-                    tmp.set_extension(ext);
-                    let mut file = match File::create(&tmp).await {
-                        Ok(f) => f,
-                        Err(_) => {
-                            return;
-                        }
-                    };
-                    let inn_curr = &mut curr;
-                    *inn_curr += img_bytes.len();
-                    let _ = match file.write_all(&img_bytes).await {
-                        Ok(_) => (),
-                        Err(_) => {
-                            return;
-                        }
-                    };
-                    let _ = match file.flush().await {
-                        Ok(_) => (),
-                        Err(_) => {
-                            return;
-                        }
-                    };
-                    img_path = Some(tmp);
-                    let _ = app.emit(
-                        "dl_progress",
-                        ByteProgress {
-                            current: inn_curr.clone(),
-                            total,
-                            task_id: task_id.clone(),
-                            title: save_as.clone(),
-                        },
-                    );
-                }
-            }
-        }
-    })()
-    .await;
-
-    let mut str = res.bytes_stream();
 
     let dl_path = app_dir.join("downloads");
 
@@ -231,75 +107,33 @@ pub async fn dl_file(
 
     let path = dl_path_l.join(save_as.clone());
 
-    let mut f = File::create(path.clone())
-        .map_err(|_| "Failed to create file")
-        .await?;
-
-    let mut last_emit = Instant::now();
-
-    let app_clone = app.clone();
-
-    let state = app.state::<RwLock<CancelFlag>>();
-    let mut broke_early = false;
+    let path_ref = &path;
+    let task_id_clone = task_id.clone();
+    let img_path: Arc<RwLock<Option<PathBuf>>> = Arc::new(RwLock::new(None));
+    let img_path_clone = img_path.clone();
 
     tokio::select! {
         _ = async {
+            let state = app_clone.state::<RwLock<HashMap<String, CancelFlag>>>();
             loop {
                 let cancel = state.read().await;
+                let val = cancel.get(&task_id_clone);
 
-                if cancel.active && cancel.id == task_id {
-                    broke_early = true;
-                    break;
-                }
-
-                drop(cancel);
-            }
-        } => {},
-
-        _= async {
-            while let Some(byte) = str.next().await {
-
-                let b = byte.map_err(|_| "Failed to read stream")?;
-
-                curr += b.len();
-                let _ = f.write_all(&b).await;
-
-                if last_emit.elapsed() >= Duration::from_millis(100) {
-                    let _ = app_clone.emit(
-                        "dl_progress",
-                        ByteProgress {
-                            current: curr,
-                            total,
-                            task_id: task_id.clone(),
-                            title: save_as.clone(),
-                        },
-                    );
-                    last_emit = Instant::now();
+                if let Some(v) = val {
+                    if v.active {
+                        drop(cancel);
+                        let _ = fs::remove_file(path_ref);
+                        if let Some(p) = img_path_clone.read().await.clone() {let _ = fs::remove_file(p.clone());};
+                        let mut cancel = state.write().await;
+                        let _ = cancel.remove(&task_id_clone);
+                        break;
+                    }
                 }
             }
-            Ok::<(), &str>(())
-        } => {}
+        } => {Ok((None, None))},
+
+        res = dl_file_fn(app, url, save_as, task_id, image_url, img_path.clone(), &path, &app_dir) => {res}
     }
-
-    let mut cancel = state.write().await;
-    *cancel = CancelFlag {
-        active: false,
-        id: String::new(),
-    };
-
-    if broke_early || curr < total {
-        drop(f);
-        let _ = fs::remove_file(path);
-        return if broke_early {
-            Ok((None, img_path))
-        } else {
-            Err("Incomplete download".to_string())
-        };
-    }
-
-    let _ = f.flush().await;
-
-    Ok((Some(path), img_path))
 }
 
 #[tauri::command]

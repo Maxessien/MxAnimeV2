@@ -1,5 +1,4 @@
 import app from './configs/app.js';
-import { convertRes, getSubplTorrent } from './utils/media.js';
 import { normalizePort, onError, onListening } from './utils/serverInit.js';
 
 

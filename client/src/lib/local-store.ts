@@ -38,6 +38,21 @@ async function getDownloads<T>(subPath: string) {
   return downloads;
 }
 
+function callDlLoop(
+  mutateAsync: UseMutateAsyncFunction<
+    void,
+    Error,
+    AnimeSummary | AnimeSummary[],
+    void
+  >) {
+  while (
+    ongoingDownloadQueue.getElements.length < ongoingDownloadQueue.maxCapacity &&
+    downloadQueue.getElements.length > 0
+  ) {
+    downloadAnime(mutateAsync);
+  }
+}
+
 async function downloadAnime(
   mutateAsync: UseMutateAsyncFunction<
     void,
@@ -46,7 +61,6 @@ async function downloadAnime(
     void
   >,
 ) {
-  downloadQueue.isProcessing = true;
   const info = downloadQueue.pop();
   const safeTitle = info.title.replace(/[<>:"/\\|?*]/g, "_");
 
@@ -100,6 +114,7 @@ async function downloadAnime(
       status: status?.status ?? null,
       id: taskId,
       isCancelled: false,
+      isPaused: false
     });
 
     ongoingAdded = {
@@ -166,7 +181,7 @@ async function downloadAnime(
           ongoing: false,
           id: Number(taskId),
         });
-      toast.error(`${info.title} - Episode ${episode.ep} download failed`);
+      throw new Error("server error");
     }
 
     ongoingDownloadQueue.removeById(taskId);
@@ -176,11 +191,8 @@ async function downloadAnime(
       ongoingDownloadQueue.removeById(ongoingAdded.taskId);
     toast.error(`${info.title} - Episode ${episode.ep} download failed`);
   } finally {
-    if (downloadQueue.traverse().length > 0) return downloadAnime(mutateAsync);
-    else {
-      downloadQueue.isProcessing = false;
-    }
+    return callDlLoop(mutateAsync);
   }
 }
 
-export { downloadAnime, getDownloads };
+export { downloadAnime, getDownloads, callDlLoop };

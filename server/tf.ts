@@ -1,3 +1,4 @@
+import { exec, execSync } from 'child_process';
 import { readFileSync, writeFileSync } from 'fs';
 import {readdir} from "fs/promises"
 

@@ -11,7 +11,7 @@ import BackBtn from "@/components/layout/BackBtn";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnimeEpisodes, useAnimeFull } from "@/hooks/use-jikan";
 import { useJson } from "@/hooks/use-json";
-import { AnimeSummary, downloadAnime } from "@/lib/local-store";
+import { AnimeSummary, callDlLoop } from "@/lib/local-store";
 import { downloadQueue } from "@/lib/queue";
 import { AugmentedAnimeMedia } from "@/types/anilink";
 import { AniZipMetadata } from "@/types/anizip";
@@ -68,7 +68,7 @@ export default function AnimeDetail() {
         queueId: window.crypto.randomUUID(),
       });
 
-      if (!downloadQueue.isProcessing) await downloadAnime(add.mutateAsync);
+      callDlLoop(add.mutateAsync)
     },
   });
 

@@ -1,6 +1,7 @@
 import { OngoingDl } from "@/types/apiResponses";
 import { AnimeSummary } from "./local-store";
 import { invoke } from "@tauri-apps/api/core";
+import { UseMutateAsyncFunction } from "@tanstack/react-query";
 
 class Queue<T> extends EventTarget {
   protected elements: T[];
@@ -9,6 +10,10 @@ class Queue<T> extends EventTarget {
     super();
     this.elements = initEls;
     this.isProcessing = false;
+  }
+
+  get getElements() {
+    return this.elements
   }
 
   traverse() {
@@ -36,22 +41,29 @@ class Queue<T> extends EventTarget {
   }
 
   removeAt(idx: number) {
-    if (idx >=0 && this.elements[idx]) {
+    if (idx >= 0 && this.elements[idx]) {
+      const removed = this.elements[idx]
       this.elements = this.elements
         .slice(0, idx)
         .concat(this.elements.slice(idx + 1));
+
       this.dispatchEvent(new Event("modify"));
+      return removed
     }
   }
 }
 
+const MAX_DL = 1
+
 class OngoingDlQueue extends Queue<OngoingDl> {
+  maxCapacity: number
   constructor() {
     super();
+    this.maxCapacity = MAX_DL
   }
 
-  get getElements() {
-    return this.elements
+  set setMaxCapacity(val: number) {
+    this.maxCapacity = val
   }
 
   removeById(tId: string | number) {
@@ -78,8 +90,21 @@ class OngoingDlQueue extends Queue<OngoingDl> {
     if (val) val.isCancelled = true
 
     if (val && shouldInvoke) {
-      invoke("cancel_dl", {id: taskId.toString()})
+      await invoke("cancel_dl", {id: taskId.toString()})
     }
+  }
+
+  async togglePlayPause(taskId: OngoingDl["id"], shouldInvoke: boolean) {
+    const val = this.elements.find(v => v.id === taskId)
+
+    if (val) {
+      val.isPaused = !val.isPaused
+      val.isPaused ? this.maxCapacity-- : this.maxCapacity++
+
+      if (shouldInvoke) await invoke("play_pause_dl", {id: taskId.toString()})
+    }
+
+    this.dispatchEvent(new Event("modify"))
   }
 }
 

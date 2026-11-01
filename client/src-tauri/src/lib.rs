@@ -1,6 +1,12 @@
 pub mod commands;
+pub mod utils;
 
-use crate::commands::CancelFlag;
+#[cfg(not(target_os = "android"))]
+use std::collections::HashMap;
+#[cfg(target_os = "android")]
+use std::collections::HashMap;
+
+use crate::utils::{CancelFlag, PauseFlag};
 use tauri::plugin::Builder as PluginBuilder;
 use tokio::sync::RwLock;
 
@@ -52,10 +58,8 @@ pub fn run() {
             commands::save_to_downloads,
             commands::delete_file
         ])
-        .manage(RwLock::new(CancelFlag {
-            active: false,
-            id: String::new(),
-        }))
+        .manage(RwLock::new(HashMap::<String, CancelFlag>::new()))
+        .manage(RwLock::new(HashMap::<String, PauseFlag>::new()))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 
@@ -104,10 +108,8 @@ pub fn run() {
             commands::save_to_downloads,
             commands::delete_file
         ])
-        .manage(RwLock::new(CancelFlag {
-            active: false,
-            id: String::new(),
-        }))
+        .manage(RwLock::new(HashMap::<String, CancelFlag>::new()))
+        .manage(RwLock::new(HashMap::<String, PauseFlag>::new()))
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

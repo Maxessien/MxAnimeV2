@@ -5,10 +5,11 @@ import { downloadTasks } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
 import { AniZipMetadata } from "../types/anizip.js";
 import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
-import { convertRes, dlAndCompress, generateSmallerResEntries, getSubplTorrent } from "../utils/media.js";
+import { dlAndCompress, generateSmallerResEntries } from "../utils/media.js";
 import { handler } from "../utils/shows.js";
 import { ParsedTorrentioStream } from "../types/torrentio.js";
 import { AddQueryQualities, Tasks } from "../types/show.js";
+import { convertRes, getSubplTorrent } from "../utils/torrentsFetchers.js";
 
 const downloadEpisode = async (req: Request, res: Response) =>
   handler(res, async () => {

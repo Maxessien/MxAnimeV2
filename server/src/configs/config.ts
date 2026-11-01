@@ -12,7 +12,10 @@ import { readFileSync } from "node:fs";
 import { createSubsplease } from "@maxessien/subsplease";
 import { SeedrClient } from "@maxessien/seedr";
 import CloudConvert from "cloudconvert";
+import {ApifyClient} from "apify-client"
 import { getEnvWithThrow } from "../utils/serverInit.js";
+import { parse } from "anitomy";
+import Ptt from "parse-torrent-title"
 
 const cloudflareAccessKey = getEnvWithThrow("CLOUDFARE_ACCESS_KEY");
 const cloudflareSecretKey = getEnvWithThrow("CLOUDFARE_SECRET_KEY");
@@ -80,6 +83,12 @@ const seedrCl = await SeedrClient.login(
 );
 const cloudConvert = new CloudConvert(getEnvWithThrow("CL_API_KEY"));
 
+const apifyClient = new ApifyClient({ token: getEnvWithThrow("APIFY_API_TOKEN") })
+const APIFY_ACTOR_ID = "maximedupre/torrent-downloader"
+
+const anitomyParser = parse
+const pttParser = Ptt.parse
+
 export {
   getEnvWithThrow,
   CLOUDFARE_APP_BUCKET,
@@ -95,4 +104,7 @@ export {
   malIdSubplMap,
   subsplease,
   cloudConvert,
+  apifyClient,
+  APIFY_ACTOR_ID,
+  anitomyParser, pttParser
 };
