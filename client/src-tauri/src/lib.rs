@@ -56,7 +56,8 @@ pub fn run() {
             commands::dl_file,
             commands::cancel_dl,
             commands::save_to_downloads,
-            commands::delete_file
+            commands::delete_file,
+            commands::pause_dl,
         ])
         .manage(RwLock::new(HashMap::<String, CancelFlag>::new()))
         .manage(RwLock::new(HashMap::<String, PauseFlag>::new()))
@@ -106,7 +107,8 @@ pub fn run() {
             commands::dl_file,
             commands::cancel_dl,
             commands::save_to_downloads,
-            commands::delete_file
+            commands::delete_file,
+            commands::pause_dl,
         ])
         .manage(RwLock::new(HashMap::<String, CancelFlag>::new()))
         .manage(RwLock::new(HashMap::<String, PauseFlag>::new()))

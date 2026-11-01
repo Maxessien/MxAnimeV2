@@ -218,7 +218,9 @@ pub async fn dl_file_fn(
     let _ = f.flush().await;
 
     let mut cancel = state.write().await;
-    cancel.insert(task_id, CancelFlag { active: false });
+    let _ = cancel.remove(&task_id);
+    let pause_state = app_clone.state::<RwLock<HashMap<String, PauseFlag>>>();
+    let _ = pause_state.write().await.remove(&task_id);
 
     Ok((Some(file_path.clone()), img_path.read().await.clone()))
 }

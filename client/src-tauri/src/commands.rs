@@ -134,6 +134,7 @@ pub async fn dl_file(
 
                 if let Some(v) = val {
                     if v.active {
+                        drop(cancel);
                         let _ = fs::remove_file(path_ref);
                         if let Some(p) = img_path_clone.read().await.clone() {let _ = fs::remove_file(p.clone());};
                         let mut cancel = state.write().await;
