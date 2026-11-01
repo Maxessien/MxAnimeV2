@@ -10,8 +10,6 @@ import { AnimeEpisodesDl } from "@/components/anime-details/AnimeEpisodesDl";
 import BackBtn from "@/components/layout/BackBtn";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnimeEpisodes, useAnimeFull } from "@/hooks/use-jikan";
-import { useJson } from "@/hooks/use-json";
-import { AnimeSummary, callDlLoop } from "@/lib/local-store";
 import { downloadQueue } from "@/lib/queue";
 import { AugmentedAnimeMedia } from "@/types/anilink";
 import { AniZipMetadata } from "@/types/anizip";
@@ -35,10 +33,6 @@ export default function AnimeDetail() {
     isFetching: isFetchingEpisodes,
     error: episodesError,
   } = useAnimeEpisodes(id);
-
-  const { add } = useJson<AnimeSummary>({
-    type: "downloads",
-  });
 
   const anime = animeData?.data;
 
@@ -67,8 +61,6 @@ export default function AnimeDetail() {
         score: anime.score,
         queueId: window.crypto.randomUUID(),
       });
-
-      callDlLoop(add.mutateAsync)
     },
   });
 

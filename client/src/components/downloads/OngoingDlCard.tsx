@@ -1,18 +1,11 @@
-import { downloadQueue, ongoingDownloadQueue } from "@/lib/queue";
+import { ongoingDownloadQueue } from "@/lib/queue";
 import { OngoingDl, Tasks } from "@/types/apiResponses";
 import { toast } from "react-toastify";
 import { Button } from "../ui/button";
 import { Pause, Play, X } from "lucide-react";
-import { AnimeSummary, callDlLoop, downloadAnime } from "@/lib/local-store";
-import { useJson } from "@/hooks/use-json";
 
 const OngoingDlCard = ({ anime, curr, status, total, id, isPaused }: OngoingDl) => {
   if (!status) return <></>
-
-
-  const { add } = useJson<AnimeSummary>({
-    type: "downloads",
-  });
 
   const progress =
     status.status === "completed"
@@ -41,9 +34,6 @@ const OngoingDlCard = ({ anime, curr, status, total, id, isPaused }: OngoingDl) 
 
     try {
       await ongoingDownloadQueue.togglePlayPause(id, status.status === "completed")
-
-      callDlLoop(add.mutateAsync)
-
     } catch (err) {
       console.log(err)
       toast.error("Pause Failed")
@@ -105,13 +95,13 @@ const OngoingDlCard = ({ anime, curr, status, total, id, isPaused }: OngoingDl) 
           )}
         </div>
 
-        <div>
+        <div className="flex items-center justify-end gap-2">
           {status.status === "completed" && (
-            <Button onClick={togglePlayPause} className="bg-secondary text-primary rounded-full hover:scale-[1.05] cursor-pointer transition-all">
+            <Button onClick={togglePlayPause} className="bg-secondary p-2 text-primary rounded-full hover:scale-[1.05] cursor-pointer transition-all">
               {isPaused ? <Play /> : <Pause />}
             </Button>
           )}
-          <Button onClick={cancelOngoing} className="bg-secondary text-primary rounded-full hover:scale-[1.05] cursor-pointer transition-all">
+          <Button onClick={cancelOngoing} className="bg-secondary p-2 text-primary rounded-full hover:scale-[1.05] cursor-pointer transition-all">
             <X />
           </Button>
         </div>

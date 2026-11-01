@@ -18,6 +18,8 @@ export default function Downloads() {
     },
   });
 
+  console.log(ongoingDownloadQueue)
+
   const [searchParam, setSearchParam] = useSearchParams()
 
   const tab: "downloads" | "ongoing" = searchParam.get("tab") === "downloads" ? "downloads" : "ongoing";

@@ -23,7 +23,7 @@ export const AnimeStreamLocal = () => {
     type: "downloads",
   });
 
-  const { remove: updateHistory } = useJson<WatchHistory>({
+  const { remove: updateHistory, json: watchHistory } = useJson<WatchHistory>({
     type: "history",
   });
 
@@ -37,15 +37,15 @@ export const AnimeStreamLocal = () => {
 
   const eps = downloads.filter(({ mal_id }) => mal_id.toString() === malId);
 
-  const filePath = eps.find((v) => v.episode.ep.toString() === ep)?.episode
-    .path;
+  const entry = eps.find((v) => v.episode.ep.toString() === ep);
 
   const filterFn = (v: WatchHistory) => v.malId == malId && v.episode == ep;
 
   return (
     <VideoPlayer
-      source={filePath || ""}
+      source={entry?.episode.path || ""}
       title={`${title ?? "Download"} - EP ${ep ?? "N/A"}`}
+      startTimeSec={watchHistory.find(v=> v.episode.toString() === ep)?.watchTimeSec || 0}
       updateWatchHistory={(watchTimeSec, duration) => {
         updateHistory.mutateAsync((history) => {
           const isUpdate = history.find(filterFn);

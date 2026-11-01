@@ -1,6 +1,6 @@
 import { MobileBottomNav } from "@/components/layout/MobileBottomNav";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { ongoingDownloadQueue } from "@/lib/queue";
+import { downloadQueue, ongoingDownloadQueue } from "@/lib/queue";
 import { cn } from "@/lib/utils";
 import {
   Calendar,
@@ -16,6 +16,8 @@ import { useEffect, useRef, useState } from "react";
 import PullToRefresh from "react-simple-pull-to-refresh";
 import { Link, useLocation, useSearchParams } from "wouter";
 import { DynamicPullSpinner } from "./PullSpinner";
+import { useJson } from "@/hooks/use-json";
+import { AnimeSummary, callDlLoop } from "@/lib/local-store";
 
 const navItems = [
   { href: "/", label: "Home", icon: Flame },
@@ -37,13 +39,18 @@ export function Shell({ children }: { children: React.ReactNode }) {
   const isActive = (href: string) =>
     location === href || (href !== "/" && location.startsWith(href));
 
+  const {add} = useJson<AnimeSummary>({type: "downloads"})
+
   useEffect(() => {
     const listenerFn = () => {
-      setOngoingCount(ongoingDownloadQueue.getElements.length);
+      setOngoingCount(ongoingDownloadQueue.getElements.length + downloadQueue.getElements.length);
+      callDlLoop(add.mutateAsync)
     };
     ongoingDownloadQueue.addEventListener("modify", listenerFn);
+    downloadQueue.addEventListener("modify", listenerFn);
     return () => {
       ongoingDownloadQueue.removeEventListener("modify", listenerFn);
+      downloadQueue.removeEventListener("modify", listenerFn);
     };
   }, []);
 

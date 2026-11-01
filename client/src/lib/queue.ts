@@ -1,7 +1,6 @@
 import { OngoingDl } from "@/types/apiResponses";
 import { AnimeSummary } from "./local-store";
 import { invoke } from "@tauri-apps/api/core";
-import { UseMutateAsyncFunction } from "@tanstack/react-query";
 
 class Queue<T> extends EventTarget {
   protected elements: T[];
@@ -87,10 +86,10 @@ class OngoingDlQueue extends Queue<OngoingDl> {
 
   async cancel(taskId: OngoingDl["id"], shouldInvoke: boolean) {
     const val = this.elements.find(v => v.id == taskId)
-    if (val) val.isCancelled = true
-
-    if (val && shouldInvoke) {
-      await invoke("cancel_dl", {id: taskId.toString()})
+    if (val) {
+      val.isCancelled = true
+      if (val.isPaused) this.maxCapacity--
+      if (shouldInvoke) await invoke("cancel_dl", { id: taskId.toString() })
     }
   }
 
@@ -98,9 +97,9 @@ class OngoingDlQueue extends Queue<OngoingDl> {
     const val = this.elements.find(v => v.id === taskId)
 
     if (val) {
-	const shouldPause = !val.isPaused
+      const shouldPause = !val.isPaused
       val.isPaused = shouldPause
-      val.isPaused ? this.maxCapacity-- : this.maxCapacity++
+      !shouldPause ? this.maxCapacity-- : this.maxCapacity++
 
       if (shouldInvoke) await invoke("pause_dl", {id: taskId.toString(), isPaused: shouldPause})
     }
