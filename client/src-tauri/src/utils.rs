@@ -40,6 +40,22 @@ pub async fn check_path(path: PathBuf) -> Result<(bool, PathBuf), String> {
     Ok((false, path))
 }
 
+async fn pause_loop(app: &AppHandle, id: &str) {
+    let state = app.state::<RwLock<HashMap<String, PauseFlag>>>();
+    let hmp = state.read().await;
+    let mut is_paused = hmp.get(id).unwrap_or(&PauseFlag { active: false }).active;
+
+    drop(hmp);
+    while is_paused {
+        let hmp_inner = state.read().await;
+        is_paused = hmp_inner
+            .get(id)
+            .unwrap_or(&PauseFlag { active: false })
+            .active;
+        drop(hmp_inner);
+    }
+}
+
 pub async fn dl_file_fn(
     app: AppHandle,
     url: String,

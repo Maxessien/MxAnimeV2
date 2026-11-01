@@ -98,10 +98,11 @@ class OngoingDlQueue extends Queue<OngoingDl> {
     const val = this.elements.find(v => v.id === taskId)
 
     if (val) {
-      val.isPaused = !val.isPaused
+	const shouldPause = !val.isPaused
+      val.isPaused = shouldPause
       val.isPaused ? this.maxCapacity-- : this.maxCapacity++
 
-      if (shouldInvoke) await invoke("play_pause_dl", {id: taskId.toString()})
+      if (shouldInvoke) await invoke("pause_dl", {id: taskId.toString(), isPaused: shouldPause})
     }
 
     this.dispatchEvent(new Event("modify"))

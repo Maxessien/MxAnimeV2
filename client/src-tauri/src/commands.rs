@@ -6,7 +6,7 @@ use tokio::{
     sync::RwLock,
 };
 
-use crate::utils::{check_path, dl_file_fn, CancelFlag};
+use crate::utils::{check_path, dl_file_fn, CancelFlag, PauseFlag};
 
 async fn save_json(dir: PathBuf, file_name: &str, json_string: String) -> Result<(), String> {
     let (was_created, p) = check_path(dir).await?;
@@ -87,6 +87,17 @@ pub async fn cancel_dl(app: tauri::AppHandle, id: String) -> Result<(), String> 
 }
 
 #[tauri::command]
+pub async fn pause_dl(app: AppHandle, id: String, is_paused: bool) -> Result<(), String> {
+    let state = app.state::<RwLock<HashMap<String, PauseFlag>>>();
+
+    let mut cancel = state.write().await;
+
+    cancel.insert(id, PauseFlag { active: is_paused });
+
+    Ok(())
+}
+
+#[tauri::command]
 pub async fn dl_file(
     app: tauri::AppHandle,
     url: String,
@@ -121,11 +132,11 @@ pub async fn dl_file(
 
                 if let Some(v) = val {
                     if v.active {
-                        drop(cancel);
                         let _ = fs::remove_file(path_ref);
                         if let Some(p) = img_path_clone.read().await.clone() {let _ = fs::remove_file(p.clone());};
                         let mut cancel = state.write().await;
                         let _ = cancel.remove(&task_id_clone);
+                        drop(cancel);
                         break;
                     }
                 }
