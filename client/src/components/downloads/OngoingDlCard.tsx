@@ -37,6 +37,8 @@ const OngoingDlCard = ({ anime, curr, status, total, id, isPaused }: OngoingDl) 
   }
 
   const togglePlayPause = async () => {
+    if (status.status !== "completed") return
+
     try {
       await ongoingDownloadQueue.togglePlayPause(id, status.status === "completed")
 
@@ -104,9 +106,11 @@ const OngoingDlCard = ({ anime, curr, status, total, id, isPaused }: OngoingDl) 
         </div>
 
         <div>
-          <Button onClick={togglePlayPause} className="bg-secondary text-primary rounded-full hover:scale-[1.05] cursor-pointer transition-all">
-            {isPaused ? <Play /> : <Pause />}
-          </Button>
+          {status.status === "completed" && (
+            <Button onClick={togglePlayPause} className="bg-secondary text-primary rounded-full hover:scale-[1.05] cursor-pointer transition-all">
+              {isPaused ? <Play /> : <Pause />}
+            </Button>
+          )}
           <Button onClick={cancelOngoing} className="bg-secondary text-primary rounded-full hover:scale-[1.05] cursor-pointer transition-all">
             <X />
           </Button>
