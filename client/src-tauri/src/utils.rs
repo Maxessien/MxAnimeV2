@@ -117,7 +117,10 @@ pub async fn dl_file_fn(
                         pause_loop(&app, &task_id).await;
                         if let Ok(ch) = chunk {
                             *inn_curr += ch.len();
-                            img_bytes.extend(ch.iter());
+                            img_bytes.extend_from_slice(&ch);
+                        } else {
+                            *inn_curr = img_size as usize;
+                            return;
                         }
                         if last_img_emit.elapsed() >= Duration::from_millis(500) {
                             let _ = app.emit(

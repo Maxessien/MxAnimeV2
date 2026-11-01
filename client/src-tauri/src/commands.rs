@@ -1,9 +1,10 @@
-use std::{collections::HashMap, io::ErrorKind, path::PathBuf, sync::Arc};
+use std::{collections::HashMap, io::ErrorKind, path::PathBuf, sync::Arc, time::Duration};
 use tauri::{AppHandle, Manager};
 use tokio::{
     fs::{self, write, File},
     io::AsyncReadExt,
     sync::RwLock,
+    time::sleep,
 };
 
 use crate::utils::{check_path, dl_file_fn, CancelFlag, PauseFlag};
@@ -126,6 +127,7 @@ pub async fn dl_file(
     tokio::select! {
         _ = async {
             let state = app_clone.state::<RwLock<HashMap<String, CancelFlag>>>();
+            let pause_state = app_clone.state::<RwLock<HashMap<String, PauseFlag>>>();
             loop {
                 let cancel = state.read().await;
                 let val = cancel.get(&task_id_clone);
@@ -136,10 +138,14 @@ pub async fn dl_file(
                         if let Some(p) = img_path_clone.read().await.clone() {let _ = fs::remove_file(p.clone());};
                         let mut cancel = state.write().await;
                         let _ = cancel.remove(&task_id_clone);
+                        let mut pause = pause_state.write().await;
+                        let _ = pause.remove(&task_id_clone);
                         drop(cancel);
+                        drop(pause);
                         break;
                     }
                 }
+                sleep(Duration::from_millis(100)).await;
             }
         } => {Ok((None, None))},
 
