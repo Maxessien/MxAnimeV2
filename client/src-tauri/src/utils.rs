@@ -12,6 +12,7 @@ use tokio::{
     fs::{create_dir_all, File},
     io::AsyncWriteExt,
     sync::RwLock,
+    time::sleep,
 };
 
 #[derive(Serialize, Clone)]
@@ -53,6 +54,7 @@ async fn pause_loop(app: &AppHandle, id: &str) {
             .unwrap_or(&PauseFlag { active: false })
             .active;
         drop(hmp_inner);
+        sleep(Duration::from_millis(100)).await;
     }
 }
 
@@ -107,15 +109,29 @@ pub async fn dl_file_fn(
         if let Some(response) = image_res {
             if let Some(path) = &base_path {
                 if img_size < (20 * 1024 * 1024) {
-                    let img_bytes = match response.bytes().await {
-                        Ok(b) => {
-                            let itm: Vec<u8> = b.iter().as_slice().to_vec();
-                            itm
+                    let mut img_bytes: Vec<u8> = Vec::new();
+                    let mut b_str = response.bytes_stream();
+                    let inn_curr = &mut curr;
+                    let mut last_img_emit = Instant::now();
+                    while let Some(chunk) = b_str.next().await {
+                        pause_loop(&app, &task_id).await;
+                        if let Ok(ch) = chunk {
+                            *inn_curr += ch.len();
+                            img_bytes.extend(ch.iter());
                         }
-                        Err(_) => {
-                            return;
+                        if last_img_emit.elapsed() >= Duration::from_millis(500) {
+                            let _ = app.emit(
+                                "dl_progress",
+                                ByteProgress {
+                                    current: inn_curr.clone(),
+                                    total,
+                                    task_id: task_id.clone(),
+                                    title: save_as.clone(),
+                                },
+                            );
+                            last_img_emit = Instant::now()
                         }
-                    };
+                    }
                     let ext = match infer::get(&img_bytes) {
                         Some(e) => e.extension(),
                         None => {
@@ -130,8 +146,6 @@ pub async fn dl_file_fn(
                             return;
                         }
                     };
-                    let inn_curr = &mut curr;
-                    *inn_curr += img_bytes.len();
                     let _ = match file.write_all(&img_bytes).await {
                         Ok(_) => (),
                         Err(_) => {
@@ -174,6 +188,7 @@ pub async fn dl_file_fn(
     let state = app.state::<RwLock<HashMap<String, CancelFlag>>>();
 
     while let Some(byte) = str.next().await {
+        pause_loop(&app, &task_id).await;
         let b = byte.map_err(|_| "Failed to read stream")?;
 
         curr += b.len();
