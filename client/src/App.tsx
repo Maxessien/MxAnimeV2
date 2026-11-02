@@ -29,7 +29,7 @@ import UpdatePopup from "./components/layout/UpdatePopup";
 
 
 // Update on every github release to match github release tag name
-const APP_RELEASE_TAG = "v0.1.0"
+const APP_RELEASE_TAG = "v0.2.0"
 
 const LATEST_RELEASE_API = "https://api.github.com/repos/Maxessien/MxAnimeV2/releases/latest"
 
