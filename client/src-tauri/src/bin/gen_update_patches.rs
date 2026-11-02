@@ -6,7 +6,7 @@ use std::{
 use bsdiff_android::CompressionAlgorithm;
 use reqwest::Client;
 use tokio::{
-    fs::{read, File},
+    fs::{create_dir_all, read, File},
     io::AsyncWriteExt,
 };
 
@@ -39,6 +39,7 @@ async fn main() {
             return;
         }
     };
+    create_dir_all(curr_dir.join("patches")).await.unwrap();
 
     for version in versions {
         let res = cl.get(version.file_url).send().await;
