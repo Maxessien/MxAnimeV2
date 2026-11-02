@@ -1,9 +1,12 @@
-use std::{env::current_dir, path::PathBuf};
+use std::{
+    env::{args, current_dir},
+    path::PathBuf,
+};
 
 use bsdiff_android::CompressionAlgorithm;
 use reqwest::Client;
 use tokio::{
-    fs::{read, read_dir, File},
+    fs::{read, File},
     io::AsyncWriteExt,
 };
 
@@ -22,20 +25,12 @@ async fn main() {
     let versions = [&V0_1_0];
     let cl = Client::new();
     let curr_dir = current_dir().unwrap();
-    let curr_apk_dir = curr_dir.join(PathBuf::from(
-        "src-tauri/gen/android/app/build/outputs/apk/universal/release",
-    ));
-
-    let mut files = read_dir(curr_apk_dir).await.unwrap();
-    let mut apk_path = PathBuf::new();
-    while let Ok(entry) = files.next_entry().await {
-        if let Some(e) = entry {
-            let file = e.file_name().to_string_lossy().into_owned();
-            if file.ends_with(".apk") {
-                apk_path = e.path();
-            }
-        }
+    let arg: Vec<String> = args().collect();
+    if arg.len() != 2 {
+        eprintln!("Usage: gen_update_patches <apk_path>");
+        return;
     }
+    let apk_path = PathBuf::from(&arg[1]);
 
     for version in versions {
         let res = cl.get(version.file_url).send().await;
