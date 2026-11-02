@@ -32,19 +32,27 @@ async fn main() {
     }
     let apk_path = PathBuf::from(&arg[1]);
 
+    let new = match read(&apk_path).await {
+        Ok(bytes) => bytes,
+        Err(e) => {
+            eprintln!("Failed to read apk: {}", e);
+            return;
+        }
+    };
+
     for version in versions {
         let res = cl.get(version.file_url).send().await;
         if let Ok(res) = res {
+            if res.status() != reqwest::StatusCode::OK {
+                eprintln!("Failed to download: {}", res.status());
+                continue;
+            };
             let bytes = res.bytes().await;
             if let Ok(bytes) = bytes {
-                let path = curr_dir.join(format!("{}_patch.bsdf2", version.tag));
-                let new = match read(&apk_path).await {
-                    Ok(bytes) => bytes,
-                    Err(e) => {
-                        eprintln!("Failed to read apk: {}", e);
-                        continue;
-                    }
-                };
+                let path = curr_dir
+                    .join("patches")
+                    .join(format!("{}_patch.bsdf2", version.tag));
+
                 let mut diff: Vec<u8> = Vec::new();
                 let result = bsdiff_android::diff_bsdf2(
                     &bytes,
@@ -58,7 +66,7 @@ async fn main() {
                 match result {
                     Ok(_) => {
                         if let Ok(mut f) = File::create(&path).await {
-                            let _ = f.write(&diff).await;
+                            let _ = f.write_all(&diff).await;
                         };
                     }
                     Err(e) => eprintln!("Failed to generate patch: {}", e),
