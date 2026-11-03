@@ -81,7 +81,40 @@ const seedrCl = await SeedrClient.login(
   getEnvWithThrow("SEEDR_EMAIL"),
   getEnvWithThrow("SEEDR_PASS"),
 );
-const cloudConvert = new CloudConvert(getEnvWithThrow("CL_API_KEY"));
+
+const cloudConvertKeys = (() => {
+  const env = getEnvWithThrow("CL_API_KEY");
+
+  try {
+    const parsed = JSON.parse(env)
+
+    if (typeof parsed === "string") {
+      return [parsed];
+    }
+    if (Array.isArray(parsed) && parsed.every((k) => typeof k === "string") && parsed.length > 0) {
+      return parsed;
+    }
+    throw new Error("CL_API_KEY must be a string or array of strings");
+  } catch (err) {
+    return [env];
+  }
+})()
+
+const getCloudConvert = async () => {
+  for (const key of cloudConvertKeys) {
+    try {
+      const cloudConvert = new CloudConvert(key);
+      const user = await cloudConvert.users.me();
+      const credits = user.credits;
+      if (credits > 0) {
+        return cloudConvert;
+      }
+    } catch (err) {
+      console.error(err);
+      continue;
+    }
+  }
+};
 
 const apifyClient = new ApifyClient({ token: getEnvWithThrow("APIFY_API_TOKEN") })
 const APIFY_ACTOR_ID = "logical_discovery/mxanimetor"
@@ -103,8 +136,7 @@ export {
   uploader,
   malIdSubplMap,
   subsplease,
-  cloudConvert,
   apifyClient,
   APIFY_ACTOR_ID,
-  anitomyParser, pttParser
+  anitomyParser, pttParser, getCloudConvert
 };

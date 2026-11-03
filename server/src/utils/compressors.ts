@@ -1,12 +1,12 @@
 import { createReadStream } from "node:fs";
 import {
-  cloudConvert,
   CLOUDFARE_APP_BUCKET,
   CLOUDFARE_URL,
   cloudflareAccessKey,
   cloudflareClient,
   cloudflareSecretKey,
   ffmpeg,
+  getCloudConvert,
 } from "../configs/config.js";
 import { Upload } from "@aws-sdk/lib-storage";
 
@@ -19,6 +19,12 @@ const compressWithCl = async (
   scalewidth: number,
 ) => {
   prog(20);
+  const cloudConvert = await getCloudConvert();
+
+  if (!cloudConvert) {
+    throw new Error("No cloud convert key available");
+  }
+
   const job = await cloudConvert.jobs.create({
     tasks: {
       import:
