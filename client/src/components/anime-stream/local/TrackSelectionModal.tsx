@@ -44,7 +44,7 @@ export const TrackSelectionModal: React.FC<TrackSelectionModalProps> = ({
       onClick={onClose}
     >
       <div
-        className="w-full max-h-[80%] bg-card text-card-foreground border-t border-border rounded-t-2xl flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200"
+        className="w-full max-w-160 max-h-[80%] bg-card text-card-foreground border-t border-border rounded-t-2xl flex flex-col shadow-2xl overflow-hidden animate-in slide-in-from-bottom duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
