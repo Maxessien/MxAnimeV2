@@ -1,4 +1,12 @@
 import { useJson } from "@/hooks/use-json";
+import { AppSettings } from "@/hooks/use-settings";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import {
   History,
@@ -9,17 +17,20 @@ import {
   Trash2,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
-import { MdWarning } from "react-icons/md"
+import { Dispatch, SetStateAction, useEffect, useState } from "react";
+import { MdWarning } from "react-icons/md";
 
-export default function Settings() {
-  const { theme, setTheme } = useTheme();
+export default function Settings({ settings, setSettings }: {
+    settings: AppSettings;
+    setSettings: Dispatch<SetStateAction<AppSettings>>;
+}) {
+  const { theme } = useTheme();
   const [mounted, setMounted] = useState(false);
   const { json: history, clear: clearHistory } = useJson({ type: "history" });
 
   useEffect(() => setMounted(true), []);
 
-  const themeOptions = [
+  const themeOptions: {value: AppSettings["theme"], label: string, icon: any}[] = [
     { value: "light", label: "Light", icon: Sun },
     { value: "dark", label: "Dark", icon: Moon },
     { value: "system", label: "System", icon: Monitor },
@@ -49,7 +60,7 @@ export default function Settings() {
             return (
               <button
                 key={opt.value}
-                onClick={() => setTheme(opt.value)}
+                onClick={() => setSettings(p=> ({...p, theme: opt.value}))}
                 className={cn(
                   "flex flex-col items-center justify-center gap-2 py-4 rounded-xl border text-sm font-medium transition-colors",
                   active
@@ -62,6 +73,42 @@ export default function Settings() {
               </button>
             );
           })}
+        </div>
+      </section>
+
+      {/* Downloads */}
+      <section className="bg-card border rounded-2xl p-6 space-y-4">
+        <h2 className="font-bold text-lg">Downloads</h2>
+        <div className="flex items-center justify-between gap-4 border-t border-border/60 pt-4">
+          <div>
+            <p className="font-medium text-sm">Max parallel downloads</p>
+            <p className="text-xs text-muted-foreground">
+              Choose how many downloads can run at the same time.
+            </p>
+          </div>
+          <Select
+            value={settings.maxParallelDownloads.toString()}
+            onValueChange={(value) => {
+              const acceptable = ["1", "3", "5", "10", "unlimited"]
+              let valCleaned = acceptable.includes(value) ? value : "1"
+              setSettings((previous) => ({
+                ...previous,
+                maxParallelDownloads:
+                  valCleaned === "unlimited" ? "unlimited" : Number(valCleaned),
+              }))
+            }}
+          >
+            <SelectTrigger className="w-32">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">1</SelectItem>
+              <SelectItem value="3">3</SelectItem>
+              <SelectItem value="5">5</SelectItem>
+              <SelectItem value="10">10</SelectItem>
+              <SelectItem value="unlimited">Unlimited</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </section>
 

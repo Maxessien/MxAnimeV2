@@ -31,7 +31,7 @@ export type AnimeDownload = { url: string; fileName: string };
 
 async function getDownloads<T>(subPath: string) {
   let file = await invoke<string>("get_json_file", {
-    subPath,
+    subPath, defaultJson: "[]"
   });
   let downloads: T[] = JSON.parse(file);
 

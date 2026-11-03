@@ -61,7 +61,7 @@ class OngoingDlQueue extends Queue<OngoingDl> {
     this.maxCapacity = MAX_DL
   }
 
-  set setMaxCapacity(val: number) {
+  setMaxCapacity(val: number) {
     this.maxCapacity = val
   }
 

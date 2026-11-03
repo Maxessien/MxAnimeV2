@@ -59,14 +59,16 @@ export function useJson<T>({
       setJson(n);
       switch (type) {
         case "downloads":
-          await invoke("save_dl_history", {
-            downloads: JSON.stringify(n.downloads),
+          await invoke("save_json_file", {
+            json: JSON.stringify(n.downloads),
+            file: "downloads.json"
           });
           break;
 
         case "history":
-          await invoke("save_watch_history", {
-            history: JSON.stringify(n.history),
+          await invoke("save_json_file", {
+            json: JSON.stringify(n.history),
+            file: "history.json"
           });
           break;
 
@@ -82,14 +84,16 @@ export function useJson<T>({
     mutationFn: async (filter: (v: T[]) => T[]) => {
       switch (type) {
         case "downloads":
-          await invoke("save_dl_history", {
-            downloads: JSON.stringify(filter(json[type])),
+          await invoke("save_json_file", {
+            json: JSON.stringify(filter(json[type])),
+            file: "downloads.json"
           });
           break;
 
         case "history":
-          await invoke("save_watch_history", {
-            history: JSON.stringify(filter(json[type])),
+          await invoke("save_json_file", {
+            json: JSON.stringify(filter(json[type])),
+            file: "history.json"
           });
           break;
 
@@ -110,11 +114,11 @@ export function useJson<T>({
       setJson((dl) => ({ ...dl, [type]: [] }));
       switch (type) {
         case "downloads":
-          await invoke("save_dl_history", { downloads: "[]" });
+          await invoke("save_json_file", { json: "[]", file: "downloads.json" });
           break;
 
         case "history":
-          await invoke("save_watch_history", { history: "[]" });
+          await invoke("save_json_file", { json: "[]", file: "history.json" });
           break;
 
         default:

@@ -26,12 +26,14 @@ import LatestEpisodes from "./pages/LatestEpisodes";
 import { ongoingDownloadQueue } from "./lib/queue";
 import axios from "axios";
 import UpdatePopup from "./components/layout/UpdatePopup";
-
+import { useSettings } from "./hooks/use-settings";
+import { useTheme } from "next-themes";
 
 // Update on every github release to match github release tag name
-const APP_RELEASE_TAG = "v0.2.0"
+const APP_RELEASE_TAG = "v0.2.0";
 
-const LATEST_RELEASE_API = "https://api.github.com/repos/Maxessien/MxAnimeV2/releases/latest"
+const LATEST_RELEASE_API =
+  "https://api.github.com/repos/Maxessien/MxAnimeV2/releases/latest";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,36 +45,43 @@ const queryClient = new QueryClient({
 });
 
 function Router() {
+  //Mount settings on app load
+  const { settings, setSettings } = useSettings();
+
   return (
     <Switch>
       <Route path="/stream/local" component={AnimeStreamLocal} />
       <Shell>
-          <Route path="/" component={Home} />
-          <Route path="/stream" component={AnimeStream} />
-          <Route path="/top" component={TopAnime} />
-          <Route path="/seasons" component={Seasons} />
-          <Route path="/latest" component={LatestEpisodes} />
-          <Route path="/schedule" component={Schedule} />
-          <Route path="/search" component={Search} />
-          <Route path="/anime/:id" component={AnimeDetail} />
-          <Route path="/downloads" component={Downloads} />
-          <Route path="/downloads/:id" component={DownloadDetails} />
-          <Route path="/settings" component={Settings} />
-          {/*<Route component={NotFound} />*/}
+        <Route path="/" component={Home} />
+        <Route path="/stream" component={AnimeStream} />
+        <Route path="/top" component={TopAnime} />
+        <Route path="/seasons" component={Seasons} />
+        <Route path="/latest" component={LatestEpisodes} />
+        <Route path="/schedule" component={Schedule} />
+        <Route path="/search" component={Search} />
+        <Route path="/anime/:id" component={AnimeDetail} />
+        <Route path="/downloads" component={Downloads} />
+        <Route path="/downloads/:id" component={DownloadDetails} />
+        <Route path="/settings">
+          <Settings settings={settings} setSettings={setSettings} />
+        </Route>
+        {/*<Route component={NotFound} />*/}
       </Shell>
-      </Switch>
+    </Switch>
   );
 }
 
 function App() {
-  const [showUpdatePopup, setShowUpdatePopup] = useState(false)
+  const [showUpdatePopup, setShowUpdatePopup] = useState(false);
+
   useEffect(() => {
     (async () => {
       let granted = await isPermissionGranted();
       if (!granted && isMobile) await requestPermission();
       try {
-        const { data } = await axios.get(LATEST_RELEASE_API)
-        if (data.tag_name && data.tag_name !== APP_RELEASE_TAG) setShowUpdatePopup(true)
+        const { data } = await axios.get(LATEST_RELEASE_API);
+        if (data.tag_name && data.tag_name !== APP_RELEASE_TAG)
+          setShowUpdatePopup(true);
       } catch (err) {}
     })();
 
@@ -84,7 +93,6 @@ function App() {
       task_id: string;
       title: string;
     }>("dl_progress", async ({ payload }) => {
-
       ongoingDownloadQueue.updateProg(payload.task_id, {
         curr: payload.current / (1024 * 1024),
         total: payload.total / (1024 * 1024),
@@ -103,7 +111,9 @@ function App() {
           <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
             <Router />
           </WouterRouter>
-          {showUpdatePopup && <UpdatePopup hidePopup={()=> setShowUpdatePopup(false)} />}
+          {showUpdatePopup && (
+            <UpdatePopup hidePopup={() => setShowUpdatePopup(false)} />
+          )}
           {/* <Toaster /> */}
           <ToastContainer
             closeButton

@@ -9,51 +9,37 @@ use tokio::{
 
 use crate::utils::{check_path, dl_file_fn, CancelFlag, PauseFlag};
 
+static ALLOW_LIST: [&str; 3] = ["downloads.json", "settings.json", "history.json"];
+
 async fn save_json(dir: PathBuf, file_name: &str, json_string: String) -> Result<(), String> {
-    let (was_created, p) = check_path(dir).await?;
+	if !ALLOW_LIST.contains(&file_name) {return Err("Unauthorised file name".to_string());};
+    let (_, p) = check_path(dir).await?;
 
     let path = p.join(file_name);
 
-    if was_created {
-        match write(path, "[]").await {
-            Ok(_) => (),
-            Err(_) => return Err("Failed to write to file".to_string()),
-        };
-    } else {
         match write(path, json_string).await {
             Ok(_) => (),
             Err(_) => return Err("Failed to write to file".to_string()),
         };
-    };
+
     Ok(())
 }
 
 #[tauri::command]
-pub async fn save_watch_history(history: String, app: AppHandle) -> Result<String, String> {
+pub async fn save_json_file(file: String, json: String, app: AppHandle) -> Result<String, String> {
     let app_dir = app
         .path()
         .app_data_dir()
         .map_err(|_| "Failed to get app data dir".to_string())?;
 
-    save_json(app_dir, "history.json", history).await?;
+    save_json(app_dir, &file, json).await?;
 
     Ok("".to_string())
 }
 
 #[tauri::command]
-pub async fn save_dl_history(downloads: String, app: AppHandle) -> Result<String, String> {
-    let app_dir = app
-        .path()
-        .app_data_dir()
-        .map_err(|_| "Failed to get app data dir".to_string())?;
-
-    save_json(app_dir, "downloads.json", downloads).await?;
-
-    Ok("".to_string())
-}
-
-#[tauri::command]
-pub async fn get_json_file(app: AppHandle, sub_path: String) -> Result<String, String> {
+pub async fn get_json_file(app: AppHandle, sub_path: String, default_json: String) -> Result<String, String> {
+	if !ALLOW_LIST.contains(&sub_path.as_str()) {return Err("Unauthorised file name".to_string());};
     let app_dir = app
         .path()
         .app_data_dir()
@@ -61,8 +47,8 @@ pub async fn get_json_file(app: AppHandle, sub_path: String) -> Result<String, S
     let path = app_dir.join(&sub_path);
 
     if !path.exists() {
-        save_json(app_dir, sub_path.as_str(), "[]".to_string()).await?;
-        Ok("[]".to_string())
+        save_json(app_dir, sub_path.as_str(), default_json.clone()).await?;
+        Ok(default_json)
     } else {
         let mut f = String::new();
         let mut file = File::open(path)

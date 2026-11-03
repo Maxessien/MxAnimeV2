@@ -50,8 +50,7 @@ pub fn run() {
                 .build(),
         )
         .invoke_handler(tauri::generate_handler![
-            commands::save_watch_history,
-            commands::save_dl_history,
+            commands::save_json_file,
             commands::get_json_file,
             commands::dl_file,
             commands::cancel_dl,
@@ -101,8 +100,7 @@ pub fn run() {
                 .build(),
         )
         .invoke_handler(tauri::generate_handler![
-            commands::save_watch_history,
-            commands::save_dl_history,
+            commands::save_json_file,
             commands::get_json_file,
             commands::dl_file,
             commands::cancel_dl,
