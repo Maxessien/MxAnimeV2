@@ -84,7 +84,7 @@ const seedrCl = await SeedrClient.login(
 const cloudConvert = new CloudConvert(getEnvWithThrow("CL_API_KEY"));
 
 const apifyClient = new ApifyClient({ token: getEnvWithThrow("APIFY_API_TOKEN") })
-const APIFY_ACTOR_ID = "maximedupre/torrent-downloader"
+const APIFY_ACTOR_ID = "logical_discovery/mxanimetor"
 
 const anitomyParser = parse
 const pttParser = Ptt.parse

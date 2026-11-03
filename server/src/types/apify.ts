@@ -1,4 +1,4 @@
 export interface TorrentResultItems {
-  fileName: string,
-  downloadUrl: string,
+  name: string,
+  downloadKey: string,
 }

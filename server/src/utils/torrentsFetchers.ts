@@ -122,12 +122,9 @@ const downloadTorrentSeedr = async (
 };
 
 const downloadTorrentToApify = async (magUri: string, ep: number) => {
-  const maxFileSize = 10 * 1024 * 1024 * 1024;
-  const { defaultDatasetId } = await apifyClient.actor(APIFY_ACTOR_ID).call(
+  const { defaultDatasetId, defaultKeyValueStoreId } = await apifyClient.actor(APIFY_ACTOR_ID).call(
     {
-      maxRunSizeMb: maxFileSize,
-      maxTorrentSizeMb: maxFileSize,
-      targets: [magUri],
+      magnetUri: magUri,
     },
     { timeout: 3600, memory: 1024 },
   );
@@ -137,21 +134,26 @@ const downloadTorrentToApify = async (magUri: string, ep: number) => {
     .listItems();
 
   const chosen = items.find((v) => {
-    const anitomyParsed = anitomyParser(v.fileName);
-    const pttParsed = pttParser(v.fileName);
+    const anitomyParsed = anitomyParser(v.name);
+    const pttParsed = pttParser(v.name);
 
-    console.log(anitomyParsed, pttParsed)
+    console.log(pttParsed, anitomyParsed)
     console.log("parsed")
 
     return (
-      v.fileName &&
-      (anitomyParsed?.episode.number === ep || pttParsed.episode === ep)
+      v.name &&
+      (
+        anitomyParsed?.episode.number === ep ||
+        pttParsed.episode === ep
+      )
     );
   });
 
   if (!chosen) throw new Error("Torrent not found");
 
-  return { chosen, defaultDatasetId };
+  const url = `https://api.apify.com/v2/key-value-stores/${defaultKeyValueStoreId}/records/${chosen.downloadKey}`
+
+  return { chosen: {...chosen, downloadUrl: url}, defaultKeyValueStoreId, defaultDatasetId };
 };
 
 const getSubplTorrent = async (

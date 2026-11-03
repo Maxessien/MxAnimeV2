@@ -189,13 +189,16 @@ const dlAndCompress = async (
 
   if (!url) {
     try {
-      const { chosen, defaultDatasetId } = await downloadTorrentToApify(
+      const { chosen, defaultKeyValueStoreId, defaultDatasetId } = await downloadTorrentToApify(
         magUri,
         epInfo.episodeId,
       );
 
       url = chosen.downloadUrl;
-      cleanUpApify = () => apifyClient.dataset(defaultDatasetId).delete();
+      cleanUpApify = ()=> (async() => {
+        await apifyClient.keyValueStore(defaultKeyValueStoreId).delete()
+        await apifyClient.dataset(defaultDatasetId).delete()
+      })()
     } catch (err) {
       console.log(err);
     }
