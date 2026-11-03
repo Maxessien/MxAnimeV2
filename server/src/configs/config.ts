@@ -101,7 +101,6 @@ const cloudConvertKeys = (() => {
 })()
 
 const getCloudConvert = async () => {
-  console.log(cloudConvertKeys)
   for (const key of cloudConvertKeys) {
     try {
       const cloudConvert = new CloudConvert(key);

@@ -1,11 +1,5 @@
 import app from './configs/app.js';
-import { getCloudConvert } from './configs/config.js';
 import { normalizePort, onError, onListening } from './utils/serverInit.js';
-
-const cl = await getCloudConvert()
-
-console.log(await cl?.users.me())
-
 
 const port = normalizePort(process.env.PORT || "7860");
 
