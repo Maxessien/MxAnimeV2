@@ -119,7 +119,7 @@ export function AccountSection() {
             />
           </div>
 
-          <Button type="submit" disabled={isLoading || !import.meta.env.VITE_AUTH_SERVER_URL}>
+          <Button type="submit" disabled={isLoading || AUTH_SERVER_URL}>
             {isLoading ? "Working..." : mode === "login" ? "Sign in" : "Create account"}
           </Button>
       </form>

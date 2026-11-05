@@ -40,7 +40,7 @@ interface AuthContextValue {
   clearError: () => void;
 }
 
-const AUTH_SERVER_URL = import.meta.env.VITE_AUTH_SERVER_URL;
+export const AUTH_SERVER_URL = "https://auth-server-z34p.onrender.com";
 const STORED_USER_KEY = "mxanime.auth.user";
 
 const authApi = axios.create({
