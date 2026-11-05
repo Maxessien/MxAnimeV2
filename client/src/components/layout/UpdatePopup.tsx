@@ -1,5 +1,7 @@
 import { Download, X } from "lucide-react"
 import { Card, CardDescription, CardTitle } from "../ui/card"
+import { openUrl } from "@tauri-apps/plugin-opener"
+import { LATEST_RELEASE_API } from "@/App"
 
 const UpdatePopup = ({hidePopup}: {hidePopup: ()=> void}) => {
   return (
@@ -10,7 +12,10 @@ const UpdatePopup = ({hidePopup}: {hidePopup: ()=> void}) => {
         <button onClick={hidePopup} className="absolute top-2 cursor-pointer right-2"><X /></button>
         <CardTitle className="text-lg text-center">App Update Available</CardTitle>
         <CardDescription className="p-0 text-base text-center">Click to download new app update</CardDescription>
-        <button className="w-full max-w-60 cursor-pointer flex justify-center items-center gap-2 px-3 py-2 rounded-md font-semibold text-lg bg-primary hover:bg-primary/90 transition-all">Download <Download /></button>
+        <button onClick={async () => {
+          await openUrl(LATEST_RELEASE_API)
+          hidePopup()
+        }} className="w-full max-w-60 cursor-pointer flex justify-center items-center gap-2 px-3 py-2 rounded-md font-semibold text-lg bg-primary hover:bg-primary/90 transition-all">Download <Download /></button>
       </Card>
     </div>
   )
