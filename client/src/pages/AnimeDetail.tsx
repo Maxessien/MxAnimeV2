@@ -11,7 +11,7 @@ import BackBtn from "@/components/layout/BackBtn";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnimeEpisodes, useAnimeFull } from "@/hooks/use-jikan";
 import { downloadQueue } from "@/lib/queue";
-import { AugmentedAnimeMedia } from "@/types/anilink";
+import { AugmentedAnimeMedia } from "@/types/anilist";
 import { AniZipMetadata } from "@/types/anizip";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";

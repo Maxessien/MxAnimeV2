@@ -1,16 +1,24 @@
 import {
   AnilinkServiceOptions,
   AniListGraphQLResponse,
+  AniListGraphQLSearchResponse,
   ANIME_FORMATS,
+  ANIME_STATUS,
+  AnimeFormat,
   AnimeRelationEdge,
+  AnimeSeason,
+  AnimeSort,
   AugmentedAnimeMedia,
+  FORMAT,
   FuzzyDateInput,
+  MediaStatus,
   PageInfo,
   PaginatedRecentEpisodes,
+  PaginatedSearchResponse,
   RawMediaWithRelations,
   RecentEpisode,
   SyntheticAiringScheduleNode,
-} from "@/types/anilink";
+} from "@/types/anilist";
 import {
   MEDIA_BY_MAL_ID_QUERY,
   PREQUEL_MINIMAL_QUERY,
@@ -18,7 +26,7 @@ import {
 } from "./utils";
 import axios from "axios";
 
-const ANILIST_GRAPHQL_ENDPOINT = "https://graphql.anilist.co";
+export const ANILIST_GRAPHQL_ENDPOINT = "https://graphql.anilist.co";
 
 export class AnilinkService {
   private readonly endpoint: string;
@@ -313,4 +321,69 @@ export async function getRecentlyReleasedEpisodes(
     pageInfo,
     data: episodes,
   };
+}
+
+export async function getAnimeList(
+  page: number,
+  format: AnimeFormat | "All",
+  year: number | "All",
+  season: AnimeSeason | "All",
+  sorts: AnimeSort[],
+  status: MediaStatus | "All",
+  searchQuery?: string,
+  perPage: number = 30
+): Promise<PaginatedSearchResponse> {
+  const now = new Date().getFullYear()
+
+  const query = `
+    query {
+      Page(page: ${page}, perPage: ${perPage}) {
+        pageInfo {
+          currentPage
+          hasNextPage
+          total
+          lastPage
+          perPage
+        }
+        media(
+          sort: [${sorts}]
+          format_in: [${format === "All" ? FORMAT : format}]
+          startDate_greater: ${year === "All" ? "19000101" : `${now}0101`}
+          endDate_lesser: ${now}1231
+          status_in: [${status === "All" ? ANIME_STATUS : status}]
+          ${season === "All" ? "" : `season: ${season}`}
+          ${searchQuery ? "search: $searchQuery" : ""}
+          type: ANIME
+        ) {
+          startDate {
+            year
+          }
+          coverImage {
+            extraLarge
+            large
+            medium
+          }
+          description
+          episodes
+          format
+          idMal
+          id
+          title {
+            english
+            romaji
+          }
+        }
+      }
+    }
+  `
+
+  const { data: { data, errors } } = await axios.post<AniListGraphQLSearchResponse>(ANILIST_GRAPHQL_ENDPOINT, { query })
+
+  if (!data || !data.Page || errors) throw new Error(errors?.[0]?.message ?? "No data returned")
+
+  return {
+    pageInfo: data.Page.pageInfo ??
+      { currentPage: page, hasNextPage: false, lastPage: page, perPage, total: page },
+    data: data.Page.media.filter(v=> v.idMal) as PaginatedSearchResponse["data"]
+  }
 }

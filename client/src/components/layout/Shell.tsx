@@ -3,13 +3,11 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { downloadQueue, ongoingDownloadQueue } from "@/lib/queue";
 import { cn } from "@/lib/utils";
 import {
-  Calendar,
   CalendarClock,
+  Compass,
   Download,
   Flame,
-  Search,
   Settings,
-  Trophy,
   Tv,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
@@ -22,10 +20,8 @@ import { AnimeSummary, callDlLoop } from "@/lib/local-store";
 const navItems = [
   { href: "/", label: "Home", icon: Flame },
   { href: "/latest", label: "Latest", icon: Tv },
-  { href: "/top", label: "Top Anime", icon: Trophy },
-  { href: "/seasons", label: "Seasons", icon: Calendar },
+  { href: "/anime", label: "Anime", icon: Compass },
   { href: "/schedule", label: "Schedule", icon: CalendarClock },
-  { href: "/search", label: "Search", icon: Search },
   { href: "/downloads", label: "Downloads", icon: Download },
   { href: "/settings", label: "Settings", icon: Settings },
 ];

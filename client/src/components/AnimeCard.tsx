@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
-import { RecentEpisode } from "@/types/anilink";
+import { RecentEpisode } from "@/types/anilist";
 
 export function AnimeCard({ anime, extraStyles }: { anime: any, extraStyles?: string }) {
   const imageUrl =
@@ -64,7 +64,7 @@ export function AnimeCard({ anime, extraStyles }: { anime: any, extraStyles?: st
   );
 }
 
-export function RecentEpisodeAnimeCard({ anime, extraStyles }: { anime: RecentEpisode, extraStyles?: string }) {
+export function RecentEpisodeAnimeCard({ anime, extraStyles, type="recent" }: { anime: Pick<RecentEpisode, "media" | "episode">, type?: "recent" | "search", extraStyles?: string }) {
   const imageUrl = anime.media.coverImage.large;
   const title = anime.media.title.english || anime.media.title.romaji || "N/A";
   return (
@@ -98,13 +98,28 @@ export function RecentEpisodeAnimeCard({ anime, extraStyles }: { anime: RecentEp
         <h3 className="font-semibold text-foreground leading-tight line-clamp-2 group-hover:text-primary transition-colors">
           {title}
         </h3>
-        <div className="flex absolute z-10 top-3 left-3 flex-wrap gap-1 shadow-2xl">
-          {anime.episode ? (
+        <div className="flex flex-wrap gap-1 mt-1.5 opacity-80">
+          {anime.media.startDate?.year && (
+            <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
+              {anime.media.startDate.year}
+            </span>
+          )}
+          <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
+              {anime.media.format}
+          </span>
+          {type === "search" && anime.episode > 0 ? (
+            <span className="text-xs text-muted-foreground font-mono bg-muted px-1.5 py-0.5 rounded">
+              {anime.episode} eps
+            </span>
+          ) : null}
+        </div>
+        {type === "recent" && <div className="flex absolute z-10 top-3 left-3 flex-wrap gap-1 shadow-2xl">
+          {anime.episode > 0 ? (
             <span className="text-sm font-semibold text-shadow-black text-shadow-sm font-mono bg-primary px-1.5 py-0.5 rounded">
               Ep {anime.episode}
             </span>
           ) : <></>}
-        </div>
+        </div>}
       </div>
     </Link>
   );

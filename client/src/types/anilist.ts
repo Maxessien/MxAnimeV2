@@ -86,12 +86,39 @@ export interface MediaResponse {
 export type AnimeFormat =
   "TV" | "TV_SHORT" | "MOVIE" | "SPECIAL" | "OVA" | "ONA" | "MUSIC";
 
+export type AnimeSeason = "SUMMER" | "WINTER" | "FALL" | "SPRING"
+
+export type AnimeSort =
+  | 'TITLE_ROMAJI'
+  | 'TITLE_ROMAJI_DESC'
+  | 'TITLE_ENGLISH'
+  | 'TITLE_ENGLISH_DESC'
+  | 'START_DATE'
+  | 'START_DATE_DESC'
+  | 'END_DATE'
+  | 'END_DATE_DESC'
+  | 'SCORE'
+  | 'SCORE_DESC'
+  | 'POPULARITY'
+  | 'POPULARITY_DESC'
+  | 'TRENDING'
+  | 'TRENDING_DESC';
+
+
 export type MediaStatus =
   | "FINISHED" // Has completed and finished airing or being published
   | "RELEASING" // Currently releasing episodes or chapters
   | "NOT_YET_RELEASED" // To be released at a future date
   | "CANCELLED" // Ended before the planned completion
   | "HIATUS"; // Paused releasing with plans to resume at a later date
+
+export const ANIME_STATUS = [
+  "FINISHED",
+  "RELEASING",
+  "NOT_YET_RELEASED",
+  "CANCELLED",
+  "HIATUS"
+]
 
 export const ANIME_FORMATS: ReadonlySet<string> = new Set<AnimeFormat>([
   "TV",
@@ -102,6 +129,35 @@ export const ANIME_FORMATS: ReadonlySet<string> = new Set<AnimeFormat>([
   "ONA",
   "MUSIC",
 ]);
+
+export const FORMAT = [
+  "TV",
+  "TV_SHORT",
+  "MOVIE",
+  "SPECIAL",
+  "OVA",
+  "ONA",
+  "MUSIC",
+]
+
+export const ANIME_SEASON = ["SUMMER", "WINTER", "FALL", "SPRING"]
+
+export const ANIME_SORT = [
+  'TITLE_ROMAJI',
+  'TITLE_ROMAJI_DESC',
+  'TITLE_ENGLISH',
+  'TITLE_ENGLISH_DESC',
+  'START_DATE',
+  'START_DATE_DESC',
+  'END_DATE',
+  'END_DATE_DESC',
+  'SCORE',
+  'SCORE_DESC',
+  'POPULARITY',
+  'POPULARITY_DESC',
+  'TRENDING',
+  'TRENDING_DESC',
+];
 
 export interface AnimeRelationNode {
   idMal: number | null;
@@ -165,8 +221,31 @@ export interface RecentEpisode {
     };
     coverImage: {
       large: string | null;
+      extraLarge: string | null,
+      medium: string | null
     };
+    startDate: {year: number}
   };
+}
+
+export interface AnimeListMedia {
+  id: number;
+  idMal: number;
+  format: AnimeFormat;
+  description: string | null;
+  episodes: number | null;
+  score?: number | null;
+  genres?: string[];
+  title: {
+    english: string | null;
+    romaji: string | null;
+  };
+  coverImage: {
+    large: string | null;
+    extraLarge: string | null;
+    medium: string | null;
+  };
+  startDate: { year: number };
 }
 
 export interface PageInfo {
@@ -183,19 +262,26 @@ interface RawRecentEpisode extends Omit<RecentEpisode, "media"> {
   };
 }
 
-export interface AniListGraphQLResponse {
-  data?: {
-    Page?: {
-      airingSchedules?: RawRecentEpisode[];
-      pageInfo?: PageInfo;
-    };
-  };
-  errors?: Array<{ message: string }>;
+interface AnilistResponse<T> {
+  data?: T, errors?: Array<{ message: string }>;
 }
+
+interface AnilistPage<T> {
+  Page?: {pageInfo?: PageInfo} & T
+}
+
+export type AniListGraphQLResponse = AnilistResponse<AnilistPage<{airingSchedules?: RawRecentEpisode[];}>>
+
+export type AniListGraphQLSearchResponse = AnilistResponse<AnilistPage<{media: RawRecentEpisode["media"][]}>>
 
 export interface PaginatedRecentEpisodes {
   pageInfo: PageInfo;
   data: RecentEpisode[];
+}
+
+export interface PaginatedSearchResponse {
+  pageInfo: PageInfo,
+  data: AnimeListMedia[]
 }
 
 export interface AnilinkServiceOptions {

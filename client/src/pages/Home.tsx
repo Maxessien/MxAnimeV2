@@ -1,4 +1,4 @@
-import { AnimeCard, RecentEpisodeAnimeCard } from "@/components/AnimeCard";
+import { RecentEpisodeAnimeCard } from "@/components/AnimeCard";
 import HomeSection from "@/components/layout/HomeSection";
 import {
   useRecentlyReleased,
@@ -39,11 +39,12 @@ export default function Home() {
 
         {spotlight && (
           <>
-            <img
-              src={spotlight.images.webp.large_image_url ?? undefined}
-              alt={spotlight.title}
+            {Boolean(spotlight.coverImage.extraLarge || spotlight.coverImage.large || spotlight.coverImage.medium) &&
+              <img
+              src={(spotlight.coverImage.extraLarge || spotlight.coverImage.large || spotlight.coverImage.medium) as string}
+              alt={spotlight.title.english || spotlight.title.romaji || "Spotlight Anime"}
               className="absolute inset-0 w-full h-full object-cover object-top opacity-60"
-            />
+            />}
             <div className="absolute inset-0 bg-linear-to-t from-background via-background/80 to-transparent" />
             <div className="absolute inset-0 bg-linear-to-r from-background/90 via-background/40 to-transparent" />
 
@@ -53,18 +54,18 @@ export default function Home() {
                   Season Spotlight
                 </span>
                 <span className="text-foreground/80 text-sm font-medium backdrop-blur-md bg-background/30 px-3 py-1 rounded-full">
-                  {spotlight.season} {spotlight.year}
+                  {spotlight.startDate.year}
                 </span>
               </div>
               <h1 className="text-3xl md:text-5xl lg:text-7xl font-display font-extrabold text-foreground mb-4 leading-[1.1] animate-in slide-in-from-bottom-8 fade-in duration-700 delay-100">
-                {spotlight.title_english || spotlight.title}
+                {spotlight.title.english || spotlight.title.romaji || "Spotlight Anime"}
               </h1>
               <p className="text-foreground/80 text-sm md:text-lg line-clamp-3 mb-8 max-w-2xl animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200 leading-relaxed">
-                {spotlight.synopsis}
+                {spotlight.description}
               </p>
               <div className="flex gap-4 animate-in slide-in-from-bottom-8 fade-in duration-700 delay-300">
                 <Link
-                  href={`/anime/${spotlight.mal_id}`}
+                  href={`/anime/${spotlight.idMal}`}
                   className="inline-flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-4 rounded-xl font-bold transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20"
                 >
                   <PlayCircle size={24} />
@@ -112,16 +113,19 @@ export default function Home() {
         isLoading={isLoadingTrending}
         list={
           <>
-            {trending?.data?.slice(1, 7).map((anime: any, i: number) => (
+            {trending?.data?.slice(1, 7).map((anime, i: number) => (
               <div
-                key={anime.mal_id}
+                key={anime.idMal}
                 className="animate-in fade-in zoom-in-95 duration-500"
                 style={{
                   animationDelay: `${i * 100}ms`,
                   animationFillMode: "both",
                 }}
               >
-                <AnimeCard extraStyles="w-50" anime={anime} />
+                <RecentEpisodeAnimeCard extraStyles="w-50" anime={{
+                  episode: anime.episodes || 0,
+                  media: anime
+                }} type="search" />
               </div>
             ))}
           </>
@@ -143,7 +147,10 @@ export default function Home() {
                   animationFillMode: "both",
                 }}
               >
-                <AnimeCard extraStyles="w-50" anime={anime} />
+                <RecentEpisodeAnimeCard extraStyles="w-50" anime={{
+                  episode: anime.episodes || 0,
+                  media: anime
+                }} type="search" />
               </div>
             ))}
           </>

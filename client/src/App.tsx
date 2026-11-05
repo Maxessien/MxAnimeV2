@@ -1,14 +1,12 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch, Router as WouterRouter } from "wouter";
+import { Redirect, Route, Switch, Router as WouterRouter } from "wouter";
 import { Shell } from "@/components/layout/Shell";
 import { ThemeProvider } from "@/components/theme-provider";
 
 import Home from "@/pages/Home";
-import TopAnime from "@/pages/TopAnime";
-import Seasons from "@/pages/Seasons";
 import Schedule from "@/pages/Schedule";
-import Search from "@/pages/Search";
+import Anime from "@/pages/Anime";
 import AnimeDetail from "@/pages/AnimeDetail";
 import Downloads from "@/pages/Downloads";
 import Settings from "@/pages/Settings";
@@ -55,11 +53,18 @@ function Router() {
       <Shell>
         <Route path="/" component={Home} />
         <Route path="/stream" component={AnimeStream} />
-        <Route path="/top" component={TopAnime} />
-        <Route path="/seasons" component={Seasons} />
+        <Route path="/anime" component={Anime} />
+        <Route path="/top">
+          <Redirect to="/anime" />
+        </Route>
+        <Route path="/seasons">
+          <Redirect to="/anime" />
+        </Route>
         <Route path="/latest" component={LatestEpisodes} />
         <Route path="/schedule" component={Schedule} />
-        <Route path="/search" component={Search} />
+        <Route path="/search">
+          <Redirect to="/anime" />
+        </Route>
         <Route path="/anime/:id" component={AnimeDetail} />
         <Route path="/downloads" component={Downloads} />
         <Route path="/downloads/:id" component={DownloadDetails} />

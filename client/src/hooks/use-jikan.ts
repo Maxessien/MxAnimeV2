@@ -4,8 +4,6 @@ import {
   Anime,
   AnimeCharacter,
   AnimeFull,
-  AnimeOrderBy,
-  AnimeSeason,
   AnimeType,
   Genre,
   JikanPaginatedResponse,
@@ -20,8 +18,8 @@ import {
 import { fetchJikan, fetchMal, MAL_DEFAULT_FIELDS } from "@/lib/jikan";
 import { AniZipMetadata } from "@/types/anizip";
 import axios from "axios";
-import { anilinkService, getRecentlyReleasedEpisodes } from "@/lib/anilink";
-import { AugmentedAnimeMedia, PaginatedRecentEpisodes } from "@/types/anilink";
+import { anilinkService, getAnimeList, getRecentlyReleasedEpisodes } from "@/lib/anilist";
+import { AugmentedAnimeMedia, PaginatedRecentEpisodes, PaginatedSearchResponse } from "@/types/anilist";
 
 // --- ANILIST SUPPORTED ENDPOINTS ---
 
@@ -38,34 +36,16 @@ export const useRecentlyReleased = (page: number, perPage?: number, startTime?: 
   });
 };
 
-// --- MAL SUPPORTED ENDPOINTS ---
-
-const PAGE_LIMIT = 25;
-const getOffset = (page: number) => (page - 1) * PAGE_LIMIT;
-
 export const useTopAnime = (
   page = 1,
   filter?: TopAnimeFilter,
   type?: AnimeType,
 ) => {
-  return useQuery<JikanPaginatedResponse<Anime>>({
+  return useQuery<PaginatedSearchResponse>({
     queryKey: ["top-anime", page, filter, type],
     queryFn: async () => {
-      // Map Jikan filters to MAL ranking types
-      let ranking_type = "all";
-      if (filter === "airing") ranking_type = "airing";
-      if (filter === "upcoming") ranking_type = "upcoming";
-      if (filter === "bypopularity") ranking_type = "bypopularity";
-      if (type === "tv") ranking_type = "tv";
-      if (type === "movie") ranking_type = "movie";
-
-      const data = await fetchMal<any>("/anime/ranking", {
-        ranking_type,
-        offset: getOffset(page),
-        limit: PAGE_LIMIT,
-        fields: MAL_DEFAULT_FIELDS,
-      });
-      return transformMalSearchToJikan(data);
+      return await
+        getAnimeList(page, "All", "All", "All", ["POPULARITY_DESC", "TRENDING_DESC", "SCORE_DESC"], "All", undefined, 10)
     },
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -74,74 +54,20 @@ export const useTopAnime = (
 };
 
 export const useSeasonsNow = (page = 1) => {
-  return useQuery<JikanPaginatedResponse<Anime>>({
+  return useQuery<PaginatedSearchResponse>({
     queryKey: ["seasons-now", page],
     queryFn: async () => {
-      // MAL requires explicit year and season
-      const date = new Date();
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      let season = "winter";
-      if (month >= 2 && month <= 4) season = "spring";
-      else if (month >= 5 && month <= 7) season = "summer";
-      else if (month >= 8 && month <= 10) season = "fall";
+      const currSeason = (()=> {
+        const month = new Date().getMonth(); // 0-indexed (Jan = 0, Dec = 11)
 
-      const data = await fetchMal<any>(`/anime/season/${year}/${season}`, {
-        offset: getOffset(page),
-        limit: PAGE_LIMIT,
-        fields: MAL_DEFAULT_FIELDS,
-      });
-      return transformMalSearchToJikan(data) as JikanPaginatedResponse<Anime>;
+        if (month >= 0 && month <= 2) return "WINTER"; // Jan, Feb, Mar
+        if (month >= 3 && month <= 5) return "SPRING"; // Apr, May, Jun
+        if (month >= 6 && month <= 8) return "SUMMER"; // Jul, Aug, Sep
+        return "FALL";                                 // Oct, Nov, Dec
+      })()
+      return await
+        getAnimeList(page, "All", 2026, currSeason, ["TRENDING_DESC", "POPULARITY_DESC"], "All", undefined, 6)
     },
-    staleTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: true
-  });
-};
-
-export const useSeason = (
-  year: number,
-  season: AnimeSeason | string,
-  page = 1,
-) => {
-  return useQuery<JikanPaginatedResponse<Anime>>({
-    queryKey: ["season", year, season, page],
-    queryFn: async () => {
-      const data = await fetchMal<any>(`/anime/season/${year}/${season}`, {
-        offset: getOffset(page),
-        limit: PAGE_LIMIT,
-        fields: MAL_DEFAULT_FIELDS,
-      });
-      return transformMalSearchToJikan(data) as JikanPaginatedResponse<Anime>;
-    },
-    enabled: !!year && !!season,
-    staleTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: true
-  });
-};
-
-export const useSearchAnime = (
-  q: string,
-  page = 1,
-  genres?: string,
-  type?: AnimeType,
-  order_by?: AnimeOrderBy,
-) => {
-  return useQuery<JikanPaginatedResponse<Anime>>({
-    queryKey: ["search-anime", q, page, genres, type, order_by],
-    queryFn: async () => {
-      // MAL has limited search parameters compared to Jikan.
-      // It mainly uses 'q' (query string).
-      const data = await fetchMal<any>("/anime", {
-        q,
-        offset: getOffset(page),
-        limit: PAGE_LIMIT,
-        fields: MAL_DEFAULT_FIELDS,
-      });
-      return transformMalSearchToJikan(data) as JikanPaginatedResponse<Anime>;
-    },
-    enabled: !!q || page > 1,
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: true

@@ -6,7 +6,7 @@ import axios from "axios";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 import { AnimeSummary } from "./local-store";
-import { WeekTimestamps } from "@/types/anilink";
+import { WeekTimestamps } from "@/types/anilist";
 import { ScheduleFilter } from "@/types/jikan";
 
 export function cn(...inputs: ClassValue[]) {
@@ -123,6 +123,7 @@ export const RECENTLY_AIRED = `
           description(asHtml: false)
           title { romaji english }
           coverImage { large }
+          startDate {year}
         }
       }
     }
