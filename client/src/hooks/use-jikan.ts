@@ -12,7 +12,6 @@ import {
   TopAnimeFilter,
 } from "@/types/jikan";
 import {
-  transformMalSearchToJikan,
   transformMalToJikan,
 } from "@/lib/mal-transform";
 import { fetchJikan, fetchMal, MAL_DEFAULT_FIELDS } from "@/lib/jikan";

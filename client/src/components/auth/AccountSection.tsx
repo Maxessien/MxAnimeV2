@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useAuth } from "@/hooks/use-auth";
+import { useAuth, AUTH_SERVER_URL } from "@/hooks/use-auth";
 import { LogIn, UserPlus } from "lucide-react";
 import { FormEvent, useState } from "react";
 import { toast } from "react-toastify";
@@ -119,7 +119,7 @@ export function AccountSection() {
             />
           </div>
 
-          <Button type="submit" disabled={isLoading || AUTH_SERVER_URL}>
+          <Button type="submit" disabled={isLoading || Boolean(AUTH_SERVER_URL)}>
             {isLoading ? "Working..." : mode === "login" ? "Sign in" : "Create account"}
           </Button>
       </form>
