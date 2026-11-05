@@ -12,6 +12,7 @@ import Search from "@/pages/Search";
 import AnimeDetail from "@/pages/AnimeDetail";
 import Downloads from "@/pages/Downloads";
 import Settings from "@/pages/Settings";
+import Auth from "@/pages/Auth";
 import { ToastContainer } from "react-toastify";
 import DownloadDetails from "./pages/DownloadDetails";
 import { AnimeStream, AnimeStreamLocal } from "./pages/AnimeStream";
@@ -27,7 +28,7 @@ import { ongoingDownloadQueue } from "./lib/queue";
 import axios from "axios";
 import UpdatePopup from "./components/layout/UpdatePopup";
 import { useSettings } from "./hooks/use-settings";
-import { useTheme } from "next-themes";
+import { AuthProvider } from "./hooks/use-auth";
 
 // Update on every github release to match github release tag name
 const APP_RELEASE_TAG = "v0.2.0";
@@ -62,6 +63,7 @@ function Router() {
         <Route path="/anime/:id" component={AnimeDetail} />
         <Route path="/downloads" component={Downloads} />
         <Route path="/downloads/:id" component={DownloadDetails} />
+        <Route path="/auth" component={Auth} />
         <Route path="/settings">
           <Settings settings={settings} setSettings={setSettings} />
         </Route>
@@ -107,23 +109,25 @@ function App() {
   return (
     <ThemeProvider>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-            <Router />
-          </WouterRouter>
-          {showUpdatePopup && (
-            <UpdatePopup hidePopup={() => setShowUpdatePopup(false)} />
-          )}
-          {/* <Toaster /> */}
-          <ToastContainer
-            closeButton
-            draggable
-            newestOnTop
-            pauseOnHover
-            position="top-center"
-            theme="colored"
-          />
-        </TooltipProvider>
+        <AuthProvider>
+          <TooltipProvider>
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <Router />
+            </WouterRouter>
+            {showUpdatePopup && (
+              <UpdatePopup hidePopup={() => setShowUpdatePopup(false)} />
+            )}
+            {/* <Toaster /> */}
+            <ToastContainer
+              closeButton
+              draggable
+              newestOnTop
+              pauseOnHover
+              position="top-center"
+              theme="colored"
+            />
+          </TooltipProvider>
+        </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
   );

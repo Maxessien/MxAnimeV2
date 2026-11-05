@@ -1,5 +1,6 @@
 import { useJson } from "@/hooks/use-json";
 import { AppSettings } from "@/hooks/use-settings";
+import { AccountStatus } from "@/components/auth/AccountStatus";
 import {
   Select,
   SelectContent,
@@ -111,6 +112,8 @@ export default function Settings({ settings, setSettings }: {
           </Select>
         </div>
       </section>
+
+      <AccountStatus />
 
       {/* Data */}
       <section className="bg-card border rounded-2xl p-6 space-y-5">
