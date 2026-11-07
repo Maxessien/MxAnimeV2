@@ -9,11 +9,11 @@ import { AnimePagination } from "@/components/anime-page/AnimePagination";
 import {
   AnimePageFilters,
   DEFAULT_FILTERS,
-} from "@/components/anime-page/anime-page.types";
+} from "@/types/anime-page.types";
 import {
   filtersFromSearch,
   filtersToSearch,
-} from "@/components/anime-page/anime-page.utils";
+} from "@/lib/anime-page.utils";
 
 export default function Anime() {
   const [location, setLocation] = useLocation();

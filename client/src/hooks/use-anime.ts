@@ -93,17 +93,6 @@ export const useAnimeFull = (id: string | number) => {
 // MAL API v2 does not support Characters, Episodes, Schedules, or a Genres list natively.
 // We retain fetchJikan here so your app doesn't break.
 
-export const useAnimeCharacters = (id: string | number) => {
-  return useQuery<JikanResponse<AnimeCharacter[]>>({
-    queryKey: ["anime-characters", id],
-    queryFn: () => fetchJikan(`/anime/${id}/characters`),
-    enabled: !!id,
-    staleTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: true
-  });
-};
-
 export const useAnimeEpisodes = (id: string | number) => {
   return useQuery<
     (AniZipMetadata | AugmentedAnimeMedia) & { isAnilist: boolean }
@@ -133,16 +122,6 @@ export const useAnimeEpisodes = (id: string | number) => {
       return { ...data, episodes: filteredEps, isAnilist: false };
     },
     enabled: !!id,
-    staleTime: 60 * 60 * 1000,
-    refetchOnWindowFocus: false,
-    refetchOnReconnect: true
-  });
-};
-
-export const useSchedules = (filter?: ScheduleFilter, page = 1) => {
-  return useQuery<JikanPaginatedResponse<Anime>>({
-    queryKey: ["schedules", filter, page],
-    queryFn: () => fetchJikan("/schedules", { filter, page }),
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: true

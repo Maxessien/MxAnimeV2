@@ -33,11 +33,7 @@ export function useJson<T>({
   clearOptions?: UseMutationOptions;
   type: JsonFiles;
 }) {
-  const [json, setJson] = useState<Record<JsonFiles, T[]>>({
-    downloads: [],
-    history: [],
-    saved: [],
-  });
+  const [json, setJson] = useState<T[]>([]);
 
   const query = useQuery<T[], Error, T[], readonly JsonFiles[]>({
     ...queryOptions,
@@ -53,28 +49,13 @@ export function useJson<T>({
   >({
     ...addOptions,
     mutationFn: async (anime) => {
-      let n = { ...json };
-      let parsedAnime = Array.isArray(anime) ? anime : [anime];
-      n[type] = [...n[type], ...parsedAnime];
-      setJson(n);
-      switch (type) {
-        case "downloads":
-          await invoke("save_json_file", {
-            json: JSON.stringify(n.downloads),
-            file: "downloads.json"
-          });
-          break;
-
-        case "history":
-          await invoke("save_json_file", {
-            json: JSON.stringify(n.history),
-            file: "history.json"
-          });
-          break;
-
-        default:
-          break;
-      }
+      const parsedAnime = Array.isArray(anime) ? anime : [anime];
+      const newVal = [...json, ...parsedAnime]
+      setJson(newVal);
+      await invoke("save_json_file", {
+        json: JSON.stringify(newVal),
+        file: `${type}.json`
+      });
     },
     retry: 3,
   });
@@ -82,28 +63,11 @@ export function useJson<T>({
   const remove = useMutation<void, Error, (v: T[]) => T[], void>({
     ...removeOptions,
     mutationFn: async (filter: (v: T[]) => T[]) => {
-      switch (type) {
-        case "downloads":
-          await invoke("save_json_file", {
-            json: JSON.stringify(filter(json[type])),
-            file: "downloads.json"
-          });
-          break;
-
-        case "history":
-          await invoke("save_json_file", {
-            json: JSON.stringify(filter(json[type])),
-            file: "history.json"
-          });
-          break;
-
-        default:
-          break;
-      }
-      setJson((dl) => ({
-        ...dl,
-        [type]: filter(dl[type]),
-      }));
+      await invoke("save_json_file", {
+        json: JSON.stringify(filter(json)),
+        file: `${type}.json`
+      });
+      setJson((dl) => filter(dl));
     },
     retry: 3,
   });
@@ -111,30 +75,15 @@ export function useJson<T>({
   const clear = useMutation({
     ...clearOptions,
     mutationFn: async () => {
-      setJson((dl) => ({ ...dl, [type]: [] }));
-      switch (type) {
-        case "downloads":
-          await invoke("save_json_file", { json: "[]", file: "downloads.json" });
-          break;
-
-        case "history":
-          await invoke("save_json_file", { json: "[]", file: "history.json" });
-          break;
-
-        default:
-          break;
-      }
+      setJson([]);
+      await invoke("save_json_file", { json: "[]", file: `${type}.json` });
     },
     retry: 3,
   });
 
   useEffect(() => {
     if (query.data)
-      setJson((dl) => {
-        let n = { ...dl };
-        n[type] = query.data;
-        return n;
-      });
+      setJson(query.data);
   }, [query.dataUpdatedAt, query.errorUpdatedAt]);
 
   return {
@@ -142,6 +91,6 @@ export function useJson<T>({
     add,
     remove,
     clear,
-    json: json[type],
+    json,
   };
 }

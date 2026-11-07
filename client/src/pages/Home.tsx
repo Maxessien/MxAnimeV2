@@ -4,7 +4,7 @@ import {
   useRecentlyReleased,
   useSeasonsNow,
   useTopAnime,
-} from "@/hooks/use-jikan";
+} from "@/hooks/use-anime";
 import { Loader2, PlayCircle } from "lucide-react";
 import { Link } from "wouter";
 

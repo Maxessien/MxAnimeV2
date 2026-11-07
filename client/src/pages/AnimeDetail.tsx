@@ -9,7 +9,7 @@ import { EpisodeEntry } from "@/components/anime-details/AnimeEpisodes";
 import { AnimeEpisodesDl } from "@/components/anime-details/AnimeEpisodesDl";
 import BackBtn from "@/components/layout/BackBtn";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAnimeEpisodes, useAnimeFull } from "@/hooks/use-jikan";
+import { useAnimeEpisodes, useAnimeFull } from "@/hooks/use-anime";
 import { downloadQueue } from "@/lib/queue";
 import { AugmentedAnimeMedia } from "@/types/anilist";
 import { AniZipMetadata } from "@/types/anizip";

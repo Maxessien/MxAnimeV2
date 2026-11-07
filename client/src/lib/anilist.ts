@@ -352,7 +352,7 @@ export async function getAnimeList(
           endDate_lesser: ${now}1231
           status_in: [${status === "All" ? ANIME_STATUS : status}]
           ${season === "All" ? "" : `season: ${season}`}
-          ${searchQuery ? "search: $searchQuery" : ""}
+          ${searchQuery ? `search: "${searchQuery}"` : ""}
           type: ANIME
         ) {
           startDate {

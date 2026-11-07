@@ -1,13 +1,13 @@
 import { ChevronDown, Filter, RotateCcw, Search, X } from "lucide-react";
 import { useState } from "react";
-import { AnimePageFilters } from "./anime-page.types";
+import { AnimePageFilters } from "../../types/anime-page.types";
 import {
   FORMAT_OPTIONS,
   SEASONS,
   SORT_OPTIONS,
   STATUS_OPTIONS,
-} from "./anime-page.types";
-import { yearsForFilter } from "./anime-page.utils";
+} from "../../types/anime-page.types";
+import { yearsForFilter } from "../../lib/anime-page.utils";
 
 interface AnimeFiltersProps {
   filters: AnimePageFilters;

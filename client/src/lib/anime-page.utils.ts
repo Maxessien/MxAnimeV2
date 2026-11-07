@@ -11,7 +11,7 @@ import {
   SORT_OPTIONS,
   STATUS_OPTIONS,
   AnimePageFilters,
-} from "./anime-page.types";
+} from "../types/anime-page.types";
 
 const isValue = <T extends string>(
   value: string | null,

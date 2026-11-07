@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useSearchParams } from "wouter";
-import { useRecentlyReleased } from "@/hooks/use-jikan";
+import { useRecentlyReleased } from "@/hooks/use-anime";
 import { AnimeCardSkeleton, RecentEpisodeAnimeCard } from "@/components/AnimeCard";
 import { CalendarClock } from "lucide-react";
 import { ScheduleFilter } from "@/types/jikan";

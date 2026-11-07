@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { AnimeCardSkeleton, RecentEpisodeAnimeCard } from "@/components/AnimeCard";
-import { useRecentlyReleased } from "@/hooks/use-jikan";
+import { useRecentlyReleased } from "@/hooks/use-anime";
 import { Tv } from "lucide-react";
 
 export default function LatestEpisodes() {
