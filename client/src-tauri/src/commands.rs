@@ -9,7 +9,7 @@ use tokio::{
 
 use crate::utils::{check_path, dl_file_fn, CancelFlag, PauseFlag};
 
-static ALLOW_LIST: [&str; 3] = ["downloads.json", "settings.json", "history.json"];
+static ALLOW_LIST: [&str; 4] = ["downloads.json", "settings.json", "history.json", "saved.json"];
 
 async fn save_json(dir: PathBuf, file_name: &str, json_string: String) -> Result<(), String> {
 	if !ALLOW_LIST.contains(&file_name) {return Err("Unauthorised file name".to_string());};

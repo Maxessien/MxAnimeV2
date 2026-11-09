@@ -9,7 +9,7 @@ import { Download as DownloadIcon, Save } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MdSavedSearch } from "react-icons/md";
 import { toast } from "react-toastify";
-import { useSearchParams } from "wouter";
+import { Link, useSearchParams } from "wouter";
 
 type Tab = "downloads" | "ongoing" | "saved"
 
@@ -92,6 +92,19 @@ export default function Downloads() {
               <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
             )}
           </button>
+          <button
+            onClick={() => setSearchParam({tab: "saved"})}
+            className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+              tab === "saved"
+                ? "text-primary"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Saved Downloads
+            {tab === "saved" && (
+              <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-primary" />
+            )}
+          </button>
         </div>
       </div>
 
@@ -129,7 +142,7 @@ export default function Downloads() {
               </div>
             ))}
           </div>
-        </div> : <div className="flex flex-col items-center justify-center text-center py-16 gap-3 border-2 border-dashed rounded-2xl">
+        </div> : tab === "saved" && <div className="flex flex-col items-center justify-center text-center py-16 gap-3 border-2 border-dashed rounded-2xl">
           <MdSavedSearch
             size={32}
             className="text-muted-foreground opacity-40"
@@ -138,6 +151,12 @@ export default function Downloads() {
           <p className="text-sm text-muted-foreground max-w-sm">
             You haven't added any anime to your saved list.
           </p>
+          <Link
+            href="/"
+            className="mt-2 text-primary font-medium hover:underline"
+          >
+            Browse anime
+          </Link>
         </div>}
       </div>
     </div>

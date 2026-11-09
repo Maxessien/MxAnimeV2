@@ -113,7 +113,7 @@ export default function Home() {
         isLoading={isLoadingTrending}
         list={
           <>
-            {trending?.data?.slice(1, 7).map((anime, i: number) => (
+            {trending?.data?.slice(0, 6).map((anime, i: number) => (
               <div
                 key={anime.idMal}
                 className="animate-in fade-in zoom-in-95 duration-500"

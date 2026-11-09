@@ -80,7 +80,7 @@ export function AnimeDetailHero({
             <Button
               type="button"
               variant={isSaved ? "secondary" : "default"}
-              className="mb-6 w-fit self-center md:self-start"
+              className="mb-6 w-fit cursor-pointer self-center md:self-start"
               onClick={onSave}
               disabled={isSaving}
             >
