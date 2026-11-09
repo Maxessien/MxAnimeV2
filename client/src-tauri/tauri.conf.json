@@ -1,7 +1,7 @@
 {
   "$schema": "https://tauri.app",
   "productName": "MxAnime",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "identifier": "com.max-essien.mxanime",
   "build": {
     "beforeDevCommand": "npm run dev",
