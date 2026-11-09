@@ -1,7 +1,7 @@
-import { AnimeFull } from "@/types/jikan";
+import { Anime } from "@/types/jikan";
 
 type AnimeSynopsisProps = {
-  anime: AnimeFull;
+  anime: Anime;
 };
 
 export function AnimeSynopsis({ anime }: AnimeSynopsisProps) {

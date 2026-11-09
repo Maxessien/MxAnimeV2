@@ -21,6 +21,13 @@ export const MEDIA_BY_MAL_ID_QUERY = `
       format
       episodes
       status
+      description(asHtml: false)
+      coverImage {
+        extraLarge
+        large
+        medium
+      }
+      status
       title {
         romaji
         english

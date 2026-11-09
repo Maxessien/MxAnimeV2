@@ -1,5 +1,6 @@
 // --- Types & Interfaces ---
 
+import { MediaResponse } from "@/types/anilist";
 import { Anime, JikanPaginatedResponse } from "@/types/jikan";
 
 export interface MalAnimeNode {
@@ -30,32 +31,7 @@ export interface MalAnimeNode {
   genres?: Array<{ id: number; name: string }>;
 }
 
-export interface JikanAnimeData {
-  mal_id: number;
-  url: string;
-  images: {
-    jpg: Record<string, string | null>;
-    webp: Record<string, string | null>;
-  };
-  title: string;
-  title_english: string | null;
-  title_japanese: string | null;
-  titles: Array<{ type: string; title: string }>;
-  type: string | null;
-  source: string | null;
-  episodes: number | null;
-  status: string | null;
-  airing: boolean;
-  score: number | null;
-  scored_by: number | null;
-  rank: number | null;
-  popularity: number | null;
-  synopsis: string | null;
-  season: string | null;
-  year: number | null;
-  studios: Array<{ mal_id: number; type: string; name: string; url: string }>;
-  genres: Array<{ mal_id: number; type: string; name: string; url: string }>;
-}
+type JikanAnimeData = Anime
 
 export interface JikanSingleResponse {
   data: Anime;
@@ -137,21 +113,46 @@ function transformMalToJikan(
   };
 }
 
-function transformMalSearchToJikan(
-  malSearchData: MalSearchResponse,
-): JikanPaginatedResponse<Anime> {
-  const dataList: JikanAnimeData[] = (malSearchData.data || [])
-    .map((item) => transformMalToJikan(item.node)?.data)
-    .filter((item): item is JikanAnimeData => !!item); // Filter out any null values safely
-
+const transformAnilistToJikan = (anilistData: MediaResponse): Anime => {
   return {
-    data: dataList,
-    pagination: {
-      has_next_page: !!malSearchData.paging?.next,
-      current_page: 1,
-      last_visible_page: 0,
+    airing: anilistData.status === "RELEASING",
+    episodes: anilistData.episodes,
+    genres: [], // Revisit later
+    images: {
+      jpg: {
+        image_url:
+          anilistData.coverImage.extraLarge || anilistData.coverImage.large || "",
+          small_image_url: anilistData.coverImage.large || "",
+        large_image_url: anilistData.coverImage.extraLarge || "",
+      },
+      webp: {
+        image_url:
+          anilistData.coverImage.extraLarge || anilistData.coverImage.large || "",
+          small_image_url: anilistData.coverImage.large || "",
+        large_image_url: anilistData.coverImage.extraLarge || "",
+      },
     },
-  };
+    mal_id: anilistData.idMal,
+    popularity: null,
+    rank: null,
+    score: null,
+    scored_by: null,
+    season: null, // Revisit later
+    source: null,
+    status: anilistData.status,
+    studios: [], // Revisit later
+    synopsis: anilistData.description,
+    title: anilistData.title.english || anilistData.title.romaji,
+    title_english: anilistData.title.english,
+    title_japanese: anilistData.title.romaji,
+    titles: [
+      { title: anilistData.title.english, type: "english" },
+      {title: anilistData.title.romaji, type: "romaji"}
+    ],
+    type: anilistData.format,
+    year: anilistData.startDate.year || null,
+    url: "" // Revisit later
+  }
 }
 
-export { transformMalSearchToJikan, transformMalToJikan };
+export { transformMalToJikan, transformAnilistToJikan };

@@ -8,6 +8,8 @@ import {
   isPermissionGranted,
   sendNotification,
 } from "@tauri-apps/plugin-notification";
+import { RecentEpisode } from "@/types/anilist";
+import { Anime } from "@/types/jikan";
 
 export const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
@@ -28,6 +30,32 @@ export type AnimeSummary = {
 
 export type AnimeDownload = { url: string; fileName: string };
 
+export type AnimeSaved = Pick<RecentEpisode, "media" | "episode">
+
+export function animeToSaved(anime: Anime): AnimeSaved {
+  return {
+    episode: anime.episodes ?? 0,
+    media: {
+      id: anime.mal_id,
+      idMal: anime.mal_id,
+      format: anime.type ?? "UNKNOWN",
+      description: anime.synopsis,
+      title: {
+        romaji: anime.title,
+        english: anime.title_english,
+      },
+      coverImage: {
+        large: anime.images.webp.large_image_url,
+        extraLarge: anime.images.webp.large_image_url,
+        medium: anime.images.webp.large_image_url,
+      },
+      startDate: {
+        year: anime.year ?? 0,
+      },
+    },
+  };
+}
+
 
 async function getDownloads<T>(subPath: string) {
   let file = await invoke<string>("get_json_file", {
@@ -44,7 +72,8 @@ function callDlLoop(
     Error,
     AnimeSummary | AnimeSummary[],
     void
-  >) {
+    >
+) {
   while (
     ongoingDownloadQueue.getElements.length < ongoingDownloadQueue.maxCapacity &&
     downloadQueue.getElements.length > 0

@@ -1,9 +1,9 @@
 import { Badge } from "@/components/ui/badge";
-import { AnimeFull } from "@/types/jikan";
+import { Anime } from "@/types/jikan";
 import { LayoutDashboard } from "lucide-react";
 
 type AnimeDetailInfoProps = {
-  anime: AnimeFull;
+  anime: Anime;
 };
 
 export function AnimeDetailInfo({ anime }: AnimeDetailInfoProps) {

@@ -1,12 +1,13 @@
 import { getDownloads } from "@/lib/local-store";
 import {
-  UndefinedInitialDataOptions,
+  QueryOptions,
   useMutation,
-  UseMutationOptions,
+  MutateOptions,
   useQuery,
 } from "@tanstack/react-query";
 import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
+import { toast } from "react-toastify";
 
 export type JsonFiles = "downloads" | "saved" | "history";
 
@@ -17,20 +18,20 @@ export function useJson<T>({
   clearOptions,
   type,
 }: {
-  queryOptions?: UndefinedInitialDataOptions<
+  queryOptions?: QueryOptions<
     T[],
     Error,
     T[],
     readonly JsonFiles[]
   >;
-  addOptions?: UseMutationOptions<
+  addOptions?: MutateOptions<
     void,
     Error,
     T[] | T,
     void
   >;
-  removeOptions?: UseMutationOptions<void, Error, (v: T[]) => T[], void>;
-  clearOptions?: UseMutationOptions;
+  removeOptions?: MutateOptions<void, Error, (v: T[]) => T[], void>;
+  clearOptions?: MutateOptions;
   type: JsonFiles;
 }) {
   const [json, setJson] = useState<T[]>([]);
@@ -49,13 +50,18 @@ export function useJson<T>({
   >({
     ...addOptions,
     mutationFn: async (anime) => {
+      if (query.isFetching) {
+        toast.error("Fetching local store...");
+        return
+      };
+
       const parsedAnime = Array.isArray(anime) ? anime : [anime];
-      const newVal = [...json, ...parsedAnime]
-      setJson(newVal);
+      const newVal = [...json, ...parsedAnime];
       await invoke("save_json_file", {
         json: JSON.stringify(newVal),
-        file: `${type}.json`
+        file: `${type}.json`,
       });
+      setJson(newVal);
     },
     retry: 3,
   });
@@ -63,9 +69,14 @@ export function useJson<T>({
   const remove = useMutation<void, Error, (v: T[]) => T[], void>({
     ...removeOptions,
     mutationFn: async (filter: (v: T[]) => T[]) => {
+      if (query.isFetching) {
+        toast.error("Fetching local store...");
+        return
+      };
+
       await invoke("save_json_file", {
         json: JSON.stringify(filter(json)),
-        file: `${type}.json`
+        file: `${type}.json`,
       });
       setJson((dl) => filter(dl));
     },
@@ -75,6 +86,11 @@ export function useJson<T>({
   const clear = useMutation({
     ...clearOptions,
     mutationFn: async () => {
+      if (query.isFetching) {
+        toast.error("Fetching local store...");
+        return
+      };
+
       setJson([]);
       await invoke("save_json_file", { json: "[]", file: `${type}.json` });
     },

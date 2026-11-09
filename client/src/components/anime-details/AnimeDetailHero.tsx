@@ -1,15 +1,22 @@
 import { Badge } from "@/components/ui/badge";
-import { AnimeFull } from "@/types/jikan";
-import { Star } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Anime } from "@/types/jikan";
+import { Bookmark, BookmarkCheck, Star } from "lucide-react";
 
 type AnimeDetailHeroProps = {
-  anime: AnimeFull;
+  anime: Anime;
   trailerUrl?: string | null;
+  isSaved?: boolean;
+  isSaving?: boolean;
+  onSave?: () => void;
 };
 
 export function AnimeDetailHero({
   anime,
   trailerUrl,
+  isSaved = false,
+  isSaving = false,
+  onSave,
 }: AnimeDetailHeroProps) {
   const coverImage =
     anime.images?.webp?.large_image_url ||
@@ -67,6 +74,19 @@ export function AnimeDetailHero({
             <h2 className="text-base sm:text-lg md:text-xl text-muted-foreground font-medium mb-6">
               {anime.title}
             </h2>
+          )}
+
+          {onSave && (
+            <Button
+              type="button"
+              variant={isSaved ? "secondary" : "default"}
+              className="mb-6 w-fit self-center md:self-start"
+              onClick={onSave}
+              disabled={isSaving}
+            >
+              {isSaved ? <BookmarkCheck /> : <Bookmark />}
+              {isSaved ? "Saved" : "Save anime"}
+            </Button>
           )}
 
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-6 mt-auto bg-card/50 backdrop-blur-md p-4 rounded-2xl border shadow-sm w-fit">

@@ -10,22 +10,21 @@ import { AnimeEpisodesDl } from "@/components/anime-details/AnimeEpisodesDl";
 import BackBtn from "@/components/layout/BackBtn";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAnimeEpisodes, useAnimeFull } from "@/hooks/use-anime";
+import { useJson } from "@/hooks/use-json";
+import { animeToSaved, AnimeSaved } from "@/lib/local-store";
+import { transformAnilistToJikan } from "@/lib/mal-transform";
 import { downloadQueue } from "@/lib/queue";
 import { AugmentedAnimeMedia } from "@/types/anilist";
 import { AniZipMetadata } from "@/types/anizip";
+import { Anime } from "@/types/jikan";
 import { useMutation } from "@tanstack/react-query";
 import { useState } from "react";
+import { toast } from "react-toastify";
 import { useRoute } from "wouter";
 
 export default function AnimeDetail() {
   const [, params] = useRoute("/anime/:id");
   const id = params?.id || "";
-
-  const {
-    data: animeData,
-    isLoading: isLoadingAnime,
-    error: animeError,
-  } = useAnimeFull(id);
 
   const {
     data: episodesData,
@@ -34,7 +33,52 @@ export default function AnimeDetail() {
     error: episodesError,
   } = useAnimeEpisodes(id);
 
-  const anime = animeData?.data;
+  const hasAnilist = episodesData !== undefined && episodesData.isAnilist && !episodesError
+
+  const {
+    data: animeData,
+    isLoading: isLoadingAnime,
+    error: animeError,
+  } = useAnimeFull(id, !hasAnilist);
+
+  const anilistEp = episodesData as AugmentedAnimeMedia;
+  const anizipEp = episodesData as AniZipMetadata;
+
+  const anime: Anime | undefined =
+    hasAnilist ? transformAnilistToJikan(anilistEp) : animeData?.data;
+
+  const {
+    json: savedAnime,
+    add: saveAnime,
+    remove: removeSavedAnime,
+    query: { isFetching: isFetchingSavedAnime },
+  } = useJson<AnimeSaved>({
+    type: "saved",
+  });
+
+  const isSaved = anime
+    ? savedAnime.some((saved) => saved.media.idMal === anime.mal_id)
+    : false;
+
+  const toggleSaved = async () => {
+    if (!anime) return;
+
+    try {
+      if (isSaved) {
+        await removeSavedAnime.mutateAsync((saved) =>
+          saved.filter((item) => item.media.idMal !== anime.mal_id),
+        );
+        toast.success("Removed from saved anime");
+      } else {
+        await saveAnime.mutateAsync(animeToSaved(anime));
+        toast.success("Saved anime");
+      }
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Could not update saved anime",
+      );
+    }
+  };
 
   const { mutateAsync } = useMutation({
     mutationFn: async ({
@@ -64,28 +108,25 @@ export default function AnimeDetail() {
     },
   });
 
-  const anilinkEp = episodesData as AugmentedAnimeMedia;
-  const anizipEp = episodesData as AniZipMetadata;
-
   const episodes: EpisodeEntry[] = episodesData?.isAnilist
-    ? anilinkEp?.airingSchedule.nodes &&
-      anilinkEp?.airingSchedule.nodes.length > 0
-      ? anilinkEp.airingSchedule.nodes.map(({ airingAt, episode }) => ({
+    ? anilistEp?.airingSchedule.nodes &&
+      anilistEp?.airingSchedule.nodes.length > 0
+      ? anilistEp.airingSchedule.nodes.map(({ airingAt, episode }) => ({
           episode,
           hasAired: new Date((airingAt * 1000)).getTime() < Date.now(),
           airDate: airingAt * 1000,
           episodeNumber: episode,
-          seasonNumber: anilinkEp.seasonNumber,
+          seasonNumber: anilistEp.seasonNumber,
         }))
-      : Array(anilinkEp.nextAiringEpisode.episode)
+      : Array(anilistEp.nextAiringEpisode.episode)
           .fill("v")
           .map((_, idx, arr) => ({
             episodeNumber: idx + 1,
-            seasonNumber: anilinkEp.seasonNumber,
+            seasonNumber: anilistEp.seasonNumber,
             episode: idx + 1,
             hasAired: idx + 1 < arr.length,
             airDate:
-              (anilinkEp.nextAiringEpisode.airingAt -
+              (anilistEp.nextAiringEpisode.airingAt -
                 3600 * 24 * 7 * (idx + 1)) *
               1000,
           }))
@@ -118,7 +159,7 @@ export default function AnimeDetail() {
     );
   }
 
-  if (isLoadingAnime) {
+  if (isLoadingAnime && !hasAnilist) {
     return (
       <div className="animate-pulse space-y-8">
         <div className="h-100 bg-muted rounded-3xl w-full"></div>
@@ -139,8 +180,8 @@ export default function AnimeDetail() {
   if (!anime) return null;
 
   const trailerUrl = episodesData?.isAnilist
-    ? anilinkEp?.trailer?.site === "youtube"
-      ? `https://www.youtube.com/embed/${anilinkEp.trailer.id}`
+    ? anilistEp?.trailer?.site === "youtube"
+      ? `https://www.youtube.com/embed/${anilistEp.trailer.id}`
       : null
     : null;
 
@@ -157,7 +198,13 @@ export default function AnimeDetail() {
             episodeInfo={dlPopup.info}
           />
         )}
-        <AnimeDetailHero anime={anime} trailerUrl={null} />
+        <AnimeDetailHero
+          anime={anime}
+          trailerUrl={null}
+          isSaved={isSaved}
+          isSaving={saveAnime.isPending || removeSavedAnime.isPending}
+          onSave={isFetchingSavedAnime ? undefined : toggleSaved}
+        />
         <AnimeTrailer animeTitle={anime.title} url={trailerUrl} />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">

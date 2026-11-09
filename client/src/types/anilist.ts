@@ -22,6 +22,14 @@ export interface MediaResponse {
 
   status: MediaStatus
 
+  description: string
+
+  coverImage: {
+    extraLarge: string
+    large: string
+    medium: string
+  }
+
   /** The official titles of the media in various languages */
   title: {
     romaji: string;

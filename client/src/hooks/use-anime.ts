@@ -1,5 +1,5 @@
 // src/hooks/useAnime.ts
-import { useQuery } from "@tanstack/react-query";
+import { QueryOptions, useQuery } from "@tanstack/react-query";
 import {
   Anime,
   AnimeCharacter,
@@ -73,7 +73,9 @@ export const useSeasonsNow = (page = 1) => {
   });
 };
 
-export const useAnimeFull = (id: string | number) => {
+export const useAnimeFull = (
+  id: string | number,
+  enabled: boolean) => {
   return useQuery<JikanResponse<AnimeFull>>({
     queryKey: ["anime-full", id],
     queryFn: async () => {
@@ -82,7 +84,7 @@ export const useAnimeFull = (id: string | number) => {
       });
       return transformMalToJikan(data) as JikanResponse<AnimeFull>;
     },
-    enabled: !!id,
+    enabled: !!id && enabled,
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnReconnect: true
@@ -124,7 +126,7 @@ export const useAnimeEpisodes = (id: string | number) => {
     enabled: !!id,
     staleTime: 60 * 60 * 1000,
     refetchOnWindowFocus: false,
-    refetchOnReconnect: true
+    refetchOnReconnect: true,
   });
 };
 

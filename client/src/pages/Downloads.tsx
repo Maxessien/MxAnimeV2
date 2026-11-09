@@ -1,13 +1,17 @@
+import { RecentEpisodeAnimeCard } from "@/components/AnimeCard";
 import DlHistory from "@/components/downloads/DlHistory";
 import OngoingDlCard from "@/components/downloads/OngoingDlCard";
 import WatingCard from "@/components/downloads/WaitingCard";
 import { useJson } from "@/hooks/use-json";
-import { AnimeSummary } from "@/lib/local-store";
+import { AnimeSaved, AnimeSummary } from "@/lib/local-store";
 import { downloadQueue, ongoingDownloadQueue } from "@/lib/queue";
-import { Download as DownloadIcon } from "lucide-react";
+import { Download as DownloadIcon, Save } from "lucide-react";
 import { useEffect, useState } from "react";
+import { MdSavedSearch } from "react-icons/md";
 import { toast } from "react-toastify";
 import { useSearchParams } from "wouter";
+
+type Tab = "downloads" | "ongoing" | "saved"
 
 export default function Downloads() {
   const { json, remove } = useJson<AnimeSummary>({
@@ -18,11 +22,14 @@ export default function Downloads() {
     },
   });
 
-  console.log(ongoingDownloadQueue)
+  const {json: saved} = useJson<AnimeSaved>({type: "saved"})
 
   const [searchParam, setSearchParam] = useSearchParams()
 
-  const tab: "downloads" | "ongoing" = searchParam.get("tab") === "downloads" ? "downloads" : "ongoing";
+  const allowedTabs = ["downloads", "ongoing", "saved"]
+
+  const sTab = searchParam.get("tab");
+  const tab: Tab = sTab && allowedTabs.includes(sTab) ? sTab as Tab : "ongoing";
 
   const [_, triggerRender] = useState(0);
 
@@ -89,9 +96,10 @@ export default function Downloads() {
       </div>
 
       <div>
-        {tab === "downloads" ? (
+        {tab === "downloads" && (
           <DlHistory json={json} remove={remove} />
-        ) : ongoingDownloadQueue.getElements.length > 0 || downloadQueue.traverse().length > 0 ? (
+        )}
+        {tab === "ongoing" && (ongoingDownloadQueue.getElements.length > 0 || downloadQueue.traverse().length > 0 ? (
           <div className="space-y-3">
             {ongoingDownloadQueue.getElements.map((val, idx) => (
               <OngoingDlCard key={idx} {...val} />
@@ -111,7 +119,26 @@ export default function Downloads() {
               Downloads will appear here as they're being processed.
             </p>
           </div>
-        )}
+        ))}
+        {tab === "saved" && saved.length > 0 ? <div className="relative">
+          {/*{loading && <Loader2 className="absolute right-0 top-0 z-10 animate-spin text-primary" />}*/}
+          <div className={`grid grid-cols-2 gap-x-3 gap-y-8 transition-opacity sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6`}>
+            {saved.map((item, index) => (
+              <div key={item.media.idMal} className="animate-in fade-in zoom-in-95" style={{ animationDelay: `${Math.min(index, 10) * 40}ms`, animationFillMode: "both" }}>
+                <RecentEpisodeAnimeCard anime={item} type="search" />
+              </div>
+            ))}
+          </div>
+        </div> : <div className="flex flex-col items-center justify-center text-center py-16 gap-3 border-2 border-dashed rounded-2xl">
+          <MdSavedSearch
+            size={32}
+            className="text-muted-foreground opacity-40"
+          />
+          <h3 className="font-semibold">No saved anime</h3>
+          <p className="text-sm text-muted-foreground max-w-sm">
+            You haven't added any anime to your saved list.
+          </p>
+        </div>}
       </div>
     </div>
   );
