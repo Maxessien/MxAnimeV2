@@ -65,10 +65,10 @@ export default function Downloads() {
       </div>
 
       <div className="border-b border-border">
-        <div className="flex gap-1 sm:gap-2">
+        <div className="flex gap-1 w-full overflow-x-auto scrollbar-hide sm:gap-2">
           <button
             onClick={() => setSearchParam({tab: "downloads"})}
-            className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-3 text-sm w-max font-medium transition-colors relative ${
               tab === "downloads"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
@@ -81,7 +81,7 @@ export default function Downloads() {
           </button>
           <button
             onClick={() => setSearchParam({tab: "ongoing"})}
-            className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-3 text-sm w-max font-medium transition-colors relative ${
               tab === "ongoing"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
@@ -94,7 +94,7 @@ export default function Downloads() {
           </button>
           <button
             onClick={() => setSearchParam({tab: "saved"})}
-            className={`px-4 py-3 text-sm font-medium transition-colors relative ${
+            className={`px-4 py-3 text-sm w-max font-medium transition-colors relative ${
               tab === "saved"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"

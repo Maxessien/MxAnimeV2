@@ -1,9 +1,13 @@
 import { Skeleton } from "@/components/ui/skeleton";
 import { downloadQueue } from "@/lib/queue";
 import { Anime } from "@/types/jikan";
-import { ListVideo } from "lucide-react";
+import { AnimeRelationEdge, RecentEpisode } from "@/types/anilist";
+import { ListVideo, Network, Sparkles } from "lucide-react";
 import { FaDownload, FaPlay, FaSpinner } from "react-icons/fa";
 import { useLocation } from "wouter";
+import { useState } from "react";
+import { AnimeRecommendations } from "./AnimeRecommendations";
+import { AnimeRelations } from "./AnimeRelations";
 
 export interface EpisodeEntry {
   episode: number;
@@ -24,6 +28,9 @@ type AnimeEpisodesProps = {
     eId: number;
     sId: number;
   }) => void;
+  isAnilist?: boolean;
+  recommendations?: RecentEpisode["media"][];
+  relations?: AnimeRelationEdge[];
 };
 
 export function AnimeEpisodes({
@@ -33,8 +40,12 @@ export function AnimeEpisodes({
   error,
   anime,
   showDlPopup,
+  isAnilist = false,
+  recommendations = [],
+  relations = [],
 }: AnimeEpisodesProps) {
   const [_, navigate] = useLocation();
+  const [activeTab, setActiveTab] = useState<"episodes" | "recommendations" | "relations">("episodes");
   const airedTotal = episodes.filter(v => v.hasAired).length
 
   return (
@@ -45,7 +56,52 @@ export function AnimeEpisodes({
         </h2>
       </div>
 
-      {isLoading ? (
+      {isAnilist && (
+        <div className="flex gap-2 overflow-x-auto border-b border-border mb-6">
+          <button
+            type="button"
+            onClick={() => setActiveTab("episodes")}
+            className={`inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+              activeTab === "episodes"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <ListVideo size={16} />
+            Episodes
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("recommendations")}
+            className={`inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+              activeTab === "recommendations"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Sparkles size={16} />
+            Recommendations
+          </button>
+          <button
+            type="button"
+            onClick={() => setActiveTab("relations")}
+            className={`inline-flex items-center gap-2 whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
+              activeTab === "relations"
+                ? "border-primary text-primary"
+                : "border-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Network size={16} />
+            Relations
+          </button>
+        </div>
+      )}
+
+      {isAnilist && activeTab === "recommendations" ? (
+        <AnimeRecommendations recommendations={recommendations} />
+      ) : isAnilist && activeTab === "relations" ? (
+        <AnimeRelations relations={relations} />
+      ) : isLoading ? (
         <div className="space-y-3">
           {Array.from({ length: 6 }).map((_, index) => (
             <Skeleton key={index} className="h-16 w-full rounded-xl" />

@@ -25,6 +25,26 @@ export const MEDIA_BY_MAL_ID_QUERY = `
         month
         day
       }
+      genres
+      season
+      studios {
+        nodes {
+          name
+        }
+      }
+      recommendations {
+        nodes {
+          media {
+          id
+          idMal
+          format
+          description(asHtml: false)
+          title { romaji english }
+          coverImage { large }
+          startDate {year}
+          }
+        }
+      }
       airingSchedule(notYetAired: false, perPage: 50) {
         nodes {
           id
@@ -57,14 +77,12 @@ export const MEDIA_BY_MAL_ID_QUERY = `
           node {
             id
             idMal
-            type
             format
-            title {
-              romaji
-              english
-              native
-              userPreferred
-            }
+            description(asHtml: false)
+            title { romaji english }
+            coverImage { large }
+            startDate {year}
+            type
           }
         }
       }

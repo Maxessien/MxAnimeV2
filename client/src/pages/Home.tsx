@@ -48,7 +48,7 @@ export default function Home() {
             <div className="absolute inset-0 bg-linear-to-t from-background via-background/80 to-transparent" />
             <div className="absolute inset-0 bg-linear-to-r from-background/90 via-background/40 to-transparent" />
 
-            <div className="z-10 p-6 w-full mx-auto max-w-4xl">
+            <div className="z-10 p-6 w-full max-h-full mx-auto max-w-4xl">
               <div className="flex items-center gap-3 mb-4 animate-in slide-in-from-bottom-4 fade-in duration-700">
                 <span className="px-3 py-1 bg-primary text-primary-foreground text-xs font-bold rounded-full uppercase tracking-wider shadow-sm">
                   Season Spotlight
@@ -57,7 +57,7 @@ export default function Home() {
                   {spotlight.startDate.year}
                 </span>
               </div>
-              <h1 className="text-3xl md:text-5xl lg:text-7xl font-display font-extrabold text-foreground mb-4 leading-[1.1] animate-in slide-in-from-bottom-8 fade-in duration-700 delay-100">
+              <h1 className="text-2xl line-clamp-2 md:text-4xl lg:text-6xl font-display font-extrabold text-foreground mb-4 leading-none animate-in slide-in-from-bottom-8 fade-in duration-700 delay-100">
                 {spotlight.title.english || spotlight.title.romaji || "Spotlight Anime"}
               </h1>
               <p className="text-foreground/80 text-sm md:text-lg line-clamp-3 mb-8 max-w-2xl animate-in slide-in-from-bottom-8 fade-in duration-700 delay-200 leading-relaxed">

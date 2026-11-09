@@ -71,6 +71,19 @@ export interface MediaResponse {
     mediaId: number;
   };
   episodes: number;
+  genres: string[]
+  season: AnimeSeason
+  studios: {
+    nodes: {
+      name: string
+    }[]
+  }
+  siteUrl: string
+  recommendations: {
+    nodes: {
+      media: RecentEpisode["media"]
+    }
+  }
   airingSchedule: {
     nodes: Array<{
       /** The AniList ID of the airing schedule entry */
@@ -167,22 +180,10 @@ export const ANIME_SORT = [
   'TRENDING_DESC',
 ];
 
-export interface AnimeRelationNode {
-  idMal: number | null;
-  format: AnimeFormat | string;
-  type: "ANIME";
-  title: {
-    romaji?: string | null;
-    english?: string | null;
-    native?: string | null;
-    userPreferred?: string | null;
-  };
-}
-
 export interface AnimeRelationEdge {
   id: number;
   relationType: string;
-  node: AnimeRelationNode;
+  node: RecentEpisode["media"] & {type: "ANIME" | "MANGA"};
 }
 
 export interface AugmentedAnimeMedia extends Omit<MediaResponse, "relations"> {
@@ -194,22 +195,7 @@ export interface AugmentedAnimeMedia extends Omit<MediaResponse, "relations"> {
 
 export interface RawMediaWithRelations extends MediaResponse {
   relations: {
-    edges: Array<{
-      id: number;
-      relationType: string;
-      node: {
-        id: number;
-        idMal: number | null;
-        type: string;
-        format: string;
-        title: {
-          romaji?: string | null;
-          english?: string | null;
-          native?: string | null;
-          userPreferred?: string | null;
-        };
-      };
-    }>;
+    edges: Array<AnimeRelationEdge>;
   };
 }
 

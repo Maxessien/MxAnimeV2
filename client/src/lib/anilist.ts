@@ -97,22 +97,14 @@ export class AnilinkService {
     );
     if (!rawMedia) return null;
 
+
     // Filter non-anime relations and map node fields
     const animeEdges: AnimeRelationEdge[] = (rawMedia.relations?.edges ?? [])
       .filter(
         (edge) =>
-          edge.node?.type === "ANIME" && ANIME_FORMATS.has(edge.node?.format),
-      )
-      .map((edge) => ({
-        id: edge.id,
-        relationType: edge.relationType,
-        node: {
-          idMal: edge.node.idMal,
-          format: edge.node.format,
-          type: "ANIME",
-          title: edge.node.title,
-        },
-      }));
+          edge.node?.type === "ANIME" && ANIME_FORMATS.has(edge.node?.format)
+          && edge.node?.format !== "MUSIC",
+      );
 
     // Traverse prequel relations to determine TV season number
     const seasonNumber = await this.calculateSeasonNumber(rawMedia);

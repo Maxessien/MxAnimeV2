@@ -219,6 +219,15 @@ export default function AnimeDetail() {
               isFetching={isFetchingEpisodes}
               error={episodesError}
               showDlPopup={(val) => setDlPopup({ active: true, info: val })}
+              isAnilist={hasAnilist}
+              // recommendations={
+              //   hasAnilist
+              //     ? anilistEp.recommendations.nodes
+              //         .map(({ media }) => media)
+              //         .filter((media) => media.idMal)
+              //     : []
+              // }
+              relations={hasAnilist ? anilistEp.relations.edges : []}
             />
           </div>
         </div>

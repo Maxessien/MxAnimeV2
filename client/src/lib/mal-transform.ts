@@ -3,6 +3,7 @@
 import { MediaResponse } from "@/types/anilist";
 import { Anime } from "@/types/jikan";
 
+
 export interface MalAnimeNode {
   id: number;
   title: string;
@@ -112,10 +113,12 @@ function transformMalToJikan(
 }
 
 const transformAnilistToJikan = (anilistData: MediaResponse): Anime => {
+  const dummyGenreObj = {mal_id: 123456, name: "", type: "", url: ""}
   return {
     airing: anilistData.status === "RELEASING",
     episodes: anilistData.episodes,
-    genres: [], // Revisit later
+    genres: anilistData.genres
+      .map(val => ({ ...dummyGenreObj, mal_id: Math.random() * 1_000_000, name: val })),
     images: {
       jpg: {
         image_url:
@@ -135,10 +138,11 @@ const transformAnilistToJikan = (anilistData: MediaResponse): Anime => {
     rank: null,
     score: null,
     scored_by: null,
-    season: null, // Revisit later
+    season: anilistData.season,
     source: null,
     status: anilistData.status,
-    studios: [], // Revisit later
+    studios: anilistData.studios.nodes
+      .map(({ name }) => ({ ...dummyGenreObj, mal_id: Math.random() * 1_000_000, name })),
     synopsis: anilistData.description,
     title: anilistData.title.english || anilistData.title.romaji,
     title_english: anilistData.title.english,
@@ -149,7 +153,7 @@ const transformAnilistToJikan = (anilistData: MediaResponse): Anime => {
     ],
     type: anilistData.format,
     year: anilistData.startDate.year || null,
-    url: "" // Revisit later
+    url: anilistData.siteUrl
   }
 }
 
