@@ -1,7 +1,7 @@
 // --- Types & Interfaces ---
 
 import { MediaResponse } from "@/types/anilist";
-import { Anime, JikanPaginatedResponse } from "@/types/jikan";
+import { Anime } from "@/types/jikan";
 
 export interface MalAnimeNode {
   id: number;
@@ -30,8 +30,6 @@ export interface MalAnimeNode {
   studios?: Array<{ id: number; name: string }>;
   genres?: Array<{ id: number; name: string }>;
 }
-
-type JikanAnimeData = Anime
 
 export interface JikanSingleResponse {
   data: Anime;

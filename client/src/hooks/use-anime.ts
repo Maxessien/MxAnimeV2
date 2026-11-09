@@ -1,14 +1,10 @@
 // src/hooks/useAnime.ts
-import { QueryOptions, useQuery } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import {
-  Anime,
-  AnimeCharacter,
   AnimeFull,
   AnimeType,
   Genre,
-  JikanPaginatedResponse,
   JikanResponse,
-  ScheduleFilter,
   TopAnimeFilter,
 } from "@/types/jikan";
 import {

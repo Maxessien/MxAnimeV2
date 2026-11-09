@@ -5,7 +5,7 @@ import WatingCard from "@/components/downloads/WaitingCard";
 import { useJson } from "@/hooks/use-json";
 import { AnimeSaved, AnimeSummary } from "@/lib/local-store";
 import { downloadQueue, ongoingDownloadQueue } from "@/lib/queue";
-import { Download as DownloadIcon, Save } from "lucide-react";
+import { Download as DownloadIcon } from "lucide-react";
 import { useEffect, useState } from "react";
 import { MdSavedSearch } from "react-icons/md";
 import { toast } from "react-toastify";
