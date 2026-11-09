@@ -1,18 +1,9 @@
 import { fetch } from "@tauri-apps/plugin-http";
-import axios from "axios";
 
 export const getBaseUrl = async () => {
-  const selfHosted = "https://jikan-mxanime.onrender.com";
   const community = "https://api.jikan.moe/v4";
 
   return community;
-
-  try {
-    await axios.get(selfHosted, { timeout: 10000 });
-    return selfHosted;
-  } catch (err) {
-    return community;
-  }
 };
 
 let queue: (() => Promise<void>)[] = [];
@@ -56,7 +47,7 @@ export const fetchMal = async <T>(
           });
         }
 
-        // 🌟 FIX: Use the native Headers class explicitly
+        // FIX: Use the native Headers class explicitly
         const headers = new Headers();
         headers.append("X-MAL-CLIENT-ID", MAL_CLIENT_ID);
 

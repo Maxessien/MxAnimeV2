@@ -174,6 +174,10 @@ async function downloadAnime(
     if (!status) throw new Error("Status not found");
 
     if (status.status.status === "completed" && status.episode) {
+      const size = status.episode.fileSize
+      const entry = ongoingDownloadQueue.getElements.find(v => v.id === taskId)
+      if (entry && size && size > 0) entry.total = size / (1024 * 1024)
+
       const [path, imgPath] = await invoke<string>("dl_file", {
         url: status.episode.fileUrl,
         saveAs: `${safeTitle} - Episode ${episode.ep}.mkv`,

@@ -23,7 +23,7 @@ import {
   MEDIA_BY_MAL_ID_QUERY,
   PREQUEL_MINIMAL_QUERY,
   RECENTLY_AIRED,
-} from "./utils";
+} from "./queries";
 import axios from "axios";
 
 export const ANILIST_GRAPHQL_ENDPOINT = "https://graphql.anilist.co";

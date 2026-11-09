@@ -14,12 +14,12 @@ import Auth from "@/pages/Auth";
 import { ToastContainer } from "react-toastify";
 import DownloadDetails from "./pages/DownloadDetails";
 import { AnimeStream, AnimeStreamLocal } from "./pages/AnimeStream";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   isPermissionGranted,
   requestPermission,
 } from "@tauri-apps/plugin-notification";
-import { isMobile } from "./lib/utils";
+import { isMobile, pollBackend } from "./lib/utils";
 import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import LatestEpisodes from "./pages/LatestEpisodes";
 import { ongoingDownloadQueue } from "./lib/queue";
@@ -81,7 +81,16 @@ function Router() {
 function App() {
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
 
+  const pollIntervalId = useRef<NodeJS.Timeout | null>(null)
+
   useEffect(() => {
+
+    if (!pollIntervalId.current) {
+      // Poll backend due to render timeout
+      pollIntervalId.current = setInterval(async () => {
+        await pollBackend()
+      }, 7 * 60 * 1000)
+    }
     (async () => {
       let granted = await isPermissionGranted();
       if (!granted && isMobile) await requestPermission();
@@ -108,6 +117,8 @@ function App() {
 
     return () => {
       if (unlisten) unlisten();
+      clearInterval(pollIntervalId.current || undefined)
+      pollIntervalId.current = null
     };
   }, []);
 
