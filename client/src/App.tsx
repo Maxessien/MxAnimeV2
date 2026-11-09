@@ -29,7 +29,7 @@ import { useSettings } from "./hooks/use-settings";
 import { AuthProvider } from "./hooks/use-auth";
 
 // Update on every github release to match github release tag name
-const APP_RELEASE_TAG = "v0.2.5";
+const APP_RELEASE_TAG = "v0.2.8";
 
 export const LATEST_RELEASE_API =
   "https://api.github.com/repos/Maxessien/MxAnimeV2/releases/latest";

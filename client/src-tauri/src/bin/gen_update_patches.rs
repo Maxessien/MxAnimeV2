@@ -25,9 +25,14 @@ static V0_2_0: Version = Version {
     file_url: "https://github.com/Maxessien/MxAnimeV2/releases/download/v0.2.0/MxAnime_v0.2.0.apk",
 };
 
+static V0_2_5: Version = Version {
+    tag: "v0_2_5",
+    file_url: "https://github.com/Maxessien/MxAnimeV2/releases/download/v0.2.5/MxAnime_0.2.5.apk",
+};
+
 #[tokio::main]
 async fn main() {
-    let versions = [&V0_1_0, &V0_2_0];
+    let versions = [&V0_1_0, &V0_2_0, &V0_2_5];
     let cl = Client::new();
     let curr_dir = current_dir().unwrap();
     let arg: Vec<String> = args().collect();

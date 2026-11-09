@@ -2414,7 +2414,7 @@ checksum = "956787520e75e9bd233246045d19f42fb73242759cc57fba9611d940ae96d4b0"
 
 [[package]]
 name = "mxanime"
-version = "0.2.5"
+version = "0.2.8"
 dependencies = [
  "bsdiff-android",
  "futures-util",
