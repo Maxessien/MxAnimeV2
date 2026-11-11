@@ -31,7 +31,7 @@ static V0_2_5: Version = Version {
 };
 
 static V0_2_8: Version = Version {
-    tag: "v0_2_5",
+    tag: "v0_2_8",
     file_url: "https://github.com/Maxessien/MxAnimeV2/releases/download/v0.2.8/MxAnime_0.2.8.apk",
 };
 
