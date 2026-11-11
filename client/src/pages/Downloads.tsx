@@ -81,7 +81,7 @@ export default function Downloads() {
           </button>
           <button
             onClick={() => setSearchParam({tab: "ongoing"})}
-            className={`px-4 py-3 text-sm w-max font-medium transition-colors relative ${
+            className={`px-4 py-3 text-sm whitespace-nowrap w-max font-medium transition-colors relative ${
               tab === "ongoing"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"
@@ -94,7 +94,7 @@ export default function Downloads() {
           </button>
           <button
             onClick={() => setSearchParam({tab: "saved"})}
-            className={`px-4 py-3 text-sm w-max font-medium transition-colors relative ${
+            className={`px-4 py-3 text-sm whitespace-nowrap w-max font-medium transition-colors relative ${
               tab === "saved"
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground"

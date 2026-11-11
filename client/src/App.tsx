@@ -1,4 +1,4 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { QueryClient, QueryClientProvider, useQuery } from "@tanstack/react-query";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Redirect, Route, Switch, Router as WouterRouter } from "wouter";
 import { Shell } from "@/components/layout/Shell";
@@ -14,7 +14,7 @@ import Auth from "@/pages/Auth";
 import { ToastContainer } from "react-toastify";
 import DownloadDetails from "./pages/DownloadDetails";
 import { AnimeStream, AnimeStreamLocal } from "./pages/AnimeStream";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   isPermissionGranted,
   requestPermission,
@@ -46,6 +46,16 @@ const queryClient = new QueryClient({
 function Router() {
   //Mount settings on app load
   const { settings, setSettings } = useSettings();
+
+  const { } = useQuery({
+    queryFn: pollBackend,
+    queryKey: ["backend", "polling"],
+    refetchInterval: 7 * 60 * 1000,
+    refetchOnReconnect: true,
+    refetchOnWindowFocus: false,
+    retry: 3,
+    retryDelay: 60_000
+  })
 
   return (
     <Switch>
@@ -81,16 +91,7 @@ function Router() {
 function App() {
   const [showUpdatePopup, setShowUpdatePopup] = useState(false);
 
-  const pollIntervalId = useRef<NodeJS.Timeout | null>(null)
-
   useEffect(() => {
-
-    if (!pollIntervalId.current) {
-      // Poll backend due to render timeout
-      pollIntervalId.current = setInterval(async () => {
-        await pollBackend()
-      }, 7 * 60 * 1000)
-    }
     (async () => {
       let granted = await isPermissionGranted();
       if (!granted && isMobile) await requestPermission();
@@ -117,8 +118,6 @@ function App() {
 
     return () => {
       if (unlisten) unlisten();
-      clearInterval(pollIntervalId.current || undefined)
-      pollIntervalId.current = null
     };
   }, []);
 

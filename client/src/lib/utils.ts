@@ -228,8 +228,12 @@ export function getCurrentWeekTimestamps(): WeekTimestamps {
 
 export const pollBackend = async () => {
   try {
-    await axios.head(BACKEND_URL)
+    const res = await fetch(BACKEND_URL, {method: "HEAD"})
+
+    if (!res.ok) throw new Error("Http request failed")
+    return true
   } catch (err) {
     console.error(err)
+    throw err
   }
 }
