@@ -19,7 +19,7 @@ const IframeStream = () => {
   return (
     <iframe
       src={iframeUrl}
-      className="absolute inset-0 w-full h-full border-0"
+      className="absolute z-99 inset-0 w-full h-full border-0"
       allowFullScreen
       allow="autoplay; encrypted-media; picture-in-picture; fullscreen"
       title={`${title ?? "Anime"} Episode ${ep}`}

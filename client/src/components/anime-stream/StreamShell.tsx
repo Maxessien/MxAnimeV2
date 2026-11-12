@@ -1,7 +1,8 @@
-import { JSX, useEffect } from "react";
+import { JSX, useEffect, useRef } from "react";
 import NotFound from "@/components/layout/NotFound";
 import { useSearchParams } from "wouter";
 import BackBtn from "@/components/layout/BackBtn";
+import { MdFullscreen, MdFullscreenExit } from "react-icons/md";
 
 const StreamShell = ({player}: {player: JSX.Element}) => {
   const [searchParam, setSearchParam] = useSearchParams();
@@ -51,6 +52,17 @@ const StreamShell = ({player}: {player: JSX.Element}) => {
     setSearchParam(params.toString());
   };
 
+  const playerWrapperRef = useRef<HTMLDivElement | null>(null)
+
+  const toggleFullScreen = async () => {
+    console.log(document.fullscreenElement)
+    const isFullScreen =
+      playerWrapperRef.current && document.fullscreenElement === playerWrapperRef.current
+
+    if (isFullScreen) await document.exitFullscreen()
+    else await playerWrapperRef.current?.requestFullscreen()
+  }
+
   return (
     <div className="min-h-screen bg-background w-full text-foreground font-sans py-2 pt-0 md:px-8 mx-auto flex flex-col gap-6">
       {/* Header Info */}
@@ -84,7 +96,16 @@ const StreamShell = ({player}: {player: JSX.Element}) => {
       <div className="grid grid-cols-1 w-full lg:grid-cols-4 gap-6 items-start">
         {/* Video Player Area */}
         <div className="lg:col-span-3 flex flex-col gap-4">
-          <div className="relative aspect-video w-full bg-card border border-card-border rounded-xl shadow-xl overflow-hidden group">
+          <div
+            ref={playerWrapperRef}
+            className="relative aspect-video w-full bg-black border border-card-border rounded-xl shadow-xl overflow-hidden group"
+          >
+            <button className="z-999 absolute p-2 rounded-full bg-primary/50 hover:bg-primary/90 top-1/2 right-1 -translate-y-1/2 font-semibold text-shadow-lg" onClick={toggleFullScreen}>
+              {Boolean(playerWrapperRef.current) &&
+                document.fullscreenElement === playerWrapperRef.current ?
+                <MdFullscreenExit size={20} /> :
+                <MdFullscreen size={20} />}
+            </button>
             {player}
           </div>
 
