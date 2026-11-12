@@ -15,16 +15,6 @@ struct Version {
     file_url: &'static str,
 }
 
-static V0_1_0: Version = Version {
-    tag: "v0_1_0",
-    file_url: "https://github.com/Maxessien/MxAnimeV2/releases/download/v0.1.0/MxAnime_0.1.0.apk",
-};
-
-static V0_2_0: Version = Version {
-    tag: "v0_2_0",
-    file_url: "https://github.com/Maxessien/MxAnimeV2/releases/download/v0.2.0/MxAnime_v0.2.0.apk",
-};
-
 static V0_2_5: Version = Version {
     tag: "v0_2_5",
     file_url: "https://github.com/Maxessien/MxAnimeV2/releases/download/v0.2.5/MxAnime_0.2.5.apk",
@@ -42,7 +32,7 @@ static V0_2_9: Version = Version {
 
 #[tokio::main]
 async fn main() {
-    let versions = [&V0_1_0, &V0_2_0, &V0_2_5, &V0_2_8, &V0_2_9];
+    let versions = [&V0_2_5, &V0_2_8, &V0_2_9];
     let cl = Client::new();
     let curr_dir = current_dir().unwrap();
     let arg: Vec<String> = args().collect();
