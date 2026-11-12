@@ -95,6 +95,9 @@ export function AccountSection() {
                   } : undefined)
                 }
               />
+              {errors.userName?.message && (
+                <p className="text-sm text-destructive">{errors.userName.message}</p>
+              )}
             </div>
           )}
 
@@ -107,6 +110,9 @@ export function AccountSection() {
                 pattern: {value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Invalid Email"}
               } : undefined)}
             />
+            {errors.email?.message && (
+              <p className="text-sm text-destructive">{errors.email.message}</p>
+            )}
           </div>
 
           {mode === "register" && (
@@ -116,6 +122,9 @@ export function AccountSection() {
                 autoComplete="tel"
                 {...rhfRegister("phone")}
               />
+              {errors.phone?.message && (
+                <p className="text-sm text-destructive">{errors.phone.message}</p>
+              )}
             </div>
           )}
 
@@ -134,6 +143,9 @@ export function AccountSection() {
                 }
               } : undefined)}
             />
+            {errors.password?.message && (
+              <p className="text-sm text-destructive">{errors.password.message}</p>
+            )}
           </div>
 
           <Button type="submit" disabled={isLoading || !Boolean(AUTH_SERVER_URL)}>
