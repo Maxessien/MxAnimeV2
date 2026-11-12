@@ -116,7 +116,6 @@ export class AnilinkService {
       (prev, curr) => prev.episode > curr.episode ? prev : curr, { episode: 0 }
     ).episode
 
-    console.log(rawMedia.startDate, rawMedia.endDate, epCount)
     const schedule =
       rawMedia.airingSchedule.nodes.length === 0 &&
       rawMedia.status === "FINISHED"
