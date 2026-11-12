@@ -109,11 +109,25 @@ export class AnilinkService {
     // Traverse prequel relations to determine TV season number
     const seasonNumber = await this.calculateSeasonNumber(rawMedia);
 
+    const epCount = rawMedia.episodes ??
+    rawMedia.nextAiringEpisode.episode ??
+    rawMedia.airingSchedule.nodes
+    .reduce(
+      (prev, curr) => prev.episode > curr.episode ? prev : curr, { episode: 0 }
+    ).episode
+
+    console.log(rawMedia.startDate, rawMedia.endDate, epCount)
     const schedule =
       rawMedia.airingSchedule.nodes.length === 0 &&
       rawMedia.status === "FINISHED"
-      ? this.constructAiringSchedule(rawMedia.episodes, rawMedia.startDate, rawMedia.endDate)
-        : rawMedia.airingSchedule.nodes;
+      ? this.constructAiringSchedule(epCount, rawMedia.startDate, rawMedia.endDate)
+        : (
+          rawMedia.airingSchedule.nodes.length < epCount ?
+            this.constructAiringSchedule(
+              epCount, rawMedia.startDate, rawMedia.endDate
+            ) :
+          rawMedia.airingSchedule.nodes
+        );
 
     return {
       ...rawMedia,
