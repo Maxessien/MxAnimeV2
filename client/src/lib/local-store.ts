@@ -28,8 +28,6 @@ export type AnimeSummary = {
   imagePath?: string
 };
 
-export type AnimeDownload = { url: string; fileName: string };
-
 export type AnimeSaved = Pick<RecentEpisode, "media" | "episode">
 
 export function animeToSaved(anime: Anime): AnimeSaved {

@@ -8,6 +8,8 @@ import { twMerge } from "tailwind-merge";
 import { AnimeSummary, BACKEND_URL } from "./local-store";
 import { WeekTimestamps } from "@/types/anilist";
 import { ScheduleFilter } from "@/types/jikan";
+import { isPermissionGranted, requestPermission } from "@tauri-apps/plugin-notification";
+import { toast } from "react-toastify";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -236,4 +238,30 @@ export const pollBackend = async () => {
     console.error(err)
     throw err
   }
+}
+
+interface CompareObj {
+  field: string,
+  type: string | (<T>(val: T)=> boolean)
+}
+
+export const validateObj = (obj: {[key: string]: any}, comparison: CompareObj[]) => {
+  for (const { field, type } of comparison) {
+    const val = obj[field]
+    if (!val) return false
+    else if (typeof type === "string" && typeof val !== type) return false
+    else if (typeof type !== "string" && !type(val)) return false
+  }
+
+  return true
+}
+
+export const handleNotificationPermission = async () => {
+  let granted = await isPermissionGranted()
+  if (!granted) await requestPermission()
+  if (!(await isPermissionGranted())) {
+    toast.error("Permission not granted")
+    return false
+  }
+  return true
 }

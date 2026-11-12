@@ -3,13 +3,15 @@ import { downloadQueue } from "@/lib/queue";
 import { Anime } from "@/types/jikan";
 import { AnimeRelationEdge, RecentEpisode } from "@/types/anilist";
 import { ListVideo, Network, Sparkles } from "lucide-react";
-import { FaDownload, FaPlay, FaSpinner, FaBell } from "react-icons/fa";
+import { FaDownload, FaPlay, FaSpinner, FaBell, FaBellSlash } from "react-icons/fa";
 import { useLocation } from "wouter";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AnimeRecommendations } from "./AnimeRecommendations";
 import { AnimeRelations } from "./AnimeRelations";
-import { isPermissionGranted, requestPermission, Schedule, sendNotification } from "@tauri-apps/plugin-notification";
+import { cancel, pending, Schedule, sendNotification } from "@tauri-apps/plugin-notification";
 import { toast } from "react-toastify";
+import { handleNotificationPermission } from "@/lib/utils";
+import { platform } from "@tauri-apps/plugin-os";
 
 export interface EpisodeEntry {
   episode: number;
@@ -46,29 +48,59 @@ export function AnimeEpisodes({
   recommendations = [],
   relations = [],
 }: AnimeEpisodesProps) {
-  const [_, navigate] = useLocation();
+  const [, navigate] = useLocation();
+  const [reminders, setReminders] = useState<
+    { [episode: EpisodeEntry["episode"]]: boolean }
+  >({})
   const [activeTab, setActiveTab] = useState<"episodes" | "recommendations" | "relations">("episodes");
   const airedTotal = episodes.filter(v => v.hasAired).length
+
+  useEffect(() => {
+    if (platform() === "android" || platform() === "ios") {
+      (async () => {
+        const obj: { [episode: EpisodeEntry["episode"]]: boolean } = {}
+        for (const { episode } of episodes) {
+          obj[episode] = await hasReminder(episode)
+        }
+        setReminders(obj)
+      })()
+    }
+  }, [episodes])
+
+  const getNotificationId = (episode: EpisodeEntry["episode"]) =>
+    (Number(anime.mal_id) * 10000 + episode) % 2147483647
+
 
   const setReminder = async (
     { airDate, episode }: Pick<EpisodeEntry, "airDate" | "episode">
   ) => {
-    let granted = await isPermissionGranted()
-    if (!granted) await requestPermission()
-    if (!(await isPermissionGranted())) {
-      toast.error("Permission not granted")
-      return
-    }
+    const hasPermission = await handleNotificationPermission()
+    if (!hasPermission) return
+
     if (!airDate) {
       toast.error("Cannot set reminder, Invalid air date")
       return
     }
+
     const scheduleDate = new Date(airDate)
     const schedule = Schedule.at(scheduleDate)
     sendNotification({
       title: `${anime.title} Ep ${episode} Release reminder`,
-      schedule
+      schedule,
+      id: getNotificationId(episode)
     })
+    setReminders(pr => ({...pr, [episode]: true}))
+  }
+
+  const cancelReminder = async (episode: EpisodeEntry["episode"]) => {
+    await cancel([getNotificationId(episode)])
+    setReminders(pr => ({...pr, [episode]: false}))
+  }
+
+  const hasReminder = async (episode: EpisodeEntry["episode"]) => {
+    const pendings = await pending()
+
+    return pendings.some(v=> v.id === getNotificationId(episode))
   }
 
   return (
@@ -210,15 +242,23 @@ export function AnimeEpisodes({
                   </button>
                 </>
               ) : <>
-                  <button
-                    title="Set Reminder for episode air date"
-                    onClick={
-                      () => setReminder({ airDate: episode.airDate, episode: episode.episode })
-                    }
-                    className="rounded-full hover:bg-muted/90 text-sm sm:text-base transition-all p-3 sm:p-4 border-2 border-(--border) bg-muted hover:cursor-pointer"
-                  >
-                    <FaBell />
-                </button>
+                {reminders[episode.episode] !== undefined && (reminders[episode.episode] ? <button
+                  title="Cancel Reminder for episode air date"
+                  onClick={
+                    () => cancelReminder(episode.episode)
+                  }
+                  className="rounded-full hover:bg-muted/90 text-sm sm:text-base transition-all p-3 sm:p-4 border-2 border-(--border) bg-muted hover:cursor-pointer"
+                >
+                  <FaBellSlash />
+                </button> : <button
+                  title="Set Reminder for episode air date"
+                  onClick={
+                    () => setReminder({ airDate: episode.airDate, episode: episode.episode })
+                  }
+                  className="rounded-full hover:bg-muted/90 text-sm sm:text-base transition-all p-3 sm:p-4 border-2 border-(--border) bg-muted hover:cursor-pointer"
+                >
+                  <FaBell />
+                </button>)}
               </>}
             </div>
           ))}
