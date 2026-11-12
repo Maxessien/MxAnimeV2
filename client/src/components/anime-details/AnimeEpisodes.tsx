@@ -3,11 +3,13 @@ import { downloadQueue } from "@/lib/queue";
 import { Anime } from "@/types/jikan";
 import { AnimeRelationEdge, RecentEpisode } from "@/types/anilist";
 import { ListVideo, Network, Sparkles } from "lucide-react";
-import { FaDownload, FaPlay, FaSpinner } from "react-icons/fa";
+import { FaDownload, FaPlay, FaSpinner, FaBell } from "react-icons/fa";
 import { useLocation } from "wouter";
 import { useState } from "react";
 import { AnimeRecommendations } from "./AnimeRecommendations";
 import { AnimeRelations } from "./AnimeRelations";
+import { isPermissionGranted, requestPermission, Schedule, sendNotification } from "@tauri-apps/plugin-notification";
+import { toast } from "react-toastify";
 
 export interface EpisodeEntry {
   episode: number;
@@ -47,6 +49,27 @@ export function AnimeEpisodes({
   const [_, navigate] = useLocation();
   const [activeTab, setActiveTab] = useState<"episodes" | "recommendations" | "relations">("episodes");
   const airedTotal = episodes.filter(v => v.hasAired).length
+
+  const setReminder = async (
+    { airDate, episode }: Pick<EpisodeEntry, "airDate" | "episode">
+  ) => {
+    let granted = await isPermissionGranted()
+    if (!granted) await requestPermission()
+    if (!(await isPermissionGranted())) {
+      toast.error("Permission not granted")
+      return
+    }
+    if (!airDate) {
+      toast.error("Cannot set reminder, Invalid air date")
+      return
+    }
+    const scheduleDate = new Date(airDate)
+    const schedule = Schedule.at(scheduleDate)
+    sendNotification({
+      title: `${anime.title} Ep ${episode} Release reminder`,
+      schedule
+    })
+  }
 
   return (
     <section>
@@ -145,7 +168,7 @@ export function AnimeEpisodes({
                   </span>
                 )}
               </div>
-              {episode.hasAired && (
+              {episode.hasAired ? (
                 <>
                   <button
                     onClick={() => {
@@ -186,7 +209,17 @@ export function AnimeEpisodes({
                     )}
                   </button>
                 </>
-              )}
+              ) : <>
+                  <button
+                    title="Set Reminder for episode air date"
+                    onClick={
+                      () => setReminder({ airDate: episode.airDate, episode: episode.episode })
+                    }
+                    className="rounded-full hover:bg-muted/90 text-sm sm:text-base transition-all p-3 sm:p-4 border-2 border-(--border) bg-muted hover:cursor-pointer"
+                  >
+                    <FaBell />
+                </button>
+              </>}
             </div>
           ))}
         </div>

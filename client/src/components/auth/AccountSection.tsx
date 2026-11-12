@@ -3,23 +3,35 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth, AUTH_SERVER_URL } from "@/hooks/use-auth";
 import { LogIn, UserPlus } from "lucide-react";
-import { FormEvent, useState } from "react";
+import { useState } from "react";
+import { useForm } from "react-hook-form";
 import { toast } from "react-toastify";
 import { useLocation } from "wouter";
 
 type Mode = "login" | "register";
 
+interface AuthUserForm {
+  userName: string,
+  email: string,
+  phone: string,
+  password: string
+}
+
 export function AccountSection() {
   const { isLoading, login, register, clearError } = useAuth();
+  const { register: rhfRegister, formState: {errors}, handleSubmit, reset } = useForm<AuthUserForm>({
+    defaultValues: {
+      email: "",
+      password: "",
+      phone: "",
+      userName: ""
+    }, mode: "onTouched", disabled: !Boolean(AUTH_SERVER_URL),
+  })
+
   const [, setLocation] = useLocation();
   const [mode, setMode] = useState<Mode>("login");
-  const [userName, setUserName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phone, setPhone] = useState("");
-  const [password, setPassword] = useState("");
 
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  const submit = async ({email, password, phone, userName}: AuthUserForm) => {
     clearError();
     try {
       if (mode === "register") {
@@ -34,7 +46,7 @@ export function AccountSection() {
         await login({ email: email.trim(), password });
         toast.success("Signed in successfully.");
       }
-      setPassword("");
+      reset();
       setLocation("/settings");
     } catch (requestError) {
       toast.error(requestError instanceof Error ? requestError.message : "Authentication request failed.");
@@ -50,7 +62,7 @@ export function AccountSection() {
         </p>
       </div>
 
-      <form onSubmit={submit} className="space-y-4 border-t border-border/60 pt-4">
+      <form onSubmit={handleSubmit(submit)} className="space-y-4 border-t border-border/60 pt-4">
           <div className="flex gap-2">
             <Button
               type="button"
@@ -72,11 +84,16 @@ export function AccountSection() {
             <div className="space-y-2">
               <Label htmlFor="auth-user-name">Username</Label>
               <Input
-                id="auth-user-name"
-                value={userName}
-                onChange={(event) => setUserName(event.target.value)}
-                required
                 autoComplete="name"
+                {...rhfRegister(
+                  "userName", mode === "register" ? {
+                    required: "Username is required",
+                    minLength:
+                      { value: 3, message: "Username must be at least 3 characters long" },
+                    maxLength:
+                      { value: 25, message: "Username must be at most 25 characters long" },
+                  } : undefined)
+                }
               />
             </div>
           )}
@@ -84,12 +101,11 @@ export function AccountSection() {
           <div className="space-y-2">
             <Label htmlFor="auth-email">Email</Label>
             <Input
-              id="auth-email"
-              type="email"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
               autoComplete="email"
+              {...rhfRegister("email", mode === "register" ? {
+                required: "Email is required",
+                pattern: {value: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, message: "Invalid Email"}
+              } : undefined)}
             />
           </div>
 
@@ -97,11 +113,8 @@ export function AccountSection() {
             <div className="space-y-2">
               <Label htmlFor="auth-phone">Phone (optional)</Label>
               <Input
-                id="auth-phone"
-                type="tel"
-                value={phone}
-                onChange={(event) => setPhone(event.target.value)}
                 autoComplete="tel"
+                {...rhfRegister("phone")}
               />
             </div>
           )}
@@ -109,17 +122,21 @@ export function AccountSection() {
           <div className="space-y-2">
             <Label htmlFor="auth-password">Password</Label>
             <Input
-              id="auth-password"
-              type="password"
-              value={password}
-              onChange={(event) => setPassword(event.target.value)}
-              required
-              minLength={8}
               autoComplete={mode === "register" ? "new-password" : "current-password"}
+              {...rhfRegister("password", mode === "register" ? {
+                required: "Password is required",
+                minLength: { value: 8, message: "Password must be at least 8 characters long" },
+                validate: (val) => {
+                  if (!val.match(/[A-Z]+/)) return "Password must include an uppercase letter"
+                  if (!val.match(/[a-z]+/)) return "Password must include a lowercase letter"
+                  if (!val.match(/[0-9]+/)) return "Password must include a number"
+                  return true
+                }
+              } : undefined)}
             />
           </div>
 
-          <Button type="submit" disabled={isLoading || Boolean(AUTH_SERVER_URL)}>
+          <Button type="submit" disabled={isLoading || !Boolean(AUTH_SERVER_URL)}>
             {isLoading ? "Working..." : mode === "login" ? "Sign in" : "Create account"}
           </Button>
       </form>
