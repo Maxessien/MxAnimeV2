@@ -84,7 +84,7 @@ const downloadTorrent = async (
     downloadTasks.set(taskId, {
       epInfo,
       progress: prog * ((maxProg - baseProg) / 100) + baseProg,
-      status: "pending",
+      status: "pending", stage: {name: "Torrenting", service: "Pikpak"}
     });
   });
 
@@ -104,7 +104,7 @@ const downloadTorrentSeedr = async (
       downloadTasks.set(taskId, {
         epInfo,
         progress: s.progress * ((maxProg - baseProg) / 100) + baseProg,
-        status: "pending",
+        status: "pending", stage: {name: "Torrenting", service: "Seedr"}
       });
     },
   });

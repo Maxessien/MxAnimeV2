@@ -1,12 +1,10 @@
-import axios from "axios";
 import { Request, Response } from "express";
 import { randomInt } from "node:crypto";
-import { downloadTasks } from "../configs/config.js";
+import { downloadAbortControllers, downloadTasks } from "../configs/config.js";
 import { Episode } from "../models/showModel.js";
-import { AniZipMetadata } from "../types/anizip.js";
 import { CLIENT_ERROR, SUCCESS } from "../utils/httpCodes.js";
 import { dlAndCompress, generateSmallerResEntries } from "../utils/media.js";
-import { handler } from "../utils/shows.js";
+import { handler, signalPromise } from "../utils/shows.js";
 import { ParsedTorrentioStream } from "../types/torrentio.js";
 import { AddQueryQualities, Tasks } from "../types/show.js";
 import { convertRes, getSubplTorrent } from "../utils/torrentsFetchers.js";
@@ -78,15 +76,38 @@ const downloadEpisode = async (req: Request, res: Response) =>
       taskId = randomInt(1_000_000);
     } while (downloadTasks.has(taskId));
 
-    void dlAndCompress(taskId, epInfo, ep.magnetUri).catch((error) => {
-      console.error("Episode download task failed:", error);
-      downloadTasks.set(taskId, { status: "error", progress: 0, epInfo });
-    });
+    const globalController = new AbortController()
+
+    downloadAbortControllers.set(taskId, {
+      globalController,
+      stageControllers: {
+        apify: new AbortController(),
+        cloudConvert: new AbortController(),
+        ffmpeg: new AbortController(),
+        pikpak: new AbortController(),
+        seedr: new AbortController(),
+      }
+    })
 
     downloadTasks.set(taskId, {
       status: "pending",
       progress: 0,
       epInfo,
+      stage: null,
+    });
+
+    void Promise.race([
+      dlAndCompress(taskId, epInfo, ep.magnetUri),
+      signalPromise(globalController.signal)
+    ])
+      .catch((error) => {
+      console.error("Episode download task failed:", error);
+        downloadTasks.set(taskId, {
+          status: "error",
+          progress: 0,
+          epInfo,
+          stage: null,
+        });
     });
 
     return res
@@ -124,8 +145,11 @@ const getDownloadStatus = async (req: Request, res: Response) =>
     }
 
     if (status.status === "error") downloadTasks.delete(Number(taskId));
+    const {epInfo, progress, filename} = status
 
-    return res.status(SUCCESS.OK).json({ status, episode: null });
+    return res.status(SUCCESS.OK).json({ status: {
+      status: status.status, epInfo, progress, filename
+    }, episode: null });
   });
 
 const addEpisode = (req: Request, res: Response) =>
@@ -182,16 +206,5 @@ const addEpisode = (req: Request, res: Response) =>
     return res.status(SUCCESS.CREATED).json(parsed);
   });
 
-const getAllTasks = async (req: Request, res: Response) =>
-  handler(res, async () => {
-    const adminKey = process.env.ADMIN_KEY;
 
-    if (!adminKey || adminKey !== req.query.key?.toString())
-      return res.status(CLIENT_ERROR.UNAUTHORIZED).json("Unauthorised access");
-
-    const map = Object.fromEntries(downloadTasks.entries());
-
-    return res.status(SUCCESS.OK).json(map);
-  });
-
-export { addEpisode, downloadEpisode, getDownloadStatus, getAllTasks };
+export { addEpisode, downloadEpisode, getDownloadStatus };

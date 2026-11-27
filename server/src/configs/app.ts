@@ -4,6 +4,7 @@ import logger from 'morgan';
 import cors from 'cors';
 import showRoutes from '../routes/showsRoute.js';
 import { join } from 'path';
+import adminRoutes from '../routes/adminRoutes.js';
 
 const LATEST_UPDATE_URL = "https://github.com/Maxessien/MxAnimeV2/releases/latest"
 
@@ -20,6 +21,7 @@ app.use("/assets", express.static(join(process.cwd(), "src/assets")))
 app.get("/", (_: Request, res: Response)=> res.sendFile(join(process.cwd(), "src/assets/index.html")))
 app.get("/update", (_: Request, res: Response) => res.redirect(LATEST_UPDATE_URL))
 app.use("/show", showRoutes)
+app.use("/admin", adminRoutes)
 
 
 export default app;

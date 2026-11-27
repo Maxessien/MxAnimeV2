@@ -6,7 +6,7 @@ import ffmpeg from "@ts-ffmpeg/fluent-ffmpeg";
 import { v2 as cloudinary } from "cloudinary";
 import ffprobe from "ffprobe-static";
 import mongoose from "mongoose";
-import { Tasks } from "../types/show.js";
+import { TaskCanceller, Tasks } from "../types/show.js";
 import { resolveFfmpegBinaryPath } from "../utils/ffmpegUtil.js";
 import { readFileSync } from "node:fs";
 import { createSubsplease } from "@maxessien/subsplease";
@@ -63,6 +63,7 @@ mongoose.connection.on("error", (err) => {
 });
 
 const downloadTasks: Map<number, Tasks> = new Map();
+const downloadAbortControllers: Map<number, TaskCanceller> = new Map();
 
 const malIdSubplMap = new Map<
   number | string,
@@ -130,6 +131,7 @@ export {
   cloudflareAccessKey,
   cloudflareClient,
   downloadTasks,
+  downloadAbortControllers,
   ffmpeg,
   mongoose,
   seedrCl,

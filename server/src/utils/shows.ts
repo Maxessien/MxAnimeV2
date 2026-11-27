@@ -1,13 +1,14 @@
 import { Response } from "express";
 import { SERVER_ERROR } from "./httpCodes.js";
 import axios from "axios";
+import { downloadAbortControllers } from "../configs/config.js";
 
 const JIKAN_API = "https://api.jikan.moe/v4";
 
 const getAniZipUrl = (malId: number | string) =>
   `https://api.ani.zip/mappings?mal_id=${malId}`;
 
-const handler = async (res: Response, cb: () => Promise<Response>): Promise<Response> => {
+const handler = async<T>(res: Response, cb: () => Promise<T | Response>): Promise<T | Response> => {
   try {
     const resp = await cb();
     return resp;
@@ -18,6 +19,21 @@ const handler = async (res: Response, cb: () => Promise<Response>): Promise<Resp
       .json(error);
   }
 };
+
+const signalPromise = async(signal: AbortSignal) => {
+  let resolve = false
+
+  signal.onabort = (_) => resolve = true
+
+  while (!resolve) {}
+}
+
+const getDlControllerWithThrow = (id: number) => {
+  const controller = downloadAbortControllers.get(id)
+
+  if (!controller) throw new Error("Controller not found")
+  else return controller
+}
 
 const getTorrentioApi = (id: string, type: string) =>
   `https://torrentio.strem.fun/stream/${type}/${id}.json`;
@@ -41,4 +57,4 @@ const createMagnetUri = (
 }
 
 
-export { handler, JIKAN_API, getAniZipUrl, getTorrentioApi, createMagnetUri };
+export { handler, signalPromise, getDlControllerWithThrow, JIKAN_API, getAniZipUrl, getTorrentioApi, createMagnetUri };

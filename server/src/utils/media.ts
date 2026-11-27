@@ -56,9 +56,9 @@ const compressTorrent = async (
   taskId: number,
   epInfo: Tasks["epInfo"],
   shouldSave: boolean = true,
-  fileName?: string,
   baseProg: number = 25,
   maxProg: number = 100,
+  fileName?: string,
 ): Promise<void> => {
   const key = `videos/${fileName ?? randomUUID()}.mkv`;
   const scalewidth = convertRes(epInfo.quality);
@@ -72,19 +72,21 @@ const compressTorrent = async (
       epInfo,
       status: "error",
       progress: downloadTasks.get(taskId)?.progress || 10,
+      stage: {name: "Compression", service: "Ffmpeg"}
     });
 
-  const compProg = (percent: number) =>
+  const compProg = (percent: number, type: "Cloudconvert" | "Ffmpeg") =>
     downloadTasks.set(taskId, {
       epInfo,
       status: "pending",
       progress: percent * ((maxProg - baseProg - 10) / 100) + baseProg + 10,
+      stage: {name: "Compression", service: type}
     });
 
   try {
     let isCompressed = false;
     try {
-      await compressWithCl(key, vid.url, compProg, "url", scalewidth);
+      await compressWithCl(key, vid.url, (v)=> compProg(v, "Cloudconvert"), "url", scalewidth);
       isCompressed = true;
     } catch (err) {
       console.log(err);
@@ -96,7 +98,7 @@ const compressTorrent = async (
         tempOutpPath,
         key,
         compErr,
-        compProg,
+        (v)=> compProg(v, "Ffmpeg"),
         scalewidth,
       );
     }
@@ -106,6 +108,7 @@ const compressTorrent = async (
       epInfo,
       status: "pending",
       progress: 95 * ((maxProg - baseProg) / 100) + baseProg,
+      stage: { name: "Finishing", service: "Server" },
     });
 
     const uploadedFileUrl = `https://pub-991c552c64ed424ebd8971019038f0ad.r2.dev/${key}`;
@@ -142,6 +145,7 @@ const compressTorrent = async (
       epInfo,
       status: "completed",
       progress: 100 * ((maxProg - baseProg) / 100) + baseProg,
+      stage: null
     });
   } catch (error) {
     console.error("Compression / Upload process failed:", error);
@@ -169,8 +173,20 @@ const dlAndCompress = async (
   let cleanUp: (() => Promise<void>) | null = null;
   let cleanUpApify: (() => Promise<void>) | null = null;
 
+  const defaultTask: Tasks = {
+    status: "pending", epInfo, progress: 0,
+    stage: { name: "Starting", service: "Server" }
+  }
+
+  const torrenttingBaseProg = 0
+  const compressionBaseProg = 25
+  const maxProg = 100
+
   try {
-    const sInfo = await downloadTorrentSeedr(magUri, epInfo, taskId);
+    downloadTasks.set(taskId, {...defaultTask, stage: {name: "Torrenting", service: "Seedr"}})
+    const sInfo = await downloadTorrentSeedr(
+      magUri, epInfo, taskId, torrenttingBaseProg, compressionBaseProg
+    );
 
     url = sInfo?.url;
     cleanUp = sInfo?.delFn;
@@ -180,7 +196,10 @@ const dlAndCompress = async (
 
   if (!url) {
     try {
-      const vid = await downloadTorrent(magUri, epInfo, taskId);
+      downloadTasks.set(taskId, {...defaultTask, stage: {name: "Torrenting", service: "Pikpak"}})
+      const vid = await downloadTorrent(
+        magUri, epInfo, taskId, torrenttingBaseProg, compressionBaseProg
+      );
       url = vid?.[0]?.url;
     } catch (err) {
       console.log(err);
@@ -189,6 +208,7 @@ const dlAndCompress = async (
 
   if (!url) {
     try {
+      downloadTasks.set(taskId, {...defaultTask, stage: {name: "Torrenting", service: "Apify"}})
       const { chosen, defaultKeyValueStoreId, defaultDatasetId } = await downloadTorrentToApify(
         magUri,
         epInfo.episodeId,
@@ -212,7 +232,7 @@ const dlAndCompress = async (
       console.log(err);
     }
   } else {
-    downloadTasks.set(taskId, { epInfo, progress: 0, status: "error" });
+    downloadTasks.set(taskId, { epInfo, progress: 0, status: "error", stage: null });
     throw new Error("Failed to download torrent");
   }
 };
